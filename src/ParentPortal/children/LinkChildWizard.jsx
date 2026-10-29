@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import EnterLearnerID from "./EnterLearnerIDsections";
 import VerifyOtp from "./VerifywithOTP";
-import Linkcomplete from "./Linkcomplete"; // Step 3 Layout Container
+import Linkcomplete from "./LinkComplete";// Step 3 Layout Container
 
 const steps = [
   { number: 1, label: "Enter Learner ID" },
