@@ -1,14 +1,6 @@
 
 import React from "react";
 
-const defaultSubjects = [
-  { name: "Mathematics", value: 70 },
-  { name: "English", value: 70 },
-  { name: "Science", value: 70 },
-  { name: "Art", value: 70 },
-  { name: "Coding", value: 70 },
-];
-
 function LearningProgressCircle({ value = 75 }) {
   const size = 130;
   const strokeWidth = 10;
@@ -84,12 +76,15 @@ function AcademicIcon() {
   );
 }
 
-export default function AcademicPerformance({ student }) {
-  const learningProgress = student?.learningProgress ?? 75;
-  const subjectsEnrolled = student?.subjectsEnrolled ?? 4;
-  const homeworkCompletion = student?.homeworkCompletion ?? 94;
+export default function AcademicPerformance({ data }) {
+  const learningProgress = data?.overall?.lessonProgress ?? 0;
+  const subjectsEnrolled = data?.overall?.subjectsEnrolled ?? 0;
+  const homeworkCompletion = data?.overall?.homeworkCompletion; // null when no coursework has been set
 
-  const subjects = student?.subjects ?? defaultSubjects;
+  const subjects = (data?.subjects ?? []).map((subject) => ({
+    name: subject.subject,
+    value: subject.lessonProgress,
+  }));
 
   return (
     <section className="box-border w-full max-w-[364px] min-w-0 overflow-hidden mb-5 lg:mb-1 rounded-[10px] border border-slate-100 bg-white shadow-[0_2px_7px_rgba(15,23,42,0.12)]">
@@ -163,7 +158,7 @@ export default function AcademicPerformance({ student }) {
           </span>
 
           <span className="shrink-0 text-[10px] sm:text-[11px] font-medium text-black">
-            {homeworkCompletion}%
+            {homeworkCompletion == null ? "—" : `${homeworkCompletion}%`}
           </span>
         </div>
       </footer>

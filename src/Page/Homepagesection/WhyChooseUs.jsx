@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from "react";
 import {
   Flame,
@@ -134,9 +135,7 @@ const AnimatedCounter = ({
 
       const elapsed = currentTime - startTime;
       const progress = Math.min(elapsed / duration, 1);
-
       const easedProgress = 1 - Math.pow(1 - progress, 3);
-
       const currentValue = Math.floor(easedProgress * target);
 
       setCount(currentValue);
@@ -213,9 +212,7 @@ const FeatureCard = ({
         hover:shadow-[0_10px_30px_rgba(0,0,0,0.07)]
       "
     >
-      {/* =====================================================
-          ICON
-      ====================================================== */}
+      {/* ICON */}
 
       <div
         className="
@@ -243,25 +240,19 @@ const FeatureCard = ({
         />
       </div>
 
-      {/* =====================================================
-          TITLE
-      ====================================================== */}
+      {/* TITLE */}
 
-      <h3 className="mt-4 text-[13px] font-semibold leading-[1.3] tracking-[-0.1px] text-[#111111] md:text-[25px]">
+      <h3 className="mt-4 text-[15px] font-semibold leading-[1.3] tracking-[-0.1px] text-[#111111] md:text-[25px]">
         {title}
       </h3>
 
-      {/* =====================================================
-          DESCRIPTION
-      ====================================================== */}
+      {/* DESCRIPTION */}
 
-      <p className="mt-2 max-w-[210px] text-[11px] font-normal leading-[1.55] text-[#9299A2] md:max-w-[280px] md:text-[20px] md:leading-[1.6]">
+      <p className="mt-2 max-w-[210px] text-[13px] font-normal leading-[1.55] text-[#9299A2] md:max-w-[280px] md:text-[20px] md:leading-[1.6]">
         {description}
       </p>
 
-      {/* =====================================================
-          BOTTOM ACCENT LINE
-      ====================================================== */}
+      {/* BOTTOM ACCENT LINE */}
 
       <div
         className="mt-auto h-[2px] w-[53px] rounded-full md:w-[68px]"
@@ -313,9 +304,7 @@ const WhyChooseUs = () => {
   return (
     <section className="relative w-full overflow-hidden bg-[#F8F8FA]">
 
-      {/* =====================================================
-          DECORATIVE RIGHT BACKGROUND SHAPE
-      ====================================================== */}
+      {/* DECORATIVE RIGHT BACKGROUND SHAPE */}
 
       <div
         className="
@@ -332,9 +321,7 @@ const WhyChooseUs = () => {
         "
       />
 
-      {/* =====================================================
-          TOP STATISTICS
-      ====================================================== */}
+      {/* TOP STATISTICS */}
 
       <div
         ref={statsRef}
@@ -376,7 +363,7 @@ const WhyChooseUs = () => {
 
               {/* Animated Number */}
 
-              <h3 className="text-[30px] font-semibold leading-none tracking-[-0.8px] text-[#173A59] sm:text-[31px] md:text-[46px]">
+              <h3 className="text-[34px] font-semibold leading-none tracking-[-0.8px] text-[#173A59] sm:text-[34px] md:text-[46px]">
                 <AnimatedCounter
                   target={stat.value}
                   suffix={stat.suffix}
@@ -388,7 +375,7 @@ const WhyChooseUs = () => {
 
               {/* Label */}
 
-              <p className="mt-2 text-[11px] font-normal tracking-[0.1px] text-[#708096] md:text-[15px]">
+              <p className="mt-2 text-[13px] font-normal tracking-[0.1px] text-[#708096] md:text-[17px]">
                 {stat.label}
               </p>
             </div>
@@ -396,9 +383,7 @@ const WhyChooseUs = () => {
         })}
       </div>
 
-      {/* =====================================================
-          MAIN CONTENT
-      ====================================================== */}
+      {/* MAIN CONTENT */}
 
       <div
         className="
@@ -418,9 +403,7 @@ const WhyChooseUs = () => {
           md:pt-[80px]
         "
       >
-        {/* =====================================================
-            WHY CHOOSE US PILL
-        ====================================================== */}
+        {/* WHY CHOOSE US PILL */}
 
         <div className="mb-3 flex h-[39px] items-center gap-2 rounded-full bg-[#E5EEFF] px-[17px] md:h-[46px] md:px-[22px]">
           <Star
@@ -430,16 +413,14 @@ const WhyChooseUs = () => {
             className="text-[#FFD400] md:scale-110"
           />
 
-          <span className="text-[12px] font-medium uppercase tracking-[0.2px] text-[#29367A] md:text-[15px]">
+          <span className="text-[14px] font-medium uppercase tracking-[0.2px] text-[#29367A] md:text-[17px]">
             Why Choose Us
           </span>
         </div>
 
-        {/* =====================================================
-            MAIN HEADING
-        ====================================================== */}
+        {/* MAIN HEADING */}
 
-        <h2 className="max-w-[620px] text-[32px] font-bold leading-[1.12] tracking-[-1.4px] text-black sm:text-[34px] md:max-w-[850px] md:text-[48px]">
+        <h2 className="max-w-[620px] text-[36px] font-bold leading-[1.12] tracking-[-1.4px] text-black sm:text-[39px] md:max-w-[850px] md:text-[48px]">
           Education That Goes
           <br />
 
@@ -448,20 +429,16 @@ const WhyChooseUs = () => {
           </span>
         </h2>
 
-        {/* =====================================================
-            DESCRIPTION
-        ====================================================== */}
+        {/* DESCRIPTION */}
 
-        <p className="mt-5 max-w-[500px] text-[14px] font-normal leading-[1.8] text-[#9AA0A9] sm:max-w-[520px] md:max-w-[680px] md:text-[18px] md:leading-[1.7]">
+        <p className="mt-5 max-w-[500px] text-[16px] font-normal leading-[1.8] text-[#9AA0A9] sm:max-w-[520px] md:max-w-[680px] md:text-[18px] md:leading-[1.7]">
           We create meaningful learning experiences that empower students,
           support parents, and equip educators with the tools they need to
           inspire confidence, encourage growth, and achieve lasting success.
         </p>
       </div>
 
-      {/* =====================================================
-          LEFT DOT DECORATION
-      ====================================================== */}
+      {/* LEFT DOT DECORATION */}
 
       <div
         className="
@@ -483,9 +460,7 @@ const WhyChooseUs = () => {
         }}
       />
 
-      {/* =====================================================
-          RIGHT DOT DECORATION
-      ====================================================== */}
+      {/* RIGHT DOT DECORATION */}
 
       <div
         className="
@@ -507,9 +482,7 @@ const WhyChooseUs = () => {
         }}
       />
 
-      {/* =====================================================
-          FEATURE CARDS
-      ====================================================== */}
+      {/* FEATURE CARDS */}
 
       <div
         className="
@@ -545,8 +518,6 @@ const WhyChooseUs = () => {
           />
         ))}
       </div>
-
-      
     </section>
   );
 };

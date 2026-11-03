@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { api } from "../../../lib/api";
 import {
   ArrowLeft,
   ChevronDown,
@@ -22,10 +23,18 @@ const navigate = useNavigate()
     date: "",
     startTime: "",
     endTime: "",
-    students: "",
+    students: "All Students",
+    meetingUrl: "",
   });
-
+  const [mySubjects, setMySubjects] = useState([]);
   const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    api
+      .get("/tutors/me")
+      .then((me) => setMySubjects(me.subjects.map((s) => s.subject)))
+      .catch(() => {});
+  }, []);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [alert, setAlert] = useState({
@@ -85,7 +94,7 @@ const navigate = useNavigate()
   const validateForm = () => {
     const newErrors = {};
 
-    const subject = formData.subject.trim();
+    const subject = String(formData.subject).trim();
     const topic = formData.topic.trim();
     const date = formData.date;
     const startTime = formData.startTime;
@@ -205,30 +214,26 @@ const navigate = useNavigate()
     try {
       setIsSubmitting(true);
 
-      /*
-       * If onSave is supplied, wait for the actual
-       * save/API request to finish.
-       */
-      if (onSave) {
-        await onSave({
-          ...formData,
-          subject: formData.subject.trim(),
-          topic: formData.topic.trim(),
-          students: formData.students.trim(),
-        });
-      }
+      // Dates are typed in the tutor's own timezone, so build them locally.
+      await api.post("/classes", {
+        subjectId: Number(formData.subject),
+        title: formData.topic.trim(),
+        startsAt: new Date(`${formData.date}T${formData.startTime}`).toISOString(),
+        endsAt: new Date(`${formData.date}T${formData.endTime}`).toISOString(),
+        meetingUrl: formData.meetingUrl.trim() || undefined,
+      });
+      if (onSave) await onSave(formData);
 
       setAlert({
         show: true,
-        message: "Class scheduled successfully.",
+        message: "Class scheduled successfully. Your students have been notified.",
         type: "success",
       });
+      setTimeout(() => navigate("/tutor/class"), 1200);
     } catch (error) {
-      console.error("Error scheduling class:", error);
-
       setAlert({
         show: true,
-        message: "Unable to schedule the class. Please try again.",
+        message: error.message || "Unable to schedule the class. Please try again.",
         type: "error",
       });
     } finally {
@@ -341,14 +346,9 @@ const navigate = useNavigate()
                   }`}
                 >
                   <option value="">Select a subject</option>
-                  <option value="Mathematics - Year 1">
-                    Mathematics - Year 1
-                  </option>
-                  <option value="English - Year 1">English - Year 1</option>
-                  <option value="Science - Year 1">Science - Year 1</option>
-                  <option value="Mathematics - Year 2">
-                    Mathematics - Year 2
-                  </option>
+                  {mySubjects.map((s) => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
                 </select>
 
                 <ChevronDown
@@ -538,6 +538,23 @@ const navigate = useNavigate()
               </div>
             </div>
 
+            {/* Meeting link */}
+            <div>
+              <label htmlFor="meetingUrl" className="mb-1.5 block text-[10px] font-semibold text-[#344054]">
+                Meeting link <span className="font-normal text-[#94A3B8]">(optional, e.g. Google Meet or Zoom)</span>
+              </label>
+              <input
+                id="meetingUrl"
+                name="meetingUrl"
+                type="url"
+                value={formData.meetingUrl}
+                onChange={handleChange}
+                disabled={isSubmitting}
+                placeholder="https://meet.google.com/..."
+                className="h-9 w-full rounded-[4px] border border-[#E4E8EF] bg-white px-3 text-[10px] text-[#202938] outline-none transition focus:border-[#2F6BFF] focus:ring-2 focus:ring-[#2F6BFF]/10 disabled:opacity-70"
+              />
+            </div>
+
             {/* Students */}
             <div>
               <label
@@ -564,12 +581,7 @@ const navigate = useNavigate()
                       : "border-[#E4E8EF] focus:border-[#2F6BFF] focus:ring-[#2F6BFF]/10"
                   }`}
                 >
-                  <option value="">Select target students</option>
-                  <option value="All Students">All Students</option>
-                  <option value="Mathematics - Year 1">
-                    Mathematics - Year 1
-                  </option>
-                  <option value="Selected Students">Selected Students</option>
+                  <option value="All Students">All students enrolled in this subject</option>
                 </select>
 
                 <ChevronDown

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import LinkChildOptionSelect from './LinkChildOptionSelect';
 import EnterLinkCodeForm from './EnterLinkCodeForm';
 
-export default function LinkChildForm() {
+export default function LinkChildForm({ onNext }) {
   const [selectedOption, setSelectedOption] = useState(null); // Nothing pre-selected
   const [subStep, setSubStep] = useState(1); // 1 = Selection, 2 = Enter Link Code
 
@@ -26,7 +26,7 @@ export default function LinkChildForm() {
           onSelectOption={handleSelectOption}
         />
       ) : (
-        <EnterLinkCodeForm onBack={handleBackToOptions} />
+        <EnterLinkCodeForm onBack={handleBackToOptions} onNext={onNext} />
       )}
     </div>
   );

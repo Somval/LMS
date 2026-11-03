@@ -3,7 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import StudentLayout from "../StudentLayout";
 import HomeDashboard from "../dashboard";
 import LearningJourney from "../learningjourney";
-import CourseDetail from "../learningjourney"; // Update path if needed
+import CourseDetail from "../Courseinformation";
 import LessonDetail from "../LessonDetail";      // The new page component
 import NextLiveClass from "../LiveClasses";
 import AssignmentsQuizzes from "../assignmentandquize"
@@ -14,12 +14,13 @@ import Rewards from "../RewardBadges"
 import Recordedlessons from "../RecordedLessons"
 import ProfileInformation from "../../StudentPortal/ProfileInformation";
 import Attendance from "../../StudentPortal/AttendanceHome";
+import NotificationsInbox from "../NotificationsInbox";
 
 const StudentRoute = () => {
   return (
     <Routes>
       <Route element={<StudentLayout />}>
-        <Route index element={<Navigate to="home" replace />} />
+        <Route index element={<Navigate to="dashboard" replace />} />
 
         <Route path="dashboard" element={<HomeDashboard />} />
         
@@ -42,6 +43,7 @@ const StudentRoute = () => {
         <Route path="recorded-lessons" element={<Recordedlessons />} />
         <Route path="attendance" element={<Attendance />} />
         <Route path="profile" element={<ProfileInformation />} />
+        <Route path="notifications" element={<NotificationsInbox />} />
         
         <Route
           path="*"

@@ -1,73 +1,18 @@
 import React from "react";
 import { ArrowRight, Video } from "lucide-react";
+import { dayLabel, timeRange, openLink } from "./classFormat";
 
-const upcomingClasses = [
-  {
-    date: "Today",
-    day: "Aug 17",
-    className: "Mathematics",
-    topic: (
-      <>
-        Linear Equations
-        <br />
-        & Inequalities
-      </>
-    ),
-    time: (
-      <>
-        5:00 PM –
-        <br />
-        6:00 PM
-      </>
-    ),
-    status: "Starting soon",
-    statusType: "starting",
-  },
-  {
-    date: "Today",
-    day: "Aug 17",
-    className: "Mathematics",
-    topic: (
-      <>
-        Linear Equations
-        <br />
-        & Inequalities
-      </>
-    ),
-    time: (
-      <>
-        5:00 PM –
-        <br />
-        6:00 PM
-      </>
-    ),
-    status: "Starting soon",
-    statusType: "starting",
-  },
-  {
-    date: "Today",
-    day: "Aug 17",
-    className: "Mathematics",
-    topic: (
-      <>
-        Linear Equations
-        <br />
-        & Inequalities
-      </>
-    ),
-    time: (
-      <>
-        5:00 PM –
-        <br />
-        6:00 PM
-      </>
-    ),
-    status: "Upcoming",
-    statusType: "upcoming",
-  },
-];
+export default function UpcomingClasses({ classes = [] }) {
+  const upcomingClasses = classes.map((c) => ({
+    ...dayLabel(c.startsAt),
+    className: c.subject.name,
+    topic: c.title,
+    time: timeRange(c.startsAt, c.endsAt),
+    status: c.status === "LIVE" ? "Live now" : new Date(c.startsAt) - Date.now() < 3600 * 1000 ? "Starting soon" : "Upcoming",
+    statusType: c.status === "LIVE" || new Date(c.startsAt) - Date.now() < 3600 * 1000 ? "starting" : "upcoming",
+    meetingUrl: c.meetingUrl,
+  }));
 
-export default function UpcomingClasses() {
   return (
     <section className="w-full  px-4 py-5 sm:px-5">
       <div className="w-full">
@@ -206,6 +151,8 @@ export default function UpcomingClasses() {
                 {/* Action */}
                 <div>
                   <button
+ onClick={() => openLink(item.meetingUrl)}
+ disabled={!item.meetingUrl}
                     type="button"
                     className="
                       flex
@@ -348,6 +295,8 @@ export default function UpcomingClasses() {
                     </div>
 
                     <button
+ onClick={() => openLink(item.meetingUrl)}
+ disabled={!item.meetingUrl}
                       type="button"
                       className="
                         flex

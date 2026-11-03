@@ -1,22 +1,25 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import { User, LogOut, Trash2, X, AlertTriangle } from 'lucide-react';
 
 export default function AccountManagement() {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
   // Modal state management
   const [activeModal, setActiveModal] = useState(null); // 'logout' | 'deactivate'
 
   // Handle Logout action
   const handleLogoutConfirm = () => {
-    alert('Logging out...');
-    // Add your auth logout logic here (e.g., clear tokens, redirect to login)
     setActiveModal(null);
+    logout();
+    navigate('/parent/login', { replace: true });
   };
 
-  // Handle Deactivate Account action
+  // Accounts are deactivated by the support team, so this opens a message to them
   const handleDeactivateConfirm = () => {
-    alert('Account deactivated successfully.');
-    // Add your account deactivation logic here
     setActiveModal(null);
+    navigate('/parent/messages');
   };
 
   return (
@@ -110,12 +113,12 @@ export default function AccountManagement() {
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900">Deactivate Account</h3>
-                    <p className="text-sm text-gray-500">This action is permanent and cannot be easily undone.</p>
+                    <p className="text-sm text-gray-500">Deactivation is handled by our support team.</p>
                   </div>
                 </div>
 
                 <p className="text-sm text-gray-600 bg-red-50/50 border border-red-100 p-3 rounded-xl mb-6">
-                  All your personal data, linked child records, and portal configurations will be disabled.
+                  Send the support team a message asking to deactivate your account. They'll confirm with you before anything is changed.
                 </p>
 
                 <div className="flex items-center justify-end gap-2 pt-4 border-t border-gray-100">
@@ -131,7 +134,7 @@ export default function AccountManagement() {
                     onClick={handleDeactivateConfirm}
                     className="px-5 py-2 bg-red-600 text-white text-sm font-medium rounded-xl hover:bg-red-700 transition shadow-sm"
                   >
-                    Confirm Deactivation
+                    Message Support
                   </button>
                 </div>
               </div>

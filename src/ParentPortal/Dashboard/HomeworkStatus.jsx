@@ -1,61 +1,21 @@
 
 import React, { useState } from "react";
+import { formatDue } from "./dashboardData";
 import { FileText, X } from "lucide-react";
 
-export default function HomeworkStatus() {
+export default function HomeworkStatus({ data }) {
   const [showAll, setShowAll] = useState(false);
 
-  // Homework data: easy to replace with API response later.
-  const homeworkData = [
-    {
-      id: 1,
-      subject: "Mathematics",
-      status: "Pending",
-      due: "Due tomorrow",
-    },
-    {
-      id: 2,
-      subject: "English Language",
-      status: "Submitted",
-      due: "Submitted",
-    },
-    {
-      id: 3,
-      subject: "Science",
-      status: "Pending",
-      due: "Due in 2 days",
-    },
-    {
-      id: 4,
-      subject: "Coding",
-      status: "Submitted",
-      due: "Submitted",
-    },
-    {
-      id: 5,
-      subject: "Social Studies",
-      status: "Pending",
-      due: "Due in 4 days",
-    },
-    {
-      id: 6,
-      subject: "Basic Technology",
-      status: "Submitted",
-      due: "Submitted",
-    },
-    {
-      id: 7,
-      subject: "Computer Science",
-      status: "Pending",
-      due: "Due next week",
-    },
-    {
-      id: 8,
-      subject: "Civic Education",
-      status: "Submitted",
-      due: "Submitted",
-    },
-  ];
+  // Open work first (overdue, then soonest due), then what has been handed in.
+  const homeworkData = (data?.homework ?? []).map((item) => ({
+    id: item.id,
+    subject: item.subject ? `${item.subject}: ${item.title}` : item.title,
+    status:
+      item.status === "SUBMITTED" || item.status === "GRADED"
+        ? "Submitted"
+        : "Pending",
+    due: formatDue(item.dueAt, item.status),
+  }));
 
   const visibleHomework = homeworkData.slice(0, 4);
 
@@ -93,6 +53,12 @@ export default function HomeworkStatus() {
             View All
           </button>
         </div>
+
+        {visibleHomework.length === 0 && (
+          <p className="px-[21px] pt-4 text-[13px] text-slate-400">
+            No homework has been set yet.
+          </p>
+        )}
 
         {/* First Four Homework Items */}
         <div className="px-[21px]">

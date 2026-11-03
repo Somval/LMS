@@ -1,72 +1,37 @@
 import React, { useState } from 'react';
 import { CheckCircle2 } from 'lucide-react';
 import ImagePath from "../assets/images/134a082cca973150969aa91355d8ac63a4934a6a (1).png"
-export default function AchievementTimelineDetails() {
-  const [selectedItem, setSelectedItem] = useState({
-    title: "Mathematics Milestone",
-    date: "Aug 8, 2026",
-    fullDate: "August 8, 2026",
-    description: "Olivia completed the required learning activities and reached this major milestone in Mathematics.",
-    imagePath: ImagePath,
-    achievements: [
-      "Completed required learning activities",
-      "Consistent effort and improvement",
-      "Demonstrated strong understanding of key concepts"
-    ]
+import { detailsOf, longDate, monthLabel, shortDate } from "./useRewards";
+export default function AchievementTimelineDetails({ achievements = [] }) {
+  const [selectedId, setSelectedId] = useState(null);
+
+  // Group by month, newest first (the API already sends them newest first).
+  const timelineData = [];
+  achievements.forEach((a) => {
+    const month = monthLabel(a.awardedAt);
+    let section = timelineData.find((s) => s.month === month);
+    if (!section) timelineData.push((section = { month, items: [] }));
+    section.items.push({
+      id: a.id,
+      title: a.title,
+      description: a.description || "Awarded by your tutor.",
+      date: shortDate(a.awardedAt),
+      fullDate: longDate(a.awardedAt),
+      imagePath: a.icon || ImagePath,
+      achievements: detailsOf(a),
+    });
   });
 
-  const timelineData = [
-    {
-      month: "August 2026",
-      items: [
-        {
-          id: 1,
-          title: "Mathematics Milestone",
-          description: "Completed a major Mathematics learning milestone.",
-          date: "Aug 8, 2026",
-          fullDate: "August 8, 2026",
-          imagePath: ImagePath
-        },
-        {
-          id: 2,
-          title: "Mathematics Milestone",
-          description: "Completed a major Mathematics learning milestone.",
-          date: "Aug 8, 2026",
-          fullDate: "August 8, 2026",
-          imagePath:ImagePath
-        }
-      ]
-    },
-    {
-      month: "July 2026",
-      items: [
-        {
-          id: 3,
-          title: "Mathematics Milestone",
-          description: "Completed a major Mathematics learning milestone.",
-          date: "Aug 8, 2026",
-          fullDate: "August 8, 2026",
-          imagePath: ImagePath
-        },
-        {
-          id: 4,
-          title: "Mathematics Milestone",
-          description: "Completed a major Mathematics learning milestone.",
-          date: "Aug 8, 2026",
-          fullDate: "August 8, 2026",
-          imagePath:ImagePath
-        },
-        {
-          id: 5,
-          title: "Mathematics Milestone",
-          description: "Completed a major Mathematics learning milestone.",
-          date: "Aug 8, 2026",
-          fullDate: "August 8, 2026",
-          imagePath: ImagePath
-        }
-      ]
-    }
-  ];
+  const allItems = timelineData.flatMap((s) => s.items);
+  const selectedItem = allItems.find((i) => i.id === selectedId) ?? allItems[0];
+
+  if (!selectedItem) {
+    return (
+      <div className="w-full rounded-2xl bg-white p-8 text-center text-sm text-gray-500 shadow-sm">
+        Your achievement timeline will appear here once your tutor awards you a badge.
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-7xl mx-auto p-6  rounded-3xl  grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -94,11 +59,11 @@ export default function AchievementTimelineDetails() {
               {/* Items for the Month */}
               <div className="space-y-3 pl-2">
                 {section.items.map((item) => {
-                  const isSelected = selectedItem.title === item.title && selectedItem.date === item.date;
+                  const isSelected = selectedItem.id === item.id;
                   return (
                     <div 
                       key={item.id}
-                      onClick={() => setSelectedItem(item)}
+                      onClick={() => setSelectedId(item.id)}
                       className={`relative flex items-center justify-between p-4 rounded-2xl cursor-pointer transition-all border ${
                         isSelected 
                           ? 'bg-[#e8f0fe] border-blue-200 shadow-sm' 

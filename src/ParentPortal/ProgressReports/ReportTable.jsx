@@ -1,67 +1,40 @@
 import React, { useState } from 'react';
-import { FileText, Eye, Download, X } from 'lucide-react';
+import { FileText, Eye, Download, X, BookOpen, CalendarCheck, ClipboardCheck, Trophy } from 'lucide-react';
+import {
+  formatDate,
+  monthTitle,
+  periodText,
+  printReport,
+  reportDate,
+  summaryText,
+} from './reportData';
 
-// Mock data structured cleanly with an image URL field for API integration
-const initialReportsData = [
-  {
-    id: 1,
-    title: 'June Progress Report',
-    period: 'Jun 1–Jun 30, 2026',
-    date: 'Jun 30, 2026',
-    fileSize: '2.4 MB',
-    summary: 'Comprehensive performance and attendance summary for June 2026.',
-    imageUrl: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=1000&q=80'
-  },
-  {
-    id: 2,
-    title: 'June Progress Report',
-    period: 'Jun 1–Jun 30, 2026',
-    date: 'Jun 30, 2026',
-    fileSize: '1.8 MB',
-    summary: 'Comprehensive performance and attendance summary for June 2026.',
-    imageUrl: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=1000&q=80'
-  },
-  {
-    id: 3,
-    title: 'June Progress Report',
-    period: 'Jun 1–Jun 30, 2026',
-    date: 'Jun 30, 2026',
-    fileSize: '3.1 MB',
-    summary: 'Comprehensive performance and attendance summary for June 2026.',
-    imageUrl: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=1000&q=80'
-  },
-  {
-    id: 4,
-    title: 'June Progress Report',
-    period: 'Jun 1–Jun 30, 2026',
-    date: 'Jun 30, 2026',
-    fileSize: '2.0 MB',
-    summary: 'Comprehensive performance and attendance summary for June 2026.',
-    imageUrl: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=1000&q=80'
-  },
-];
+const Tile = ({ icon: Icon, value, label, color }) => (
+  <div className="rounded-2xl border border-slate-200/80 bg-white p-4 text-left">
+    <div className={`mb-2 flex h-9 w-9 items-center justify-center rounded-xl ${color}`}>
+      <Icon className="h-4 w-4" />
+    </div>
+    <div className="text-xl font-bold text-slate-900">{value}</div>
+    <div className="text-xs text-slate-500">{label}</div>
+  </div>
+);
 
-export default function ReportsTable({ reports = initialReportsData }) {
+// reports: newest first. student: { fullName, learnerId }. generatedAt: when the data was worked out.
+export default function ReportsTable({ reports = [], student, generatedAt }) {
   const [selectedReport, setSelectedReport] = useState(null);
+  const firstName = student.fullName.split(/\s+/)[0];
 
-  // Handle Export / Download action for the image
+  // Download = the browser's print dialog, where "Save as PDF" makes the file.
   const handleDownload = (report, e) => {
     if (e) e.stopPropagation();
-    
-    // Create a temporary anchor to trigger image download
-    const link = document.createElement('a');
-    link.href = report.imageUrl;
-    link.download = `${report.title.replace(/\s+/g, '_')}_${report.date}.jpg`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    printReport(report, student, generatedAt);
   };
 
   return (
     <div className="w-full  bg-slate-50 flex items-start justify-center p-4 md:p-6 font-sans text-slate-800">
       {/* Main Container Card - Perfect Full-Page Width Layout */}
       <div className="w-full bg-white rounded-2xl shadow-xs border border-slate-200/80 p-6 md:p-8 space-y-6">
-        
+
         {/* Section Header */}
         <h2 className="text-xl md:text-2xl font-bold text-slate-900 tracking-tight">
           Reports
@@ -70,7 +43,7 @@ export default function ReportsTable({ reports = initialReportsData }) {
         {/* Table Wrapper */}
         <div className="w-full overflow-x-auto rounded-2xl border border-slate-200/80 bg-white">
           <table className="w-full text-left border-collapse min-w-[750px]">
-            
+
             {/* Table Header */}
             <thead>
               <tr className="bg-[#F1F3F9] text-slate-600 text-xs md:text-sm font-semibold">
@@ -83,28 +56,35 @@ export default function ReportsTable({ reports = initialReportsData }) {
 
             {/* Table Body */}
             <tbody className="divide-y divide-slate-100 text-sm">
-              {reports && reports.length > 0 ? (
+              {reports.length > 0 ? (
                 reports.map((report) => (
-                  <tr key={report.id} className="hover:bg-slate-50/60 transition-colors">
-                    
+                  <tr key={report.month} className="hover:bg-slate-50/60 transition-colors">
+
                     {/* Report Info & Mini Icon */}
-                    <td className="py-4 px-6 whitespace-nowrap flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
-                        <FileText className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <div className="font-bold text-slate-900">{report.title}</div>
+                    <td className="py-4 px-6 whitespace-nowrap">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+                          <FileText className="w-5 h-5" />
+                        </div>
+                        <div className="font-bold text-slate-900">
+                          {monthTitle(report)} Progress Report
+                          {report.isCurrent && (
+                            <span className="ml-2 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700 border border-amber-200/70">
+                              In progress
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </td>
 
                     {/* Period */}
                     <td className="py-4 px-6 text-slate-700 font-medium whitespace-nowrap">
-                      {report.period}
+                      {periodText(report)}
                     </td>
 
                     {/* Date */}
                     <td className="py-4 px-6 text-slate-600 whitespace-nowrap">
-                      {report.date}
+                      {formatDate(reportDate(report, generatedAt))}
                     </td>
 
                     {/* Actions */}
@@ -124,7 +104,8 @@ export default function ReportsTable({ reports = initialReportsData }) {
                         <button
                           type="button"
                           onClick={(e) => handleDownload(report, e)}
-                          title="Download Report"
+                          title="Download Report (Save as PDF)"
+                          aria-label={`Download ${monthTitle(report)} report`}
                           className="p-1.5 bg-white border border-slate-200 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all cursor-pointer shadow-2xs"
                         >
                           <Download className="w-4 h-4" />
@@ -150,13 +131,17 @@ export default function ReportsTable({ reports = initialReportsData }) {
 
       {/* --- POPUP MODAL FOR VIEWING REPORT --- */}
       {selectedReport && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200">
-          
-          <div 
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200"
+          onMouseDown={(e) => e.target === e.currentTarget && setSelectedReport(null)}
+        >
+
+          <div
+            role="dialog"
+            aria-modal="true"
             className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl border border-slate-200/80 overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200"
-            onClick={(e) => e.stopPropagation()}
           >
-            
+
             {/* Modal Header */}
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
               <div className="flex items-center gap-3">
@@ -165,10 +150,10 @@ export default function ReportsTable({ reports = initialReportsData }) {
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-slate-900 leading-tight">
-                    {selectedReport.title}
+                    {monthTitle(selectedReport)} Progress Report
                   </h3>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Period: {selectedReport.period} • {selectedReport.date}
+                    Period: {periodText(selectedReport)} • {student.fullName}
                   </p>
                 </div>
               </div>
@@ -193,18 +178,81 @@ export default function ReportsTable({ reports = initialReportsData }) {
               </div>
             </div>
 
-            {/* Modal Body / Image Content */}
-            <div className="p-6 overflow-y-auto space-y-4 text-center bg-slate-50/30">
-              <div className="w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 flex items-center justify-center p-2">
-                <img 
-                  src={selectedReport.imageUrl} 
-                  alt={selectedReport.title} 
-                  className="max-h-[500px] w-auto object-contain rounded-xl shadow-xs"
-                />
-              </div>
-              <p className="text-xs text-slate-500 max-w-lg mx-auto">
-                {selectedReport.summary}
+            {/* Modal Body: the report, worked out from the child's own activity */}
+            <div className="p-6 overflow-y-auto space-y-5 bg-slate-50/30">
+              {selectedReport.isCurrent && (
+                <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs text-amber-800">
+                  This month isn't over yet, so these figures are the totals so far.
+                </p>
+              )}
+
+              <p className="text-sm text-slate-700 leading-relaxed">
+                {summaryText(firstName, selectedReport)}
               </p>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <Tile icon={BookOpen} color="bg-blue-50 text-blue-600" value={selectedReport.lessons.completed} label="Lessons completed" />
+                <Tile
+                  icon={CalendarCheck}
+                  color="bg-emerald-50 text-emerald-600"
+                  value={selectedReport.attendance.rate == null ? '—' : `${selectedReport.attendance.rate}%`}
+                  label={`Attendance (${selectedReport.attendance.held} class${selectedReport.attendance.held === 1 ? '' : 'es'})`}
+                />
+                <Tile
+                  icon={ClipboardCheck}
+                  color="bg-purple-50 text-purple-600"
+                  value={selectedReport.work.submitted}
+                  label={selectedReport.work.averageScore != null ? `Work handed in · avg ${selectedReport.work.averageScore}%` : 'Work handed in'}
+                />
+                <Tile icon={Trophy} color="bg-amber-50 text-amber-600" value={selectedReport.achievements.length} label="Achievements" />
+              </div>
+
+              {selectedReport.lessons.bySubject.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-2">Lessons by subject</h4>
+                  <ul className="space-y-1.5 text-sm text-slate-700">
+                    {selectedReport.lessons.bySubject.map((item) => (
+                      <li key={item.subject} className="flex items-center justify-between rounded-lg bg-white border border-slate-200/70 px-3 py-2">
+                        <span>{item.subject}</span>
+                        <span className="font-semibold">{item.completed}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {selectedReport.work.items.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-2">Work handed in</h4>
+                  <ul className="space-y-1.5 text-sm text-slate-700">
+                    {selectedReport.work.items.map((item, index) => (
+                      <li key={`${item.title}-${index}`} className="flex items-center justify-between gap-3 rounded-lg bg-white border border-slate-200/70 px-3 py-2">
+                        <span className="min-w-0 truncate">
+                          {item.title}
+                          {item.subject && <span className="text-slate-400"> · {item.subject}</span>}
+                        </span>
+                        <span className={`shrink-0 font-semibold ${item.percent == null ? 'text-slate-400 text-xs' : ''}`}>
+                          {item.percent == null ? 'Awaiting marking' : `${item.percent}%`}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {selectedReport.achievements.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-2">Achievements</h4>
+                  <ul className="space-y-1.5 text-sm text-slate-700">
+                    {selectedReport.achievements.map((item, index) => (
+                      <li key={`${item.title}-${index}`} className="flex items-center justify-between rounded-lg bg-white border border-slate-200/70 px-3 py-2">
+                        <span>{item.title} <span className="text-slate-400">· {item.kind === 'REWARD' ? 'Reward' : 'Badge'}</span></span>
+                        <span className="text-xs text-slate-500">{formatDate(item.awardedAt)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
 
           </div>

@@ -1,14 +1,18 @@
 import React, { useState } from "react";
 import { Check, Copy } from "lucide-react";
 
-export default function ParentLinkCode() {
+export default function ParentLinkCode({ link, error }) {
   const [copied, setCopied] = useState(false);
 
-  const parentCode = "ABX - 4821";
+  // The parent needs both values, so the copy button copies both.
+  const learnerId = link?.learnerId;
+  const parentCode = link ? `${link.code.slice(0, 3)} - ${link.code.slice(3)}` : "";
+  const days = link ? Math.max(1, Math.round((new Date(link.expiresAt) - Date.now()) / 86400000)) : 30;
 
   const handleCopy = async () => {
+    if (!link) return;
     try {
-      await navigator.clipboard.writeText(parentCode);
+      await navigator.clipboard.writeText(`Learner ID: ${learnerId}\nLink code: ${link.code}`);
       setCopied(true);
 
       setTimeout(() => {
@@ -53,7 +57,7 @@ export default function ParentLinkCode() {
         {/* Parent link code box (increased inner max-width to scale with the component) */}
         <div className="mx-auto mt-3 flex h-[42px] w-full max-w-[840px] items-center justify-between rounded-[3px] border border-[#E8E8EE] bg-white px-3 sm:px-4">
           <span className="flex-1 text-center font-poppins text-sm font-bold tracking-wide text-[#33368E] sm:text-base">
-            {parentCode}
+            {error ? "Unavailable" : link ? `${learnerId}  •  ${parentCode}` : "Generating…"}
           </span>
 
           <button
@@ -74,7 +78,7 @@ export default function ParentLinkCode() {
         {/* Security note */}
         <p className="mt-1.5 text-[9px] leading-3 text-[#929292]">
           <span className="mr-1">ⓘ</span>
-          This code will expire in 30 days.
+          {error ? error : `Your parent needs both the Learner ID and the code. It expires in ${days} days.`}
         </p>
       </div>
     </div>

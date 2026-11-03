@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import {
   CalendarDays,
   Users,
@@ -7,40 +8,14 @@ import {
   ArrowRight,
 } from "lucide-react";
 
-const DashboardMetrics = () => {
+const DashboardMetrics = ({ data }) => {
+  const navigate = useNavigate();
+  const n = (v) => (data ? v : "–");
   const metrics = [
-    {
-      count: 4,
-      label: "Classes Today",
-      action: "View schedule",
-      icon: CalendarDays,
-      iconBg: "bg-purple-50",
-      iconColor: "text-purple-600",
-    },
-    {
-      count: 18,
-      label: "Active Students",
-      action: "View students",
-      icon: Users,
-      iconBg: "bg-emerald-50",
-      iconColor: "text-emerald-500",
-    },
-    {
-      count: 7,
-      label: "Assignments Due",
-      action: "Review submissions",
-      icon: FileText,
-      iconBg: "bg-purple-50",
-      iconColor: "text-purple-600",
-    },
-    {
-      count: 3,
-      label: "Quizzes to Review",
-      action: "Review quizzes",
-      icon: ClipboardCheck,
-      iconBg: "bg-purple-50",
-      iconColor: "text-purple-600",
-    },
+    { count: n(data?.classesToday?.length), label: "Classes Today", action: "View schedule", path: "/tutor/class", icon: CalendarDays, iconBg: "bg-purple-50", iconColor: "text-purple-600" },
+    { count: n(data?.studentCount), label: "Active Students", action: "View students", path: "/tutor/students", icon: Users, iconBg: "bg-emerald-50", iconColor: "text-emerald-500" },
+    { count: n(data?.assignmentsToGrade), label: "Assignments to Grade", action: "Review submissions", path: "/tutor/assignment-quize", icon: FileText, iconBg: "bg-purple-50", iconColor: "text-purple-600" },
+    { count: n(data?.quizzesThisWeek), label: "Quizzes Taken This Week", action: "Review quizzes", path: "/tutor/assignment-quize", icon: ClipboardCheck, iconBg: "bg-purple-50", iconColor: "text-purple-600" },
   ];
 
   return (
@@ -101,6 +76,7 @@ const DashboardMetrics = () => {
 
                 <button
                   type="button"
+                onClick={() => navigate(metric.path)}
                   className="
                     mt-2
                     inline-flex

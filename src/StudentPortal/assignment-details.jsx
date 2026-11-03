@@ -1,265 +1,193 @@
-import React, { useState } from "react";
-import {
-  ChevronRight,
-  CalendarDays,
-  Send,
-} from "lucide-react";
+import React, { useCallback, useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { CalendarDays, CheckCircle2, ChevronRight, FileText, Send, XCircle } from "lucide-react";
+import { api, openPrivateFile } from "../lib/api";
 
-const questions = [
-  {
-    id: 1,
-    question: "Solve for x:",
-    equation: "3x + 2 = 14",
-    marks: 2,
-  },
-  {
-    id: 2,
-    question: "Solve for x:",
-    equation: "3x + 2 = 14",
-    marks: 2,
-  },
-];
+const fmtDue = (iso) =>
+  `${new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}, ${new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
 
 export default function AssignmentDetails() {
-  const [answers, setAnswers] = useState({});
-  const [working, setWorking] = useState({});
-  const [note, setNote] = useState("");
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [work, setWork] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const handleAnswerChange = (id, value) => {
-    setAnswers((prev) => ({
-      ...prev,
-      [id]: value,
-    }));
-  };
+  // Answers: quiz = chosen option index per question, assignment = free text.
+  const [choices, setChoices] = useState({});
+  const [text, setText] = useState("");
+  const [file, setFile] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleWorkingChange = (id, value) => {
-    setWorking((prev) => ({
-      ...prev,
-      [id]: value,
-    }));
-  };
+  const load = useCallback(async () => {
+    try {
+      setWork(await api.get(`/coursework/${id}`));
+      setError("");
+    } catch (err) {
+      setError(err.message || "Could not load this task.");
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
 
-  const handleSubmit = (e) => {
+  useEffect(() => { load(); }, [load]);
+
+  const isQuiz = work?.type === "QUIZ";
+  const submission = work?.submission ?? null;
+  const overdue = !submission && work?.dueAt && new Date(work.dueAt) < new Date();
+  const total = isQuiz ? (work.questions ?? []).reduce((n, q) => n + (q.points ?? 1), 0) : 100;
+
+  const submit = async (e) => {
     e.preventDefault();
+    if (submitting) return;
+    setError("");
 
-    console.log({
-      answers,
-      working,
-      note,
-    });
+    let body;
+    if (isQuiz) {
+      const answers = work.questions.map((_, i) => choices[i]);
+      if (answers.some((a) => a === undefined)) return setError("Answer every question before submitting.");
+      body = { answers };
+    } else {
+      if (!text.trim() && !file) return setError("Write your answer or attach a file.");
+      body = { answers: text.trim() || undefined };
+    }
+
+    setSubmitting(true);
+    try {
+      if (!isQuiz && file) body.fileUrl = (await api.upload("/uploads/submissions", file)).url;
+      await api.post(`/coursework/${id}/submit`, body);
+      await load();
+    } catch (err) {
+      setError(err.message || "Could not submit.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const pickFile = (f) => {
+    if (!f) return;
+    if (f.size > 15 * 1024 * 1024) return setError("The file must not exceed 15 MB.");
+    setError("");
+    setFile(f);
   };
 
   return (
-    <div className="min-h-screen w-full  px-3 py-4 sm:px-5 sm:py-6 md:px-6 lg:px-8">
+    <div className="min-h-screen w-full px-3 py-4 sm:px-5 sm:py-6 md:px-6 lg:px-8">
       <div className="mx-auto w-full max-w-[1100px]">
-
-        {/* Main Card */}
         <div className="overflow-hidden rounded-2xl bg-white shadow-[0_4px_20px_rgba(15,23,42,0.06)]">
-
-          {/* Top Header */}
+          {/* Header */}
           <div className="px-4 pb-4 pt-4 sm:px-6 sm:pb-5 sm:pt-5 md:px-7 lg:px-8">
-
-            {/* Breadcrumb */}
             <div className="mb-4 flex items-center gap-1.5 text-[10px] font-medium text-[#2E6DFF] sm:text-xs">
-              <span className="cursor-pointer hover:text-blue-700">
-                Assignments & Quiz
-              </span>
-
+              <span className="cursor-pointer hover:text-blue-700" onClick={() => navigate("/student/assignments")}>Assignments &amp; Quiz</span>
               <ChevronRight className="h-3 w-3 text-[#8B98AA]" />
-
-              <span className="text-[#64748B]">
-                Assignment Details
-              </span>
+              <span className="text-[#64748B]">{isQuiz ? "Quiz" : "Assignment"} Details</span>
             </div>
 
-            {/* Header */}
-            <div className="flex items-start">
+            {loading && <p className="py-6 text-sm text-slate-400">Loading…</p>}
+            {work && (
               <div className="min-w-0">
-
-                <h1 className="text-base font-bold tracking-[-0.01em] text-[#111827] sm:text-lg md:text-xl">
-                  Algebra Practice
-                </h1>
-
-                <p className="mt-0.5 text-[10px] font-medium text-[#374151] sm:text-xs">
-                  Mathematics • Linear Equations
-                </p>
-
-                {/* Metadata */}
-                <div className="mt-2.5 flex flex-wrap items-center gap-2">
-
-                  <div className="flex items-center gap-1.5 text-[9px] text-[#64748B] sm:text-[10px]">
-                    <CalendarDays className="h-3 w-3" />
-                    <span>
-                      Due May 16, 2025 • 11:59 PM
-                    </span>
-                  </div>
-
-                  <span className="rounded-full bg-[#FFF0E1] px-2.5 py-1 text-[8px] font-semibold text-[#F28C28] sm:text-[9px]">
-                    High Difficulty
-                  </span>
-
+                <h1 className="text-base font-bold tracking-[-0.01em] text-[#111827] sm:text-lg md:text-xl">{work.title}</h1>
+                <p className="mt-0.5 text-[10px] font-medium text-[#374151] sm:text-xs">{work.subject?.name}</p>
+                <div className="mt-2.5 flex flex-wrap items-center gap-3 text-[9px] text-[#64748B] sm:text-[10px]">
+                  <span className="flex items-center gap-1.5"><CalendarDays className="h-3 w-3" />{work.dueAt ? `Due ${fmtDue(work.dueAt)}` : "No deadline"}</span>
+                  {isQuiz && <span>{work.questions.length} questions · {total} marks</span>}
                 </div>
               </div>
-            </div>
+            )}
           </div>
 
-          {/* Content */}
-          <div className="space-y-3 px-3 pb-4 sm:space-y-4 sm:px-5 sm:pb-6 md:px-6 lg:px-7">
+          {error && <p role="alert" className="mx-4 mb-3 rounded-md bg-red-50 px-3 py-2 text-xs text-red-600 sm:mx-6">{error}</p>}
 
-            {/* Instructions */}
-            <section className="rounded-lg bg-[#EAF0FF] px-4 py-3 sm:px-5 sm:py-4">
+          {work && (
+            <div className="space-y-3 px-3 pb-4 sm:space-y-4 sm:px-5 sm:pb-6 md:px-6 lg:px-7">
+              {/* Result banner */}
+              {submission && (
+                <section className={`rounded-lg px-4 py-3 sm:px-5 sm:py-4 ${submission.gradedAt ? "bg-emerald-50" : "bg-[#FFF7E6]"}`}>
+                  <h2 className="text-xs font-bold text-[#1E293B]">
+                    {submission.gradedAt ? `Score: ${submission.score}/${total}` : "Submitted. Waiting for your tutor to grade it."}
+                  </h2>
+                  {submission.feedback && <p className="mt-1 text-xs text-[#475569]"><span className="font-semibold">Feedback:</span> {submission.feedback}</p>}
+                </section>
+              )}
+              {overdue && <p className="rounded-lg bg-red-50 px-4 py-3 text-xs text-red-600">The deadline for this task has passed, so it can no longer be submitted.</p>}
 
-              <h2 className="text-[10px] font-bold text-[#1E293B] sm:text-xs">
-                Instructions
-              </h2>
+              {/* Instructions */}
+              {work.instructions && (
+                <section className="rounded-lg bg-[#EAF0FF] px-4 py-3 sm:px-5 sm:py-4">
+                  <h2 className="text-[10px] font-bold text-[#1E293B] sm:text-xs">Instructions</h2>
+                  <p className="mt-1 max-w-4xl whitespace-pre-wrap text-[9px] leading-[1.55] text-[#64748B] sm:text-[10px] md:text-xs">{work.instructions}</p>
+                </section>
+              )}
 
-              <p className="mt-1 max-w-4xl text-[9px] leading-[1.55] text-[#64748B] sm:text-[10px] md:text-xs">
-                Solve each question and show your working. Complete all 10
-                questions before submitting.
-              </p>
-
-            </section>
-
-            {/* Questions */}
-            <section className="rounded-lg bg-white shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
-
-              {/* Section Header */}
-              <div className="px-4 pb-2.5 pt-4 sm:px-5 sm:pt-5">
-
-                <h2 className="text-[10px] font-bold text-[#111827] sm:text-xs md:text-sm">
-                  Assignment Questions
-                </h2>
-
-              </div>
-
-              {/* Questions List */}
-              <div className="space-y-5 px-4 pb-5 sm:px-5 sm:pb-6 md:space-y-6">
-
-                {questions.map((item) => (
-                  <div
-                    key={item.id}
-                    className="min-w-0"
-                  >
-
-                    {/* Question Heading */}
-                    <div className="flex items-start gap-2.5 sm:gap-3">
-
-                      {/* Number */}
-                      <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#30288C] text-[9px] font-bold text-white sm:h-6 sm:w-6 sm:text-[10px]">
-                        {item.id}
+              <form onSubmit={submit} className="space-y-3 sm:space-y-4">
+                {/* QUIZ */}
+                {isQuiz && work.questions.map((q, i) => {
+                  const mine = submission ? submission.answers?.[i] : choices[i];
+                  const revealed = !!submission?.gradedAt && q.correctIndex !== undefined;
+                  return (
+                    <section key={q.id ?? i} className="rounded-lg bg-white p-4 shadow-[0_2px_12px_rgba(15,23,42,0.04)] sm:p-5">
+                      <div className="mb-3 flex items-start justify-between gap-3">
+                        <p className="text-xs font-semibold text-[#111827] sm:text-sm">{i + 1}. {q.text}</p>
+                        <span className="shrink-0 text-[10px] text-[#64748B]">{q.points ?? 1} mark{(q.points ?? 1) === 1 ? "" : "s"}</span>
                       </div>
-
-                      {/* Question */}
-                      <div className="min-w-0 flex-1 pt-0.5">
-
-                        <div className="flex items-start justify-between gap-3">
-
-                          <div className="min-w-0">
-
-                            <p className="text-[9px] font-semibold text-[#111827] sm:text-[10px] md:text-xs">
-                              {item.question}
-                            </p>
-
-                            <p className="mt-0.5 text-[9px] text-[#374151] sm:text-[10px] md:text-xs">
-                              {item.equation}
-                            </p>
-
-                          </div>
-
-                          {/* Marks */}
-                          <span className="shrink-0 rounded-sm bg-[#EAF1FF] px-1.5 py-1 text-[7px] font-semibold text-[#2E6DFF] sm:px-2 sm:text-[8px]">
-                            {item.marks} marks
-                          </span>
-
-                        </div>
+                      <div className="space-y-2">
+                        {q.options.map((opt, oi) => {
+                          const isMine = mine === oi;
+                          const isRight = revealed && q.correctIndex === oi;
+                          const isWrong = revealed && isMine && q.correctIndex !== oi;
+                          return (
+                            <label key={oi} className={`flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 text-xs sm:text-sm ${
+                              isRight ? "border-emerald-300 bg-emerald-50" : isWrong ? "border-red-300 bg-red-50" : isMine ? "border-[#2E6DFF] bg-[#F5F8FF]" : "border-slate-200 hover:border-slate-300"} ${submission ? "cursor-default" : ""}`}>
+                              <input type="radio" name={`q-${i}`} checked={isMine} disabled={!!submission || overdue}
+                                onChange={() => setChoices((c) => ({ ...c, [i]: oi }))} className="accent-[#2E6DFF]" />
+                              <span className="flex-1">{opt}</span>
+                              {isRight && <CheckCircle2 className="h-4 w-4 text-emerald-600" />}
+                              {isWrong && <XCircle className="h-4 w-4 text-red-500" />}
+                            </label>
+                          );
+                        })}
                       </div>
-                    </div>
+                    </section>
+                  );
+                })}
 
-                    {/* Answer */}
-                    <div className="ml-[30px] mt-3 sm:ml-9 sm:mt-4">
+                {/* ASSIGNMENT */}
+                {!isQuiz && (
+                  <section className="rounded-lg bg-white p-4 shadow-[0_2px_12px_rgba(15,23,42,0.04)] sm:p-5">
+                    <h2 className="mb-2 text-xs font-bold text-[#1E293B] sm:text-sm">Your answer</h2>
+                    {submission ? (
+                      <div className="space-y-3">
+                        {typeof submission.answers === "string" && <p className="whitespace-pre-wrap text-xs text-[#374151] sm:text-sm">{submission.answers}</p>}
+                        {submission.fileUrl && (
+                          <button type="button" onClick={() => openPrivateFile(submission.fileUrl).catch((e) => setError(e.message))}
+                            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-700 hover:border-slate-300">
+                            <FileText className="h-4 w-4 text-[#2E6DFF]" /> Open your attached file
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <textarea value={text} onChange={(e) => setText(e.target.value)} disabled={overdue} rows={8} placeholder="Type your answer here…"
+                          className="w-full rounded-lg border border-slate-200 p-3 text-xs outline-none focus:border-[#2E6DFF] sm:text-sm" />
+                        <label className="flex cursor-pointer items-center gap-2 text-xs font-medium text-[#2E6DFF]">
+                          <FileText className="h-4 w-4" />
+                          {file ? file.name : "Attach a file (PDF, image, Word or text, up to 15 MB)"}
+                          <input type="file" accept=".pdf,.png,.jpg,.jpeg,.txt,.docx" className="sr-only" disabled={overdue} onChange={(e) => pickFile(e.target.files?.[0])} />
+                        </label>
+                      </div>
+                    )}
+                  </section>
+                )}
 
-                      <label className="mb-1.5 block text-[8px] font-semibold text-[#1F2937] sm:text-[9px]">
-                        Your Answer
-                      </label>
-
-                      <input
-                        type="text"
-                        value={answers[item.id] || ""}
-                        onChange={(e) =>
-                          handleAnswerChange(
-                            item.id,
-                            e.target.value
-                          )
-                        }
-                        className="h-8 w-full rounded-md bg-white px-2.5 text-[9px] text-[#111827] outline-none ring-1 ring-inset ring-[#E5E7EB] transition placeholder:text-[#B6BFCC] focus:ring-[#2E6DFF] sm:h-9 sm:px-3 sm:text-[10px]"
-                      />
-
-                      {/* Working */}
-                      <label className="mb-1.5 mt-3 block text-[8px] font-semibold text-[#1F2937] sm:mt-4 sm:text-[9px]">
-                        Show your working
-                      </label>
-
-                      <textarea
-                        rows={4}
-                        value={working[item.id] || ""}
-                        onChange={(e) =>
-                          handleWorkingChange(
-                            item.id,
-                            e.target.value
-                          )
-                        }
-                        className="min-h-[82px] w-full resize-none rounded-md bg-white px-2.5 py-2 text-[9px] text-[#111827] outline-none ring-1 ring-inset ring-[#E5E7EB] transition placeholder:text-[#B6BFCC] focus:ring-[#2E6DFF] sm:min-h-[95px] sm:px-3 sm:text-[10px]"
-                      />
-
-                    </div>
-                  </div>
-                ))}
-
-              </div>
-            </section>
-
-            {/* Submission */}
-            <section className="rounded-lg bg-white shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
-
-              <div className="px-4 pb-4 pt-4 sm:px-5 sm:pb-5 sm:pt-5">
-
-                <h2 className="text-[10px] font-bold text-[#111827] sm:text-xs">
-                  Your Submission
-                </h2>
-
-                <div className="mt-3">
-
-                  <label className="mb-1.5 block text-[8px] font-semibold text-[#1F2937] sm:text-[9px]">
-                    Add a note (optional)
-                  </label>
-
-                  <textarea
-                    value={note}
-                    onChange={(e) => setNote(e.target.value)}
-                    rows={2}
-                    placeholder="Write a message to your tutor..."
-                    className="w-full resize-none rounded-md bg-white px-2.5 py-2 text-[9px] text-[#111827] outline-none ring-1 ring-inset ring-[#E5E7EB] transition placeholder:text-[#B6BFCC] focus:ring-[#2E6DFF] sm:px-3 sm:text-[10px]"
-                  />
-
-                </div>
-
-                {/* Submit */}
-                <form onSubmit={handleSubmit}>
-
-                  <button
-                    type="submit"
-                    className="mt-3 inline-flex h-8 items-center justify-center gap-1.5 rounded-md bg-[#2E6DFF] px-3 text-[8px] font-semibold text-white shadow-sm transition hover:bg-[#245DDB] active:scale-[0.98] sm:h-9 sm:px-4 sm:text-[9px]"
-                  >
-                    <Send className="h-3 w-3" />
-                    Submit Assignment
+                {!submission && !overdue && (
+                  <button type="submit" disabled={submitting}
+                    className="inline-flex items-center gap-2 rounded-lg bg-[#2E6DFF] px-6 py-3 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-60 sm:text-sm">
+                    <Send className="h-4 w-4" /> {submitting ? "Submitting…" : isQuiz ? "Submit Quiz" : "Submit Assignment"}
                   </button>
-
-                </form>
-
-              </div>
-            </section>
-
-          </div>
+                )}
+              </form>
+            </div>
+          )}
         </div>
       </div>
     </div>

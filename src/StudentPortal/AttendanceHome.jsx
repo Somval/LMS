@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { api } from "../lib/api";
 import { CheckCircle2, XCircle, Clock3 } from "lucide-react";
 import SessionAttendance from "./AttendanceSession";
 const stats = [
@@ -32,6 +33,31 @@ const stats = [
 ];
 
 const OnboardingCard = () => {
+  const [data, setData] = useState(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    api.get("/attendance").then(setData).catch((err) => setError(err.message || "Could not load attendance."));
+  }, []);
+
+  const summary = data?.summary;
+  // "Attended" includes late arrivals, since the student did turn up.
+  const values = summary
+    ? [String(summary.PRESENT + summary.LATE), String(summary.ABSENT), String(summary.LATE)]
+    : ["–", "–", "–"];
+  const rate = summary?.rate;
+  const rateLabel = rate == null ? "No data yet" : rate >= 90 ? "Excellent" : rate >= 75 ? "Good" : "Needs attention";
+
+  const sessions = (data?.records ?? []).map((r) => ({
+    id: r.id,
+    date: new Date(r.class.startsAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+    subject: r.class.subject.name,
+    time: `${new Date(r.class.startsAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })} – ${new Date(r.class.endsAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`,
+    joinedAt: "—",
+    timeSpent: "—",
+    status: r.status === "PRESENT" ? "Attended" : r.status === "LATE" ? "Late" : "Missed",
+  }));
+
   return (
     <>
     <section className="w-full bg-slate-50 p-4 sm:p-6">
@@ -40,7 +66,7 @@ const OnboardingCard = () => {
         <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
 
           {/* Normal Statistics */}
-          {stats.map((item) => {
+          {stats.map((item, statIndex) => {
             const Icon = item.icon;
 
             return (
@@ -73,7 +99,7 @@ const OnboardingCard = () => {
                 {/* Number */}
                 <div className="pl-[52px]">
                   <p className="text-[27px] font-semibold leading-none tracking-tight text-slate-950">
-                    {item.value}
+                    {values[statIndex]}
                   </p>
                 </div>
               </div>
@@ -109,7 +135,7 @@ const OnboardingCard = () => {
                   strokeWidth="3"
                   strokeLinecap="round"
                   strokeDasharray="125.66"
-                  strokeDashoffset="25.13"
+                  strokeDashoffset={125.66 * (1 - (rate ?? 0) / 100)}
                 />
               </svg>
             </div>
@@ -125,11 +151,11 @@ const OnboardingCard = () => {
               </p>
 
               <p className="mt-1 text-[27px] font-semibold leading-none tracking-tight text-slate-950">
-                80%
+                {rate == null ? "–" : `${rate}%`}
               </p>
 
               <p className="mt-1 text-[10px] font-medium text-emerald-500">
-                Good
+                {rateLabel}
               </p>
             </div>
           </div>
@@ -137,7 +163,10 @@ const OnboardingCard = () => {
       </div>
       
     </section>
-    <SessionAttendance/>
+    {error && (
+      <p role="alert" className="mx-4 mb-3 rounded-md bg-red-50 px-3 py-2 text-xs text-red-600 sm:mx-6">{error}</p>
+    )}
+    <SessionAttendance sessions={sessions} />
   </>);
 };
 

@@ -1,8 +1,17 @@
 import React from "react";
+import useRewards from "./useRewards";
 import RecentAchievements from "./RecentAchievements";
 import AchievementTimelineDetails from "./AchievementTimeline";
 
 export default function AchievementCards() {
+  const { earned, loading, error } = useRewards();
+  const now = new Date();
+  const thisMonth = earned.filter((a) => {
+    const d = new Date(a.awardedAt);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  }).length;
+  const latest = earned[0];
+
   return (
     <>
       <div className="mx-auto w-full max-w-7xl px-3 py-5 sm:px-4 sm:py-6 lg:px-6">
@@ -100,7 +109,7 @@ export default function AchievementCards() {
               </p>
 
               <h3 className="mt-0.5 text-3xl font-extrabold leading-none text-gray-900 sm:text-3xl lg:text-4xl">
-                12
+                {earned.length}
               </h3>
 
               <p className="mt-1 text-[11px] text-gray-500 sm:text-xs lg:text-sm">
@@ -189,7 +198,7 @@ export default function AchievementCards() {
               </p>
 
               <h3 className="mt-0.5 text-3xl font-extrabold leading-none text-gray-900 sm:text-3xl lg:text-4xl">
-                3
+                {thisMonth}
               </h3>
 
               <p className="mt-1 truncate text-[11px] text-gray-500 sm:text-xs lg:text-sm">
@@ -277,7 +286,7 @@ export default function AchievementCards() {
               </h3>
 
               <p className="mt-1 truncate text-[11px] text-gray-500 sm:text-xs lg:text-sm">
-                Mathematics Milestone
+                {latest ? latest.title : "None yet"}
               </p>
             </div>
           </div>
@@ -287,12 +296,12 @@ export default function AchievementCards() {
       {/* =====================================================
           RECENT ACHIEVEMENTS
       ====================================================== */}
-      <RecentAchievements />
+      <RecentAchievements achievements={earned} loading={loading} error={error} />
 
       {/* =====================================================
           ACHIEVEMENT TIMELINE
       ====================================================== */}
-      <AchievementTimelineDetails />
+      <AchievementTimelineDetails achievements={earned} />
     </>
   );
 }

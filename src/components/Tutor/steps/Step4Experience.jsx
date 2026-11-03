@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Trash2, ChevronDown, Calendar, Plus } from "lucide-react";
 
 const createExperience = (id) => ({
@@ -19,10 +19,11 @@ const inputClass =
 const labelClass =
   "mb-2 block text-sm font-semibold text-gray-800";
 
-export default function TeachingExperienceForm() {
+export default function TeachingExperienceForm({ onExtra }) {
   const [experiences, setExperiences] = useState([
     createExperience(1),
   ]);
+  useEffect(() => { onExtra?.('experiences', experiences); }, [experiences, onExtra]);
 
   const handleAddExperience = () => {
     setExperiences((prev) => [

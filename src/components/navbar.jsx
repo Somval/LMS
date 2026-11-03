@@ -53,14 +53,14 @@ export default function Navbar() {
         {/* Desktop Right Actions */}
         <div className="hidden lg:flex lg:items-center lg:gap-6">
           <Link
-            to="/student-auth/login"
+            to="/role-login"
             className="text-sm font-semibold text-[#0878b5] transition hover:text-[#065f8f]"
           >
             LOGIN
           </Link>
 
           <Link
-            to="/RegistrationHome"
+            to="/roleSelection"
             className="flex items-center gap-3 rounded-full bg-[#30317f] px-5 py-2 text-sm font-semibold text-[#f5d900] transition hover:bg-[#252665]"
           >
             <span>Get Started</span>
@@ -130,7 +130,7 @@ export default function Navbar() {
 
           <div className="pt-4 border-t border-gray-200 flex flex-col gap-4">
             <Link
-              to="/student-auth/login"
+              to="/role-login"
               onClick={closeMenu}
               className="text-base font-semibold text-[#0878b5] transition hover:text-[#065f8f]"
             >
@@ -138,7 +138,7 @@ export default function Navbar() {
             </Link>
 
             <Link
-              to="/RegistrationHome"
+              to="/roleSelection"
               onClick={closeMenu}
               className="flex items-center justify-center gap-3 rounded-full bg-[#30317f] px-6 py-2.5 text-sm font-semibold text-[#f5d900] transition hover:bg-[#252665]"
             >

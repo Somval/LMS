@@ -1,14 +1,7 @@
 import React from "react";
 
 export default function LinkComplete({
-  childData = [
-    {
-      childName: "Olivia Johnson",
-      learnerId: "STU-78201",
-      childEmail: "oliviajohnson@gmail.com",
-      avatarUrl: "https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&q=80&w=200"
-    }
-  ],
+  childData = [],
   onGoToLinkedChildren,
   onGoToDashboard,
 }) {
@@ -48,20 +41,23 @@ export default function LinkComplete({
 
         {/* Learner Profile Card */}
         <div className="rounded-xl bg-white p-4 border border-slate-100 shadow-xs flex items-center gap-3.5">
-          <img
-            src={child.avatarUrl}
-            alt={child.childName}
-            className="h-12 w-12 rounded-full object-cover shrink-0 ring-2 ring-amber-100"
-          />
+          <span
+            aria-hidden="true"
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-100 text-sm font-bold text-amber-700 ring-2 ring-amber-100"
+          >
+            {(child.childName || "")
+              .split(/\s+/)
+              .filter(Boolean)
+              .slice(0, 2)
+              .map((part) => part[0].toUpperCase())
+              .join("")}
+          </span>
           <div className="overflow-hidden space-y-0.5">
             <h3 className="text-sm sm:text-base font-bold text-slate-900 truncate">
               {child.childName}
             </h3>
             <p className="text-[11px] sm:text-xs text-slate-400 font-medium truncate">
               Learner ID: {child.learnerId}
-            </p>
-            <p className="text-[11px] sm:text-xs text-slate-400 truncate">
-              Email address: {child.childEmail}
             </p>
           </div>
         </div>

@@ -1,4 +1,6 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { api } from "../../../lib/api";
+import { classStatusLabel, fullDate, timeRange } from "../../../StudentPortal/classFormat";
 import {
   CalendarDays,
   Calendar,
@@ -15,79 +17,47 @@ import { Link } from "react-router-dom";
     CLASS DATA
 ========================================================= */
 
-const classes = [
-  {
-    id: 1,
-    studentName: "Olivia Johnson",
-    studentAvatar: "",
-    subject: "Mathematics",
-    level: "Year 1",
-    description: "Algebra and Quadratic Equations",
-    recurringSchedule: "Mondays",
-    recurringTime: "5:00 PM – 6:00 PM",
-    date: "Mon, May 26, 2025",
-    time: "5:00 PM – 6:00 PM",
-    status: "upcoming",
-  },
-  {
-    id: 2,
-    studentName: "Olivia Johnson",
-    studentAvatar: "",
-    subject: "Mathematics",
-    level: "Year 1",
-    description: "Algebra and Quadratic Equations",
-    recurringSchedule: "Mondays",
-    recurringTime: "5:00 PM – 6:00 PM",
-    date: "Mon, May 26, 2025",
-    time: "5:00 PM – 6:00 PM",
-    status: "upcoming",
-  },
-  {
-    id: 3,
-    studentName: "Olivia Johnson",
-    studentAvatar: "",
-    subject: "Mathematics",
-    level: "Year 1",
-    description: "Algebra and Quadratic Equations",
-    recurringSchedule: "Mondays",
-    recurringTime: "5:00 PM – 6:00 PM",
-    date: "Mon, May 26, 2025",
-    time: "5:00 PM – 6:00 PM",
-    status: "upcoming",
-  },
-  {
-    id: 4,
-    studentName: "Liam Smith",
-    studentAvatar: "",
-    subject: "English Language",
-    level: "Year 1",
-    description: "Grammar and Comprehension",
-    recurringSchedule: "Mondays",
-    recurringTime: "4:00 PM – 5:00 PM",
-    date: "Mon, May 19, 2025",
-    time: "4:00 PM – 5:00 PM",
-    status: "past",
-  },
-  {
-    id: 5,
-    studentName: "Sophia Davis",
-    studentAvatar: "",
-    subject: "Physics",
-    level: "Year 2",
-    description: "Motion and Forces",
-    recurringSchedule: "Fridays",
-    recurringTime: "3:00 PM – 4:00 PM",
-    date: "Fri, May 16, 2025",
-    time: "3:00 PM – 4:00 PM",
-    status: "past",
-  },
-];
 
 /* =========================================================
     MAIN COMPONENT
 ========================================================= */
 
 export default function UpcomingClasses() {
+  const [classes, setClasses] = useState([]);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([api.get("/classes"), api.get("/tutors/students")])
+      .then(([list, students]) => {
+        // How many of the tutor's students take each subject.
+        const perSubject = new Map();
+        students.forEach((st) => st.subjects.forEach((sub) => perSubject.set(sub.id, (perSubject.get(sub.id) ?? 0) + 1)));
+        const now = Date.now();
+        setClasses(
+          list.map((c) => {
+            const n = perSubject.get(c.subject.id) ?? 0;
+            return {
+              id: c.id,
+              studentName: c.title,
+              studentAvatar: "",
+              subject: c.subject.name,
+              level: `${n} student${n === 1 ? "" : "s"}`,
+              description: classStatusLabel(c),
+              recurringSchedule: "One-time class",
+              recurringTime: "",
+              date: fullDate(c.startsAt),
+              time: timeRange(c.startsAt, c.endsAt),
+              startsAt: c.startsAt,
+              status: new Date(c.endsAt).getTime() < now || c.status === "COMPLETED" ? "past" : "upcoming",
+            };
+          })
+        );
+      })
+      .catch((err) => setError(err.message || "Could not load your classes."))
+      .finally(() => setLoading(false));
+  }, []);
+
   const [activeTab, setActiveTab] = useState("Upcoming Classes");
   const [search, setSearch] = useState("");
   const [subject, setSubject] = useState("All Subjects");
@@ -109,7 +79,7 @@ export default function UpcomingClasses() {
       return classes.filter((item) => item.status === "upcoming");
     }
     return classes;
-  }, [activeTab]);
+  }, [activeTab, classes]);
 
   /* SEARCH + FILTER */
   const filteredClasses = useMemo(() => {
@@ -124,18 +94,23 @@ export default function UpcomingClasses() {
 
       let matchesDate = true;
 
+      const start = new Date(item.startsAt);
+      const now = new Date();
       if (dateFilter === "Today") {
-        matchesDate = item.date === "Mon, May 26, 2025";
+        matchesDate = start.toDateString() === now.toDateString();
       }
 
       if (dateFilter === "This Week") {
-        matchesDate =
-          item.date === "Mon, May 26, 2025" ||
-          item.date === "Mon, May 19, 2025";
+        const weekStart = new Date(now);
+        weekStart.setHours(0, 0, 0, 0);
+        weekStart.setDate(now.getDate() - now.getDay());
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 7);
+        matchesDate = start >= weekStart && start < weekEnd;
       }
 
       if (dateFilter === "This Month") {
-        matchesDate = true;
+        matchesDate = start.getMonth() === now.getMonth() && start.getFullYear() === now.getFullYear();
       }
 
       return matchesSearch && matchesSubject && matchesDate;
@@ -232,9 +207,9 @@ export default function UpcomingClasses() {
               className="h-[34px] w-full appearance-none rounded-[4px] border border-[#D9DDE5] bg-white px-[10px] pr-7 text-[10px] text-[#344054] outline-none focus:border-[#7500E8] sm:h-[32px]"
             >
               <option>All Subjects</option>
-              <option>Mathematics</option>
-              <option>English Language</option>
-              <option>Physics</option>
+              {[...new Set(classes.map((c) => c.subject))].map((s) => (
+                <option key={s}>{s}</option>
+              ))}
             </select>
             <ChevronDown
               size={13}
@@ -349,7 +324,7 @@ export default function UpcomingClasses() {
 
                     {/* ACTION */}
                     <td className="py-4 pl-4 pr-6 whitespace-nowrap text-right sm:text-left">
-                      <Link to={`/Tutor/open-class/${item.id}`} className="inline-flex">
+                      <Link to={`/tutor/open-class/${item.id}`} className="inline-flex">
                         <button
                           type="button"
                           className="inline-flex h-[34px] items-center justify-center rounded-[6px] bg-[#2563EB] px-4 text-[12px] font-medium text-white shadow-sm transition hover:bg-[#1D4ED8] active:scale-[0.98]"
@@ -363,7 +338,7 @@ export default function UpcomingClasses() {
               ) : (
                 <tr>
                   <td colSpan="5" className="py-12 text-center text-[#98A2B3]">
-                    No classes found
+                    {loading ? "Loading…" : error || "No classes found"}
                   </td>
                 </tr>
               )}

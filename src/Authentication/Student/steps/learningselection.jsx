@@ -13,6 +13,7 @@ export default function LearningPreferences({ onNext, onBack }) {
   const [selectedDays, setSelectedDays] = useState(['Mon']);
   const [selectedTime, setSelectedTime] = useState('morning');
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const toggleDay = (day) => {
     setSelectedDays(prev => {
@@ -22,16 +23,20 @@ export default function LearningPreferences({ onNext, onBack }) {
     });
   };
 
-  const handleContinue = (e) => {
+  const handleContinue = async (e) => {
     e.preventDefault();
     if (selectedDays.length === 0) {
       setError('Please select at least one available day.');
       return;
     }
-
-    // Pass data or proceed to next step
-    if (onNext) {
-      onNext({ selectedDays, selectedTime });
+    setSubmitting(true);
+    try {
+      // The parent step saves everything to the server and throws if that fails.
+      await onNext?.({ selectedDays, selectedTime });
+    } catch (err) {
+      setError(err.message || 'Could not save your preferences. Please try again.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -134,9 +139,10 @@ export default function LearningPreferences({ onNext, onBack }) {
         <button
           type="button"
           onClick={handleContinue}
+          disabled={submitting}
           className="inline-flex min-h-[42px] items-center justify-center rounded-xl bg-[#30336B] px-6 text-xs font-bold text-white shadow-sm transition-colors hover:bg-[#252854] cursor-pointer gap-2"
         >
-          <span>Continue</span>
+          <span>{submitting ? 'Saving…' : 'Continue'}</span>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="5" y1="12" x2="19" y2="12"></line>
             <polyline points="12 5 19 12 12 19"></polyline>

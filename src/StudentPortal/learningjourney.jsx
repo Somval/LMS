@@ -1,148 +1,134 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Search,
   Calculator,
   BookOpen,
   Atom,
+  Code2,
   ArrowRight,
+  X,
 } from "lucide-react";
+import { api } from "../lib/api";
 
-import CourseDetail from "./Courseinformation";
+const THEMES = {
+  mathematics: {
+    icon: Calculator, badgeText: "text-[#2F327D]", iconBg: "bg-[#2F327D] text-white", barColor: "bg-[#2F327D]",
+    btnPrimary: "bg-[#2F327D] hover:bg-[#252865] text-white", btnSecondary: "border-[#2F327D] text-[#2F327D] hover:bg-[#2F327D]/5",
+    arrowColor: "text-white", secondaryArrow: "text-[#2F327D]",
+  },
+  english: {
+    icon: BookOpen, badgeText: "text-amber-500", iconBg: "bg-amber-400 text-white", barColor: "bg-amber-400",
+    btnPrimary: "bg-amber-400 hover:bg-amber-500 text-slate-900 font-semibold", btnSecondary: "border-amber-400 text-amber-600 hover:bg-amber-50",
+    arrowColor: "text-slate-900", secondaryArrow: "text-amber-600",
+  },
+  science: {
+    icon: Atom, badgeText: "text-emerald-500", iconBg: "bg-emerald-500 text-white", barColor: "bg-emerald-500",
+    btnPrimary: "bg-emerald-500 hover:bg-emerald-600 text-white", btnSecondary: "border-emerald-500 text-emerald-600 hover:bg-emerald-50",
+    arrowColor: "text-white", secondaryArrow: "text-emerald-600",
+  },
+  coding: {
+    icon: Code2, badgeText: "text-[#8F3985]", iconBg: "bg-[#8F3985] text-white", barColor: "bg-[#8F3985]",
+    btnPrimary: "bg-[#8F3985] hover:bg-[#762f6e] text-white", btnSecondary: "border-[#8F3985] text-[#8F3985] hover:bg-[#8F3985]/5",
+    arrowColor: "text-white", secondaryArrow: "text-[#8F3985]",
+  },
+};
+const DEFAULT_THEME = { ...THEMES.mathematics, icon: BookOpen };
 
-const coursesData = [
-  {
-    id: 1,
-    title: "Linear Equations & Algebra",
-    category: "MATHEMATICS",
-    description:
-      "Learn the fundamentals of algebra, linear equations, and problem solving.",
-    progress: 72,
-    completedLessons: 24,
-    totalLessons: 32,
-    theme: {
-      icon: Calculator,
-      badgeText: "text-[#2F327D]",
-      iconBg: "bg-[#2F327D] text-white",
-      barColor: "bg-[#2F327D]",
-      btnPrimary: "bg-[#2F327D] hover:bg-[#252865] text-white",
-      btnSecondary:
-        "border-[#2F327D] text-[#2F327D] hover:bg-[#2F327D]/5",
-      arrowColor: "text-white",
-      secondaryArrow: "text-[#2F327D]",
-    },
-  },
-  {
-    id: 2,
-    title: "Reading & Writing Skills",
-    category: "ENGLISH LANGUAGE",
-    description:
-      "Improve your reading comprehension and writing techniques.",
-    progress: 72,
-    completedLessons: 24,
-    totalLessons: 32,
-    theme: {
-      icon: BookOpen,
-      badgeText: "text-amber-500",
-      iconBg: "bg-amber-400 text-white",
-      barColor: "bg-amber-400",
-      btnPrimary:
-        "bg-amber-400 hover:bg-amber-500 text-slate-900 font-semibold",
-      btnSecondary:
-        "border-amber-400 text-amber-600 hover:bg-amber-50",
-      arrowColor: "text-slate-900",
-      secondaryArrow: "text-amber-600",
-    },
-  },
-  {
-    id: 3,
-    title: "General Science",
-    category: "SCIENCE",
-    description:
-      "Learn the fundamentals of algebra, linear equations, and problem solving.",
-    progress: 72,
-    completedLessons: 24,
-    totalLessons: 32,
-    theme: {
-      icon: Atom,
-      badgeText: "text-emerald-500",
-      iconBg: "bg-emerald-500 text-white",
-      barColor: "bg-emerald-500",
-      btnPrimary: "bg-emerald-500 hover:bg-emerald-600 text-white",
-      btnSecondary:
-        "border-emerald-500 text-emerald-600 hover:bg-emerald-50",
-      arrowColor: "text-white",
-      secondaryArrow: "text-emerald-600",
-    },
-  },
-  {
-    id: 4,
-    title: "Reading & Writing Skills",
-    category: "ENGLISH LANGUAGE",
-    description:
-      "Improve your reading comprehension and writing techniques.",
-    progress: 72,
-    completedLessons: 24,
-    totalLessons: 32,
-    theme: {
-      icon: BookOpen,
-      badgeText: "text-amber-500",
-      iconBg: "bg-amber-400 text-white",
-      barColor: "bg-amber-400",
-      btnPrimary:
-        "bg-amber-400 hover:bg-amber-500 text-slate-900 font-semibold",
-      btnSecondary:
-        "border-amber-400 text-amber-600 hover:bg-amber-50",
-      arrowColor: "text-slate-900",
-      secondaryArrow: "text-amber-600",
-    },
-  },
-  {
-    id: 5,
-    title: "General Science",
-    category: "SCIENCE",
-    description:
-      "Learn the fundamentals of algebra, linear equations, and problem solving.",
-    progress: 72,
-    completedLessons: 24,
-    totalLessons: 32,
-    theme: {
-      icon: Atom,
-      badgeText: "text-emerald-500",
-      iconBg: "bg-emerald-500 text-white",
-      barColor: "bg-emerald-500",
-      btnPrimary: "bg-emerald-500 hover:bg-emerald-600 text-white",
-      btnSecondary:
-        "border-emerald-500 text-emerald-600 hover:bg-emerald-50",
-      arrowColor: "text-white",
-      secondaryArrow: "text-emerald-600",
-    },
-  },
-  {
-    id: 6,
-    title: "Linear Equations & Algebra",
-    category: "MATHEMATICS",
-    description:
-      "Learn the fundamentals of algebra, linear equations, and problem solving.",
-    progress: 72,
-    completedLessons: 24,
-    totalLessons: 32,
-    theme: {
-      icon: Calculator,
-      badgeText: "text-[#2F327D]",
-      iconBg: "bg-[#2F327D] text-white",
-      barColor: "bg-[#2F327D]",
-      btnPrimary: "bg-[#2F327D] hover:bg-[#252865] text-white",
-      btnSecondary:
-        "border-[#2F327D] text-[#2F327D] hover:bg-[#2F327D]/5",
-      arrowColor: "text-white",
-      secondaryArrow: "text-[#2F327D]",
-    },
-  },
-];
+const SCHOOL_YEARS = ["Reception", "Year 1", "Year 2", "Year 3", "Year 4", "Year 5", "Year 6", "Year 7", "Year 8", "Year 9", "Year 10", "Year 11", "Year 12"];
+
+/* ---------- Enrol in another subject ---------- */
+function EnrollModal({ enrolledIds, onClose, onDone }) {
+  const [options, setOptions] = useState([]);
+  const [subjectId, setSubjectId] = useState("");
+  const [yearLevel, setYearLevel] = useState("");
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    api.get("/subjects").then((all) => setOptions(all.filter((s) => !enrolledIds.includes(s.id)))).catch(() => setError("Could not load subjects."));
+  }, [enrolledIds]);
+
+  const submit = async () => {
+    if (!subjectId || !yearLevel) return setError("Choose a subject and a school year.");
+    setSaving(true);
+    try {
+      await api.post("/student/subjects", { subjectId: Number(subjectId), yearLevel });
+      onDone();
+    } catch (err) {
+      setError(err.message);
+      setSaving(false);
+    }
+  };
+
+  const field = "h-[44px] w-full rounded-[9px] border border-slate-200 bg-white px-3 text-[14px] text-slate-800 outline-none focus:border-[#2F327D]";
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" role="dialog" aria-modal="true">
+      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-lg font-bold text-slate-900">Enroll in a new subject</h3>
+          <button type="button" onClick={onClose} aria-label="Close" className="rounded-full p-1 text-slate-400 hover:bg-slate-100"><X className="h-5 w-5" /></button>
+        </div>
+        {options.length === 0 && !error ? (
+          <p className="py-4 text-sm text-slate-500">You are already enrolled in every available subject.</p>
+        ) : (
+          <div className="space-y-3">
+            <select value={subjectId} onChange={(e) => { setSubjectId(e.target.value); setError(""); }} className={field}>
+              <option value="">Select subject</option>
+              {options.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+            <select value={yearLevel} onChange={(e) => { setYearLevel(e.target.value); setError(""); }} className={field}>
+              <option value="">Select school year</option>
+              {SCHOOL_YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
+            </select>
+          </div>
+        )}
+        {error && <p role="alert" className="mt-3 text-sm text-red-600">{error}</p>}
+        <div className="mt-5 flex justify-end gap-3">
+          <button type="button" onClick={onClose} className="rounded-xl bg-slate-100 px-5 py-2.5 text-sm font-semibold text-slate-700">Cancel</button>
+          {options.length > 0 && (
+            <button type="button" onClick={submit} disabled={saving} className="rounded-xl bg-[#2E6DFF] px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60">
+              {saving ? "Adding…" : "Enroll"}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function CourseDashboard() {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [coursesData, setCoursesData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [enrollOpen, setEnrollOpen] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
+
+  useEffect(() => {
+    Promise.all([api.get("/student/subjects"), api.get("/dashboard/student")])
+      .then(([subjects, dash]) => {
+        const stats = new Map((dash.subjects ?? []).map((x) => [x.subjectId, x]));
+        setCoursesData(
+          subjects.map((sub) => {
+            const st = stats.get(sub.id);
+            return {
+              id: sub.id,
+              title: sub.yearLevel ? `${sub.name} · ${sub.yearLevel}` : sub.name,
+              category: sub.name.toUpperCase(),
+              description: sub.description || `Continue your ${sub.name} lessons.`,
+              progress: st?.lessonProgress ?? 0,
+              completedLessons: st?.lessonsCompleted ?? 0,
+              totalLessons: st?.lessonsTotal ?? 0,
+              theme: THEMES[sub.name.toLowerCase()] || DEFAULT_THEME,
+            };
+          })
+        );
+      })
+      .catch((err) => setError(err.message || "Could not load your subjects."))
+      .finally(() => setLoading(false));
+  }, [reloadKey]);
 
   const filteredCourses = coursesData.filter((course) => {
     const query = searchQuery.toLowerCase().trim();
@@ -154,21 +140,15 @@ export default function CourseDashboard() {
     );
   });
 
-  /* ============================================================
-     COURSE DETAIL
-  ============================================================ */
-
-  if (selectedCourse) {
-    return (
-      <CourseDetail
-        course={selectedCourse}
-        onBack={() => setSelectedCourse(null)}
-      />
-    );
-  }
-
   return (
     <section className="min-h-screen w-full font-sans">
+      {enrollOpen && (
+        <EnrollModal
+          enrolledIds={coursesData.map((c) => c.id)}
+          onClose={() => setEnrollOpen(false)}
+          onDone={() => { setEnrollOpen(false); setReloadKey((k) => k + 1); }}
+        />
+      )}
       <div className="w-full px-5 py-6 sm:px-6 lg:px-7 xl:px-8">
 
         {/* ======================================================
@@ -221,6 +201,7 @@ export default function CourseDashboard() {
 
           <button
             type="button"
+            onClick={() => setEnrollOpen(true)}
             className="
               flex
               h-[48px]
@@ -420,7 +401,7 @@ export default function CourseDashboard() {
 
                   <button
                     type="button"
-                    onClick={() => setSelectedCourse(course)}
+                    onClick={() => navigate(`/student/learning/${course.id}`)}
                     className={`
                       group
                       flex
@@ -456,7 +437,7 @@ export default function CourseDashboard() {
 
                   <button
                     type="button"
-                    onClick={() => setSelectedCourse(course)}
+                    onClick={() => navigate(`/student/learning/${course.id}`)}
                     className={`
                       group
                       flex
@@ -499,7 +480,12 @@ export default function CourseDashboard() {
             EMPTY STATE
         ====================================================== */}
 
-        {filteredCourses.length === 0 && (
+        {error && (
+          <p role="alert" className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>
+        )}
+        {loading && <p className="py-10 text-center text-sm text-slate-400">Loading your subjects…</p>}
+
+        {!loading && filteredCourses.length === 0 && (
           <div
             className="
               flex

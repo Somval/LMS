@@ -13,65 +13,33 @@ import {
 } from "lucide-react";
 
 import EditAssessmentModal from "../../components/Tutor/EditAssessmentModal";
-const initialAssessments = [
-  {
-    id: 1,
-    title: "Quadratic Equations Practice",
-    type: "Assignment",
-    week: "Week 1",
-    availability: "After Week 1",
-    deadline: "7 days after unlock",
-    submissions: "1/8",
-    status: "Active",
-  },
-  {
-    id: 2,
-    title: "Quadratic Equations Practice",
-    type: "Quiz",
-    week: "Week 1",
-    availability: "After Week 1",
-    deadline: "7 days after unlock",
-    submissions: "1/8",
-    status: "Active",
-  },
-  {
-    id: 3,
-    title: "Quadratic Equations Practice",
-    type: "Assignment",
-    week: "Week 1",
-    availability: "After Week 1",
-    deadline: "7 days after unlock",
-    submissions: "1/8",
-    status: "Active",
-  },
-  {
-    id: 4,
-    title: "Quadratic Equations Practice",
-    type: "Assignment",
-    week: "Week 1",
-    availability: "After Week 1",
-    deadline: "7 days after unlock",
-    submissions: "1/8",
-    status: "Draft",
-  },
-  {
-    id: 5,
-    title: "Quadratic Equations Practice",
-    type: "Assignment",
-    week: "Week 1",
-    availability: "After Week 1",
-    deadline: "7 days after unlock",
-    submissions: "1/8",
-    status: "Grading",
-  },
-];
+import { api } from "../../lib/api";
+import { fullDate } from "../../StudentPortal/classFormat";
+const statuses = ["All Statuses", "Active", "Draft", "Grading", "Closed"];
 
-const weeks = [
-  "All Weeks",
-  ...Array.from({ length: 12 }, (_, index) => `Week ${index + 1}`),
-];
+const toLocalInput = (iso) => {
+  if (!iso) return "";
+  const d = new Date(iso);
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().slice(0, 16);
+};
 
-const statuses = ["All Statuses", "Active", "Draft", "Grading"];
+// One table row from an API record.
+const toRow = (w) => {
+  const closed = w.dueAt && new Date(w.dueAt) < new Date();
+  return {
+    id: w.id,
+    title: w.title,
+    type: w.type === "QUIZ" ? "Quiz" : "Assignment",
+    week: w.subject?.name ?? "General", // the "week" column now shows the subject
+    availability: w.published ? "Published" : "Not published",
+    deadline: w.dueAt ? fullDate(w.dueAt) : "No deadline",
+    dueAt: w.dueAt,
+    published: w.published,
+    submissions: `${w._count?.submissions ?? 0}/${w.studentCount ?? 0}`,
+    status: !w.published ? "Draft" : w.ungradedCount > 0 ? "Grading" : closed ? "Closed" : "Active",
+  };
+};
 
 const ASSIGNMENT_PATH = "/assignment-quize/new";
 const QUIZ_PATH = "/tutor/create-quize";
@@ -81,10 +49,23 @@ export default function App() {
 
   const [activeTab, setActiveTab] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedWeek, setSelectedWeek] = useState("All Weeks");
+  const [selectedWeek, setSelectedWeek] = useState("All Subjects");
   const [selectedStatus, setSelectedStatus] = useState("All Statuses");
 
-  const [assessments, setAssessments] = useState(initialAssessments);
+  const [assessments, setAssessments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+
+  const reload = () =>
+    api
+      .get("/coursework")
+      .then((list) => { setAssessments(list.map(toRow)); setLoadError(""); })
+      .catch((err) => setLoadError(err.message || "Could not load your coursework."))
+      .finally(() => setLoading(false));
+
+  useEffect(() => { reload(); }, []);
+
+  const weeks = ["All Subjects", ...new Set(assessments.map((a) => a.week))];
   const [activeMenuId, setActiveMenuId] = useState(null);
   const [isWeekDropdownOpen, setIsWeekDropdownOpen] = useState(false);
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
@@ -144,7 +125,7 @@ export default function App() {
   // EDIT: Open the imported modal without navigating.
   const handleEditAssessment = (item) => {
     setActiveMenuId(null);
-    setSelectedAssessment({ ...item });
+    setSelectedAssessment({ ...item, dueInput: toLocalInput(item.dueAt) });
     setIsEditModalOpen(true);
   };
 
@@ -161,40 +142,38 @@ export default function App() {
   };
 
   // Save the edited assessment to the current list.
-  const handleSaveAssessment = (event) => {
+  const handleSaveAssessment = async (event) => {
     event?.preventDefault?.();
-
     if (!selectedAssessment) return;
-
-    const updatedAssessment = {
-      ...selectedAssessment,
-      title: selectedAssessment.title?.trim() ?? "",
-    };
-
-    if (!updatedAssessment.title) {
+    const title = selectedAssessment.title?.trim() ?? "";
+    if (!title) {
       showToast("Please enter an assessment title.");
       return;
     }
-
-    setAssessments((previous) =>
-      previous.map((item) =>
-        item.id === updatedAssessment.id ? updatedAssessment : item
-      )
-    );
-
-    closeEditModal();
-
-    showToast(`Successfully updated "${updatedAssessment.title}".`);
+    try {
+      await api.patch(`/coursework/${selectedAssessment.id}`, {
+        title,
+        dueAt: selectedAssessment.dueInput ? new Date(selectedAssessment.dueInput).toISOString() : null,
+        published: selectedAssessment.published,
+      });
+      closeEditModal();
+      showToast(`Successfully updated "${title}".`);
+      reload();
+    } catch (err) {
+      showToast(err.message || "Could not save your changes.");
+    }
   };
 
-  const handleCloseAssessment = (item) => {
-    setAssessments((previous) =>
-      previous.filter((assessment) => assessment.id !== item.id)
-    );
-
+  // Closing stops new submissions by setting the deadline to now.
+  const handleCloseAssessment = async (item) => {
     setActiveMenuId(null);
-
-    showToast(`Closed assessment "${item.title}".`);
+    try {
+      await api.patch(`/coursework/${item.id}`, { dueAt: new Date().toISOString() });
+      showToast(`Closed "${item.title}" to new submissions.`);
+      reload();
+    } catch (err) {
+      showToast(err.message || "Could not close this assessment.");
+    }
   };
 
   const filteredAssessments = assessments.filter((item) => {
@@ -210,7 +189,7 @@ export default function App() {
       item.type.toLowerCase().includes(query);
 
     const matchesWeek =
-      selectedWeek === "All Weeks" || item.week === selectedWeek;
+      selectedWeek === "All Subjects" || item.week === selectedWeek;
 
     const matchesStatus =
       selectedStatus === "All Statuses" || item.status === selectedStatus;
@@ -440,7 +419,7 @@ export default function App() {
                     Type
                   </th>
                   <th scope="col" className="whitespace-nowrap px-6 py-4">
-                    Week
+                    Subject
                   </th>
                   <th scope="col" className="whitespace-nowrap px-6 py-4">
                     Availability
@@ -467,8 +446,7 @@ export default function App() {
                       colSpan={8}
                       className="px-6 py-12 text-center text-slate-400"
                     >
-                      No coursework or assessments found matching your
-                      criteria.
+                      {loading ? "Loading…" : loadError || (assessments.length === 0 ? "No coursework yet. Create an assignment or quiz to get started." : "No coursework matches your filters.")}
                     </td>
                   </tr>
                 ) : (
@@ -598,7 +576,7 @@ export default function App() {
                                   className="flex w-full items-center gap-2.5 px-4 py-2.5 text-xs font-medium text-rose-600 transition-colors hover:bg-rose-50"
                                 >
                                   <Trash2 className="h-3.5 w-3.5 text-rose-500" />
-                                  <span>Close Assessment</span>
+                                  <span>Close submissions</span>
                                 </button>
                               </div>
                             )}

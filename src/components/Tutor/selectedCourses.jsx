@@ -1,16 +1,28 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { api } from "../../lib/api";
 import { BookOpen, FileText, ChevronDown } from "lucide-react";
 
-const courses = [
-  { id: 1, name: "Mathematics — Year 1", assignments: 2, quizzes: 2 },
-  { id: 2, name: "English — Year 1", assignments: 4, quizzes: 3 },
-  { id: 3, name: "Physics — Year 1", assignments: 3, quizzes: 5 },
-];
-
 export default function CourseOverview() {
-  const [selectedCourseId, setSelectedCourseId] = useState(courses[0].id);
+  const [courses, setCourses] = useState([]);
+  const [selectedCourseId, setSelectedCourseId] = useState(null);
+
+  useEffect(() => {
+    Promise.all([api.get("/tutors/me"), api.get("/coursework")])
+      .then(([me, work]) => {
+        const list = me.subjects.map(({ subject }) => ({
+          id: subject.id,
+          name: subject.name,
+          assignments: work.filter((w) => w.subjectId === subject.id && w.type === "ASSIGNMENT").length,
+          quizzes: work.filter((w) => w.subjectId === subject.id && w.type === "QUIZ").length,
+        }));
+        setCourses(list);
+        setSelectedCourseId(list[0]?.id ?? null);
+      })
+      .catch(() => {});
+  }, []);
+
   const selectedCourse =
-    courses.find((course) => course.id === selectedCourseId) ?? courses[0];
+    courses.find((course) => course.id === selectedCourseId) ?? { name: "", assignments: 0, quizzes: 0 };
 
   return (
     <section className="w-full bg-[#F4F6FC] p-3 sm:p-5">

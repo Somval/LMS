@@ -1,10 +1,21 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { api } from '../../../lib/api';
 import { ChevronDown, ChevronsUpDown } from 'lucide-react';
 
 const DAYS_OF_WEEK = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-export default function Step2ProfessionalInfo({ formData, onChange }) {
+export default function Step2ProfessionalInfo({ formData, onChange, onExtra }) {
   const [selectedDays, setSelectedDays] = useState(['Mon', 'Tue', 'Wed', 'Thu', 'Fri']);
+  const [subjectOptions, setSubjectOptions] = useState([]);
+
+  useEffect(() => {
+    api.get('/subjects').then((list) => {
+      setSubjectOptions(list);
+      onExtra?.('subjectOptions', list);
+    }).catch(() => {});
+  }, [onExtra]);
+
+  useEffect(() => { onExtra?.('days', selectedDays); }, [selectedDays, onExtra]);
 
   const toggleDay = (day) => {
     setSelectedDays((prev) =>
@@ -40,12 +51,9 @@ export default function Step2ProfessionalInfo({ formData, onChange }) {
               <option value="" disabled hidden>
                 Select subjects
               </option>
-              <option value="Mathematics">Mathematics</option>
-              <option value="English Literature">English Literature</option>
-              <option value="Physics">Physics</option>
-              <option value="Chemistry">Chemistry</option>
-              <option value="Biology">Biology</option>
-              <option value="Computer Science">Computer Science</option>
+              {subjectOptions.map((s) => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
             </select>
             <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
           </div>

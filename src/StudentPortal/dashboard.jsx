@@ -1,4 +1,6 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { api } from "../lib/api";
 import {
   CalendarDays,
   Clock3,
@@ -7,7 +9,6 @@ import {
 } from "lucide-react";
 
 import Image from "../assets/images/a28f032b0be13a6fa79d1e9bde6116adb70cef77.png";
-import TutorImage from "../assets/images/d2ff9714f4a9d1e2956e94de49cf1a63a6522afb.jpg";
 
 import StudenLearnings from "./Mylearning";
 import RecentAchievements from "./RecentAchievementshome";
@@ -26,37 +27,75 @@ const LIVE_CLASS_HEIGHT = "h-[290px]";
 const SCHEDULE_MIN_HEIGHT = "min-h-[225px]";
 
 /* ============================================================
-   SCHEDULE DATA
+   HELPERS
 ============================================================ */
 
-const scheduleItems = [
-  {
-    time: "5:00 PM – 6:00 PM",
-    title: "Mathematics",
-    subtitle: "Linear Equations",
-    type: "Live Class",
-  },
-  {
-    time: "5:00 PM – 6:00 PM",
-    title: "Mathematics",
-    subtitle: "Linear Equations",
-    type: "Live Class",
-  },
-  {
-    time: "5:00 PM – 6:00 PM",
-    title: "Mathematics",
-    subtitle: "Chapter 3 Quiz",
-    type: "Quiz",
-  },
-  {
-    time: "6:30 PM – 7:30 PM",
-    title: "Physics",
-    subtitle: "Kinematics & Motion",
-    type: "Live Class",
-  },
-];
+const fmtTime = (d) =>
+  new Date(d).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+
+const fmtRange = (a, b) => `${fmtTime(a)} – ${fmtTime(b)}`;
+
+const isSameDay = (a, b) => new Date(a).toDateString() === new Date(b).toDateString();
+
+const fmtDay = (d) => {
+  const date = new Date(d);
+  const label = date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+  if (isSameDay(date, new Date())) return `Today, ${label}`;
+  return `${date.toLocaleDateString("en-GB", { weekday: "short" })}, ${label}`;
+};
+
+const initials = (name = "") =>
+  name.split(" ").filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join("") || "T";
 
 export default function ClassOverview() {
+  const navigate = useNavigate();
+  const [data, setData] = useState(null);
+  const [todayClasses, setTodayClasses] = useState([]);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
+
+    Promise.all([
+      api.get("/dashboard/student"),
+      api.get("/classes", { from: start.toISOString(), to: end.toISOString() }),
+    ])
+      .then(([dash, classes]) => {
+        setData(dash);
+        setTodayClasses(classes);
+      })
+      .catch((err) => setError(err.message || "Could not load your dashboard."));
+  }, []);
+
+  const nextClass = data?.upcomingClasses?.[0] ?? null;
+
+  // Today's classes plus any coursework due today, soonest first.
+  const scheduleItems = [
+    ...todayClasses.map((c) => ({
+      at: new Date(c.startsAt),
+      time: fmtRange(c.startsAt, c.endsAt),
+      title: c.subject.name,
+      subtitle: c.title,
+      type: c.status === "CANCELLED" ? "Cancelled" : "Live Class",
+    })),
+    ...(data?.pendingCoursework ?? [])
+      .filter((w) => w.dueAt && isSameDay(w.dueAt, new Date()))
+      .map((w) => ({
+        at: new Date(w.dueAt),
+        time: `Due ${fmtTime(w.dueAt)}`,
+        title: w.subject?.name ?? "Coursework",
+        subtitle: w.title,
+        type: w.type === "QUIZ" ? "Quiz" : "Assignment",
+      })),
+  ].sort((a, b) => a.at - b.at);
+
+  const joinNext = () => {
+    if (nextClass?.meetingUrl) window.open(nextClass.meetingUrl, "_blank", "noopener,noreferrer");
+  };
+
   return (
     <section className="w-full bg-slate-50 font-sans">
       {/* ======================================================
@@ -73,6 +112,12 @@ export default function ClassOverview() {
           - mx-auto
           - extra horizontal px
       ====================================================== */}
+
+      {error && (
+        <p role="alert" className="mb-4 rounded-md border border-red-100 bg-red-50 px-3 py-2 text-xs text-red-600">
+          {error}
+        </p>
+      )}
 
       <div className="w-full">
         {/* ====================================================
@@ -218,7 +263,7 @@ export default function ClassOverview() {
                       max-sm:text-[21px]
                     "
                   >
-                    Mathematics
+                    {nextClass ? nextClass.subject.name : "No upcoming class"}
                   </h2>
 
                   <p
@@ -232,7 +277,7 @@ export default function ClassOverview() {
                       max-sm:text-[13px]
                     "
                   >
-                    Linear Equations and Inequalities
+                    {nextClass ? nextClass.title : "Your tutor will schedule your next class soon."}
                   </p>
                 </div>
 
@@ -263,7 +308,7 @@ export default function ClassOverview() {
                         max-sm:text-[12px]
                       "
                     >
-                      Today, 14 May 2025
+                      {nextClass ? fmtDay(nextClass.startsAt) : "—"}
                     </span>
                   </div>
 
@@ -289,7 +334,7 @@ export default function ClassOverview() {
                         max-sm:text-[12px]
                       "
                     >
-                      5:00 PM – 6:00 PM
+                      {nextClass ? fmtRange(nextClass.startsAt, nextClass.endsAt) : "—"}
                     </span>
                   </div>
                 </div>
@@ -299,9 +344,8 @@ export default function ClassOverview() {
                 ================================================= */}
 
                 <div className="mt-4 flex items-center gap-2.5">
-                  <img
-                    src={TutorImage}
-                    alt="Sarah Johnson"
+                  <div
+                    aria-hidden="true"
                     className="
                       h-7
                       w-7
@@ -313,8 +357,10 @@ export default function ClassOverview() {
                       shadow-sm
                       max-sm:h-8
                       max-sm:w-8
-                    "
-                  />
+                     flex items-center justify-center bg-blue-600 text-[9px] font-semibold text-white"
+                  >
+                    {nextClass ? initials(nextClass.tutor.user.fullName) : "–"}
+                  </div>
 
                   <div className="min-w-0">
                     <p
@@ -340,7 +386,7 @@ export default function ClassOverview() {
                         max-sm:text-[13px]
                       "
                     >
-                      Sarah Johnson
+                      {nextClass ? nextClass.tutor.user.fullName : "—"}
                     </p>
                   </div>
                 </div>
@@ -351,7 +397,10 @@ export default function ClassOverview() {
 
                 <button
                   type="button"
+                  onClick={joinNext}
+                  disabled={!nextClass?.meetingUrl}
                   className="
+                    disabled:cursor-not-allowed disabled:opacity-50
                     mt-4
                     inline-flex
                     h-[27px]
@@ -386,7 +435,7 @@ export default function ClassOverview() {
                     strokeWidth={2}
                   />
 
-                  <span>Join Class</span>
+                  <span>{nextClass && !nextClass.meetingUrl ? "Link coming soon" : "Join Class"}</span>
                 </button>
               </div>
             </div>
@@ -435,6 +484,11 @@ export default function ClassOverview() {
               {/* SCHEDULE LIST */}
 
               <div className="mt-3">
+                {scheduleItems.length === 0 && (
+                  <p className="py-6 text-center text-[11px] text-slate-400">
+                    Nothing scheduled for today.
+                  </p>
+                )}
                 {scheduleItems.map((item, index) => (
                   <div
                     key={`${item.title}-${index}`}
@@ -560,6 +614,7 @@ export default function ClassOverview() {
             >
               <button
                 type="button"
+                onClick={() => navigate("/student/live-classes")}
                 className="
                   group
                   inline-flex
@@ -614,7 +669,7 @@ export default function ClassOverview() {
           ================================================= */}
 
           <div className="w-full">
-            <StudenLearnings />
+            <StudenLearnings subjects={data?.subjects} loading={!data && !error} />
           </div>
 
           {/* =================================================
@@ -622,7 +677,7 @@ export default function ClassOverview() {
           ================================================= */}
 
           <div className="flex h-full w-full flex-col">
-            <RecentAchievements />
+            <RecentAchievements achievements={data?.recentAchievements} loading={!data && !error} />
           </div>
         </div>
 
@@ -631,7 +686,7 @@ export default function ClassOverview() {
         ===================================================== */}
 
         <div className="mt-4 w-full">
-          <MyTasks />
+          <MyTasks tasks={data?.pendingCoursework} loading={!data && !error} />
         </div>
       </div>
     </section>

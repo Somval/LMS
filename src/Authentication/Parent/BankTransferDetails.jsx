@@ -2,13 +2,13 @@
 import React, { useState } from "react";
 import { Copy, Check } from "lucide-react";
 
-export default function BankTransferDetails({ totalAmount = 0 }) {
+export default function BankTransferDetails({ totalAmount = 0, bank, reference }) {
   const [copiedField, setCopiedField] = useState(null);
 
   const bankInfo = {
-    bankName: "First National Bank",
-    accountName: "LMS.",
-    accountNumber: "9876543210",
+    bankName: bank?.name || "Not set yet",
+    accountName: bank?.accountName || "Not set yet",
+    accountNumber: bank?.accountNumber || "Not set yet",
   };
 
   const copyToClipboard = async (text, field) => {
@@ -39,7 +39,7 @@ export default function BankTransferDetails({ totalAmount = 0 }) {
       <p className="text-sm leading-relaxed text-gray-600">
         Transfer the exact total amount of{" "}
         <span className="font-bold text-gray-900">
-          ${Number(totalAmount).toFixed(2)}
+          ₦{Number(totalAmount).toLocaleString()}
         </span>{" "}
         to the account below.
       </p>
@@ -94,6 +94,11 @@ export default function BankTransferDetails({ totalAmount = 0 }) {
         </div>
       </div>
 
+      {reference && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+          Use <span className="font-mono font-bold">{reference}</span> as the transfer narration so we can match your payment.
+        </div>
+      )}
       {copiedField === "account" && (
         <p className="text-xs font-medium text-green-600" role="status">
           Account number copied successfully.

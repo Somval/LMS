@@ -1,5 +1,6 @@
 
 import React, { useState, useRef, useEffect, useId } from "react";
+import { api } from "../../../lib/api";
 import {
   Calculator,
   Atom,
@@ -27,32 +28,14 @@ const schoolYears = [
   "Year 12",
 ];
 
-const subjectsData = [
-  {
-    id: "math",
-    name: "Mathematics",
-    icon: Calculator,
-    bgColor: "bg-[#2E3192]",
-  },
-  {
-    id: "science",
-    name: "Science",
-    icon: Atom,
-    bgColor: "bg-[#00D061]",
-  },
-  {
-    id: "english",
-    name: "English",
-    icon: BookOpen,
-    bgColor: "bg-[#FFD100]",
-  },
-  {
-    id: "coding",
-    name: "Coding",
-    icon: Code2,
-    bgColor: "bg-[#8F3985]",
-  },
-];
+// Look and feel for each subject. The list itself (and each subject's id) comes from the API.
+const SUBJECT_STYLES = {
+  mathematics: { icon: Calculator, bgColor: "bg-[#2E3192]" },
+  science: { icon: Atom, bgColor: "bg-[#00D061]" },
+  english: { icon: BookOpen, bgColor: "bg-[#FFD100]" },
+  coding: { icon: Code2, bgColor: "bg-[#8F3985]" },
+};
+const DEFAULT_STYLE = { icon: BookOpen, bgColor: "bg-[#30336B]" };
 
 const assessmentNote =
   "Your assessment will help us identify the areas where you need the most support.";
@@ -236,6 +219,29 @@ export default function SubjectSelection({ onNext, onBack }) {
   const [selectedLevels, setSelectedLevels] = useState({});
   const [selectedCourses, setSelectedCourses] = useState([]);
   const [error, setError] = useState("");
+  const [subjectsData, setSubjectsData] = useState([]);
+  const [loadingSubjects, setLoadingSubjects] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .get("/subjects")
+      .then((list) => {
+        if (cancelled) return;
+        setSubjectsData(
+          list.map((s) => ({
+            id: s.id,
+            name: s.name,
+            ...(SUBJECT_STYLES[s.name.toLowerCase()] || DEFAULT_STYLE),
+          }))
+        );
+      })
+      .catch(() => !cancelled && setError("Could not load subjects. Please refresh and try again."))
+      .finally(() => !cancelled && setLoadingSubjects(false));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Add a subject automatically when its school year is selected.
   const handleLevelChange = (subject, newLevel) => {
@@ -318,6 +324,9 @@ export default function SubjectSelection({ onNext, onBack }) {
           aria-label="Available subjects"
           className="space-y-3"
         >
+          {loadingSubjects && (
+            <p className="py-6 text-center text-sm text-[#8B94AD]">Loading subjects…</p>
+          )}
           {subjectsData.map((subject) => {
             const Icon = subject.icon;
             const selectedYear = selectedLevels[subject.id] || "";

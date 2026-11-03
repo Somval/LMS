@@ -1,41 +1,15 @@
 import React from "react";
+import Avatar from "../../components/Avatar";
+import { timeAgo } from "../../StudentPortal/classFormat";
 
-const RecentActivity = () => {
-  const activities = [
-    {
-      id: 1,
-      name: "Olivia Brown",
-      action: "submitted Algebra Practice",
-      time: "12 min ago",
-      avatar:
-        "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80",
-    },
-    {
-      id: 2,
-      name: "Daniel Carter",
-      action: "completed Mathematics Quiz",
-      time: "28 min ago",
-      avatar:
-        "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80",
-    },
-    {
-      id: 3,
-      name: "Sophia Williams",
-      action: "submitted Geometry Assignment",
-      time: "45 min ago",
-      avatar:
-        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-    },
-    {
-      id: 4,
-      name: "Ethan Johnson",
-      action: "joined Year 1 Mathematics",
-      time: "1 hr ago",
-      avatar:
-        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
-    },
-    
-  ];
+const RecentActivity = ({ items = [] }) => {
+  const activities = items.map((a, i) => ({
+    id: i,
+    name: a.name,
+    avatarUrl: a.avatarUrl,
+    action: `${a.type === "QUIZ" ? "completed" : "submitted"} ${a.title}`,
+    time: timeAgo(a.at),
+  }));
 
   return (
     <div className="w-full min-w-0 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm sm:p-5 lg:p-6">
@@ -54,19 +28,16 @@ const RecentActivity = () => {
 
       {/* Activity Items */}
       <div className="divide-y divide-slate-100">
+        {activities.length === 0 && (
+          <p className="py-8 text-center text-sm text-slate-400">No activity from your students yet.</p>
+        )}
         {activities.map((item) => (
           <div
             key={item.id}
             className="flex min-w-0 items-center gap-3 py-4 sm:gap-4"
           >
             {/* Avatar */}
-            <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-slate-100 sm:h-11 sm:w-11 lg:h-12 lg:w-12">
-              <img
-                src={item.avatar}
-                alt={item.name}
-                className="h-full w-full object-cover"
-              />
-            </div>
+            <Avatar name={item.name} avatarUrl={item.avatarUrl} className="h-10 w-10 rounded-full sm:h-11 sm:w-11 lg:h-12 lg:w-12" textClassName="text-sm" />
 
             {/* Content */}
             <div className="min-w-0 flex-1">

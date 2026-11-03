@@ -3,74 +3,21 @@ import {
   ArrowRight,
   CirclePlay,
 } from "lucide-react";
+import { dayLabel, timeRange, openLink } from "./classFormat";
 
-const pastClasses = [
-  {
-    date: "Today",
-    day: "Aug 17",
-    className: "Mathematics",
-    topic: (
-      <>
-        Linear Equations
-        <br />
-        & Inequalities
-      </>
-    ),
-    time: (
-      <>
-        5:00 PM –
-        <br />
-        6:00 PM
-      </>
-    ),
-    status: "Attended",
-    recording: true,
-  },
-  {
-    date: "Today",
-    day: "Aug 17",
-    className: "Mathematics",
-    topic: (
-      <>
-        Linear Equations
-        <br />
-        & Inequalities
-      </>
-    ),
-    time: (
-      <>
-        5:00 PM –
-        <br />
-        6:00 PM
-      </>
-    ),
-    status: "Attended",
-    recording: false,
-  },
-  {
-    date: "Today",
-    day: "Aug 17",
-    className: "Mathematics",
-    topic: (
-      <>
-        Linear Equations
-        <br />
-        & Inequalities
-      </>
-    ),
-    time: (
-      <>
-        5:00 PM –
-        <br />
-        6:00 PM
-      </>
-    ),
-    status: "Attended",
-    recording: true,
-  },
-];
+const STATUS_LABEL = { PRESENT: "Attended", LATE: "Late", ABSENT: "Missed" };
 
-export default function PastClasses() {
+export default function PastClasses({ classes = [], attendance = {} }) {
+  const pastClasses = classes.map((c) => ({
+    ...dayLabel(c.startsAt),
+    className: c.subject.name,
+    topic: c.title,
+    time: timeRange(c.startsAt, c.endsAt),
+    status: c.status === "CANCELLED" ? "Cancelled" : STATUS_LABEL[attendance[c.id]] ?? "Not marked",
+    recording: !!c.recordingUrl,
+    recordingUrl: c.recordingUrl,
+  }));
+
   return (
     <section className="w-full bg-[#f5f7fc] px-4 py-5 sm:px-5">
       <div className="w-full">
@@ -193,12 +140,12 @@ export default function PastClasses() {
                     />
 
                     <span
-                      className="
+                      className={`
                         whitespace-nowrap
                         text-[11px]
                         font-medium
-                        text-[#10b958]
-                      "
+                        ${item.status === "Attended" ? "text-[#10b958]" : item.status === "Missed" || item.status === "Cancelled" ? "text-[#e5484d]" : "text-[#747ca1]"}
+                      `}
                     >
                       {item.status}
                     </span>
@@ -209,6 +156,8 @@ export default function PastClasses() {
                 <div className="flex justify-end">
                   {item.recording && (
                     <button
+ onClick={() => openLink(item.recordingUrl)}
+ 
                       type="button"
                       className="
                         flex
@@ -347,24 +296,26 @@ export default function PastClasses() {
                           h-[7px]
                           w-[7px]
                           rounded-full
-                          bg-[#16c766]
+                          bg-[#9aa3bd]
                         "
                       />
 
                       <span
-                        className="
+                        className={`
                           text-[10px]
                           font-medium
-                          text-[#10b958]
-                        "
+                          ${item.status === "Attended" ? "text-[#10b958]" : item.status === "Missed" || item.status === "Cancelled" ? "text-[#e5484d]" : "text-[#747ca1]"}
+                        `}
                       >
-                        Attended
+                        {item.status}
                       </span>
                     </div>
 
                     {/* Recording */}
                     {item.recording && (
                       <button
+ onClick={() => openLink(item.recordingUrl)}
+ 
                         type="button"
                         className="
                           flex

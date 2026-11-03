@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { api } from '../../../lib/api';
 import { 
   ArrowLeft, 
   Flame, 
@@ -13,11 +15,37 @@ export default function CreateRewardForm() {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    frequency: 'Monthly',
+    points: '0',
     giveType: 'Reward',
     selectedMethod: 'Learning Streak',
     methodDescription: ''
   });
+
+  const navigate = useNavigate();
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const create = async () => {
+    if (saving) return;
+    if (formData.name.trim().length < 2) return setError('Give it a name.');
+    const method = earningMethods.find((m) => m.title === formData.selectedMethod);
+    const how = formData.methodDescription.trim() || method?.subtitle || '';
+    const description = [formData.description.trim(), how && `How to earn: ${how}`].filter(Boolean).join('\n\n').slice(0, 1000);
+    setSaving(true);
+    setError('');
+    try {
+      await api.post('/rewards', {
+        title: formData.name.trim(),
+        description: description || undefined,
+        kind: formData.giveType === 'Badge' ? 'BADGE' : 'REWARD',
+        points: Number(formData.points) || 0,
+      });
+      navigate('/tutor/students');
+    } catch (err) {
+      setError(err.message || 'Could not create this.');
+      setSaving(false);
+    }
+  };
 
   const earningMethods = [
     { id: 'streak', title: 'Learning Streak', subtitle: 'Stay active for 7 consecutive days.', icon: Flame },
@@ -34,7 +62,7 @@ export default function CreateRewardForm() {
         {/* Top Header Section */}
         <div className="flex items-center justify-between pb-6 mb-8 border-b border-slate-100">
           <div className="flex items-center space-x-4">
-            <button className="p-2 hover:bg-slate-50 rounded-full transition-colors text-slate-600">
+            <button type="button" onClick={() => navigate(-1)} aria-label="Go back" className="p-2 hover:bg-slate-50 rounded-full transition-colors text-slate-600">
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div>
@@ -81,24 +109,18 @@ export default function CreateRewardForm() {
             </div>
           </div>
 
-          {/* When Should Students Earn this? */}
+          {/* Points */}
           <div>
             <label className="block text-sm font-semibold text-slate-900 mb-2">
-              When Should Students earn this?
+              Points <span className="font-normal text-slate-400">(optional)</span>
             </label>
-            <div className="relative">
-              <select 
-                value={formData.frequency}
-                onChange={(e) => setFormData({...formData, frequency: e.target.value})}
-                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-800 appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all cursor-pointer"
-              >
-                <option value="Monthly">Monthly</option>
-                <option value="Weekly">Weekly</option>
-                <option value="Daily">Daily</option>
-                <option value="Termly">Termly</option>
-              </select>
-              <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-            </div>
+            <input
+              inputMode="numeric"
+              value={formData.points}
+              onChange={(e) => setFormData({...formData, points: e.target.value.replace(/\D/g, '')})}
+              className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all"
+            />
+            <p className="mt-2 text-xs text-slate-400">You award this to students yourself, from their profile page.</p>
           </div>
 
           {/* What would you like to give? */}
@@ -107,14 +129,14 @@ export default function CreateRewardForm() {
               What would you like to give?
             </label>
             <div className="relative">
-              <select 
+              <select
                 value={formData.giveType}
                 onChange={(e) => setFormData({...formData, giveType: e.target.value})}
                 className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-800 appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all cursor-pointer"
               >
                 <option value="Reward">Reward</option>
                 <option value="Badge">Badge</option>
-                <option value="Certificate">Certificate</option>
+                <option value="Certificate">Certificate (counts as a reward)</option>
               </select>
               <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
             </div>
@@ -165,13 +187,17 @@ export default function CreateRewardForm() {
             </span>
           </div>
 
+          {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
+
           {/* Bottom Action Button */}
           <div className="pt-4 flex justify-center">
             <button 
               type="button"
-              className="w-full sm:w-auto px-12 py-3.5 bg-[#303373] hover:bg-[#25285c] text-white text-sm font-medium rounded-xl shadow-md transition-all active:scale-[0.99]"
+              onClick={create}
+              disabled={saving}
+              className="w-full sm:w-auto px-12 py-3.5 bg-[#303373] hover:bg-[#25285c] text-white text-sm font-medium rounded-xl shadow-md transition-all active:scale-[0.99] disabled:opacity-60"
             >
-              Create Recognition
+              {saving ? 'Creating…' : 'Create Recognition'}
             </button>
           </div>
 

@@ -1,27 +1,22 @@
 
 import React from "react";
-import TutorImage from "../../assets/images/03a69e3af2677c18576441e05e66092043930940.jpg";
+import { useNavigate } from "react-router-dom";
 import { MessageSquare, Star, Flag } from "lucide-react";
+import { initials } from "./dashboardData";
 
-export default function AssignedTutor() {
-  const tutorsData = [
-    {
-      id: 1,
-      name: "Sarah Johnson",
-      role: "Mathematics Tutor",
-      rating: 4.9,
-      reviews: "120+ reviews",
-      imageUrl: TutorImage,
-    },
-    {
-      id: 2,
-      name: "Sarah Johnson",
-      role: "Mathematics Tutor",
-      rating: 4.9,
-      reviews: "120+ reviews",
-      imageUrl: TutorImage,
-    },
-  ];
+export default function AssignedTutor({ data }) {
+  const navigate = useNavigate();
+
+  const tutorsData = (data?.tutors ?? []).map((tutor) => ({
+    id: tutor.id,
+    name: tutor.name,
+    role: `${tutor.subjects.join(", ")} Tutor`,
+    rating: tutor.rating, // null until a parent has reviewed them
+    reviews: tutor.reviews
+      ? `${tutor.reviews} review${tutor.reviews === 1 ? "" : "s"}`
+      : "no reviews yet",
+    initials: initials(tutor.name),
+  }));
 
   const actions = [
     {
@@ -63,6 +58,12 @@ export default function AssignedTutor() {
         </span>
       </div>
 
+      {tutorsData.length === 0 && (
+        <p className="text-sm text-gray-400">
+          No tutors are teaching your child's subjects yet.
+        </p>
+      )}
+
       {/* TUTOR CARDS */}
       <div className="grid w-full min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
         {tutorsData.map((tutor) => (
@@ -72,12 +73,12 @@ export default function AssignedTutor() {
           >
             {/* TUTOR INFORMATION */}
             <div className="flex min-w-0 items-center gap-3">
-              <img
-                src={tutor.imageUrl}
-                alt={tutor.name}
-                loading="lazy"
-                className="h-11 w-11 shrink-0 rounded-full object-cover ring-2 ring-gray-100 sm:h-12 sm:w-12"
-              />
+              <div
+                aria-hidden="true"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-sm font-bold text-indigo-700 ring-2 ring-gray-100 sm:h-12 sm:w-12"
+              >
+                {tutor.initials}
+              </div>
 
               <div className="min-w-0 flex-1">
                 <h3 className="truncate text-sm font-bold leading-5 text-gray-900 sm:text-base">
@@ -97,7 +98,7 @@ export default function AssignedTutor() {
                   />
 
                   <span className="text-xs font-semibold text-gray-800">
-                    {tutor.rating.toFixed(1)}
+                    {tutor.rating === null ? "New" : tutor.rating.toFixed(1)}
                   </span>
 
                   <span className="text-[10px] text-gray-400 sm:text-xs">
@@ -113,6 +114,7 @@ export default function AssignedTutor() {
                 <button
                   key={label}
                   type="button"
+                  onClick={() => label === "Message" && navigate("/parent/messages")}
                   aria-label={`${label} ${tutor.name}`}
                   className={`flex min-h-[48px] min-w-0 items-center justify-center gap-1.5 rounded-lg border ${border} px-1.5 py-2 ${color} ${hover} transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${ring} sm:gap-2 sm:px-2`}
                 >

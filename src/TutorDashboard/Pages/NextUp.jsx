@@ -1,40 +1,20 @@
 import React from "react";
+import { dayLabel } from "../../StudentPortal/classFormat";
 
-const NextUp = () => {
-  const items = [
-    {
-      id: 1,
-      month: "May",
-      day: "15",
-      title: "Quiz: Linear Equations",
-      subtitle: "Math – Year 1",
-      badge: "Tomorrow",
-    },
-    {
-      id: 2,
-      month: "May",
-      day: "15",
-      title: "Submit progress reports",
-      subtitle: "All Subjects",
-      badge: "Friday",
-    },
-    {
-      id: 3,
-      month: "May",
-      day: "15",
-      title: "Quiz: Linear Equations",
-      subtitle: "Math – Year 1",
-      badge: "Tomorrow",
-    },
-    {
-      id: 4,
-      month: "May",
-      day: "15",
-      title: "Quiz: Linear Equations",
-      subtitle: "Math – Year 1",
-      badge: "Tomorrow",
-    },
-  ];
+const KIND = { CLASS: "Class", ASSIGNMENT: "Assignment due", QUIZ: "Quiz due" };
+
+const NextUp = ({ items: source = [] }) => {
+  const items = source.map((n, i) => {
+    const d = new Date(n.at);
+    return {
+      id: `${n.kind}-${n.id}-${i}`,
+      month: d.toLocaleDateString("en-US", { month: "short" }),
+      day: String(d.getDate()),
+      title: `${KIND[n.kind] ?? "Event"}: ${n.title}`,
+      subtitle: n.subject,
+      badge: dayLabel(n.at).date,
+    };
+  });
 
   return (
     <div className="flex h-full w-full min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
@@ -50,6 +30,9 @@ const NextUp = () => {
 
       {/* Items */}
       <div className="min-h-0 flex-1 overflow-hidden">
+        {items.length === 0 && (
+          <p className="py-8 text-center text-sm text-slate-400">Nothing coming up yet.</p>
+        )}
         {items.map((item) => (
           <div
             key={item.id}

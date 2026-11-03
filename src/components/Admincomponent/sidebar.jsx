@@ -48,6 +48,11 @@ const navigation = [
         icon: UsersRound,
         path: "/admin/users/parents",
       },
+      {
+        label: "Tutor Applications",
+        icon: BadgeCheck,
+        path: "/admin/users/applications",
+      },
     ],
   },
   {

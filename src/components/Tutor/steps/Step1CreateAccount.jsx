@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { User, Mail, Lock, Eye, EyeOff, ChevronDown } from 'lucide-react';
 
-export default function Step1CreateAccount({ formData, onChange }) {
+export default function Step1CreateAccount({ formData, onChange, onExtra }) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  useEffect(() => { onExtra?.('agreed', agreedToTerms); }, [agreedToTerms, onExtra]);
 
   return (
     <div className="w-full text-left font-sans">

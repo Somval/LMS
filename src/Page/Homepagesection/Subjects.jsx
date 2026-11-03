@@ -11,12 +11,9 @@ import {
   GraduationCap,
 } from "lucide-react";
 
-
-
 import MathematicsImage from "../../assets/images/MathematicsImage.png";
 import ScienceImage from "../../assets/images/istockphoto-639407632-612x612.jpg";
 import EnglishImage from "../../assets/images/english.jfif";
-
 import CodingImage from "../../assets/images/images (2).jfif";
 import LanguagesImage from "../../assets/images/images (3).jfif";
 
@@ -35,7 +32,6 @@ const subjects = [
     ],
     image: MathematicsImage,
   },
-
   {
     id: "science",
     name: "Science",
@@ -50,7 +46,6 @@ const subjects = [
     ],
     image: ScienceImage,
   },
-
   {
     id: "english",
     name: "English",
@@ -65,7 +60,6 @@ const subjects = [
     ],
     image: EnglishImage,
   },
-
   {
     id: "coding",
     name: "Coding",
@@ -80,7 +74,6 @@ const subjects = [
     ],
     image: CodingImage,
   },
-
   {
     id: "languages",
     name: "Languages",
@@ -97,20 +90,11 @@ const subjects = [
   },
 ];
 
-// =========================================================
-// COMPONENT
-// =========================================================
-
 function SubjectsSection() {
   const [activeIndex, setActiveIndex] = useState(0);
 
   const activeSubject = subjects[activeIndex];
-
   const ActiveIcon = activeSubject.icon;
-
-  // =======================================================
-  // NEXT SUBJECT
-  // =======================================================
 
   const nextSubject = () => {
     setActiveIndex((current) =>
@@ -118,76 +102,49 @@ function SubjectsSection() {
     );
   };
 
-  // =======================================================
-  // PREVIOUS SUBJECT
-  // =======================================================
-
   const previousSubject = () => {
     setActiveIndex((current) =>
       current === 0 ? subjects.length - 1 : current - 1
     );
   };
 
-  // =======================================================
-  // SELECT SUBJECT
-  // =======================================================
-
   const selectSubject = (index) => {
     setActiveIndex(index);
   };
-
-  // =======================================================
-  // LEARN MORE
-  // =======================================================
 
   const handleLearnMore = () => {
     console.log(`Explore ${activeSubject.name}`);
   };
 
   return (
-    <section className="relative w-full overflow-hidden bg-[#eef5ff] px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+    <section className="relative w-full overflow-hidden bg-[#eef5ff] px-4 py-9 sm:px-6 sm:py-12 lg:px-8">
       <div className="mx-auto w-full max-w-[900px]">
 
-        {/* =================================================
-            TOP BADGE
-        ================================================= */}
-
-        <div className="mb-3 flex justify-center">
-          <div className="inline-flex items-center gap-2 rounded-full bg-[#dbe8fb] px-3 py-1.5 text-[9px] font-semibold uppercase tracking-wide text-[#31438d] shadow-sm">
-            <GraduationCap
-              size={12}
-              strokeWidth={2.5}
-            />
-
-            <span>
-              Our Learning Programs
-            </span>
+        {/* TOP BADGE */}
+        <div className="mb-4 flex justify-center">
+          <div className="inline-flex items-center gap-2 rounded-full bg-[#dbe8fb] px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-[#31438d] shadow-sm sm:text-xs">
+            <GraduationCap size={15} strokeWidth={2.5} />
+            <span>Our Learning Programs</span>
           </div>
         </div>
 
-        {/* =================================================
-            HEADING
-        ================================================= */}
-
-        <div className="mx-auto max-w-[600px] text-center">
-          <h2 className="text-[25px] font-bold leading-[1.05] tracking-tight text-[#303d91] sm:text-[32px]">
+        {/* HEADING */}
+        <div className="mx-auto max-w-[650px] text-center">
+          <h2 className="text-[30px] font-bold leading-[1.12] tracking-tight text-[#303d91] sm:text-[38px] md:text-[42px]">
             Explore Subjects.
             <br />
             Excel in What Matters.
           </h2>
 
-          <p className="mx-auto mt-3 max-w-[510px] text-[10px] leading-[1.6] text-slate-500 sm:text-[11px]">
+          <p className="mx-auto mt-4 max-w-[540px] text-[13px] leading-[1.75] text-slate-500 sm:text-[15px] md:text-base">
             From foundational skills to future-ready knowledge,
             our diverse learning programs help learners build
             confidence and achieve academic success.
           </p>
         </div>
 
-        {/* =================================================
-            SUBJECT NAVIGATION
-        ================================================= */}
-
-        <div className="mt-5 flex gap-2 overflow-x-auto pb-2 sm:justify-center sm:overflow-visible">
+        {/* SUBJECT NAVIGATION */}
+        <div className="mt-7 flex gap-2.5 overflow-x-auto pb-3 sm:justify-center sm:overflow-visible">
           {subjects.map((subject, index) => {
             const Icon = subject.icon;
             const isActive = activeIndex === index;
@@ -200,10 +157,11 @@ function SubjectsSection() {
                 aria-label={`View ${subject.name}`}
                 aria-current={isActive ? "true" : undefined}
                 className={`
-                  group flex shrink-0 items-center gap-2
-                  rounded-md border px-3 py-2
-                  text-[9px] font-semibold
+                  group flex shrink-0 items-center gap-2.5
+                  rounded-md border px-4 py-2.5
+                  text-[12px] font-semibold
                   transition-all duration-300
+                  sm:px-4 sm:py-3 sm:text-[13px]
 
                   ${
                     isActive
@@ -224,51 +182,41 @@ function SubjectsSection() {
                   }
                 `}
               >
-                {/* Icon */}
                 <span
                   className={`
-                    flex h-4 w-4
+                    flex h-5 w-5
                     items-center justify-center
-                    rounded-[3px]
+                    rounded-[4px]
                     ${subject.iconBg}
                   `}
                 >
                   <Icon
-                    size={10}
+                    size={13}
                     strokeWidth={2.5}
                     className="text-white"
                   />
                 </span>
 
-                {/* Name */}
-                <span>
-                  {subject.name}
-                </span>
+                <span>{subject.name}</span>
               </button>
             );
           })}
         </div>
 
-        {/* =================================================
-            MAIN SUBJECT CARD
-        ================================================= */}
-
+        {/* MAIN SUBJECT CARD */}
         <div
           className="
-            relative mt-4
-            min-h-[240px]
+            relative mt-5
+            min-h-[300px]
             overflow-hidden
             rounded-xl
             bg-[#cfe0fb]
             shadow-[0_8px_25px_rgba(54,77,130,0.08)]
-            sm:min-h-[270px]
+            sm:min-h-[320px]
+            md:min-h-[340px]
           "
         >
-
-          {/* =================================================
-              DECORATIVE BACKGROUND CIRCLE
-          ================================================= */}
-
+          {/* DECORATIVE BACKGROUND CIRCLE */}
           <div
             className="
               absolute
@@ -301,80 +249,68 @@ function SubjectsSection() {
             "
           />
 
-          {/* =================================================
-              CONTENT
-          ================================================= */}
+          {/* CONTENT */}
+          <div className="relative z-10 flex min-h-[300px] items-center sm:min-h-[320px] md:min-h-[340px]">
 
-          <div className="relative z-10 flex min-h-[240px] items-center sm:min-h-[270px]">
+            {/* LEFT CONTENT */}
+            <div className="relative z-20 w-[58%] px-4 py-7 sm:w-[48%] sm:px-8 sm:py-8 lg:px-10">
 
-            {/* =================================================
-                LEFT CONTENT
-            ================================================= */}
-
-            <div className="relative z-20 w-[54%] px-5 py-6 sm:w-[48%] sm:px-8 lg:px-10">
-
-              {/* Subject Icon */}
-              <div className="mb-3 flex h-5 w-5 items-center justify-center rounded-[3px] bg-[#30388d]">
+              {/* SUBJECT ICON */}
+              <div className="mb-4 flex h-7 w-7 items-center justify-center rounded-[5px] bg-[#30388d] sm:h-8 sm:w-8">
                 <ActiveIcon
-                  size={12}
+                  size={17}
                   strokeWidth={2.5}
                   className="text-white"
                 />
               </div>
 
-              {/* Subject Title */}
-              <h3 className="font-serif text-[15px] font-medium text-[#111c3d] sm:text-[20px]">
+              {/* SUBJECT TITLE */}
+              <h3 className="font-serif text-[21px] font-semibold leading-tight text-[#111c3d] sm:text-[26px] md:text-[29px]">
                 {activeSubject.name}
               </h3>
 
-              {/* Description */}
-              <p className="mt-1.5 max-w-[290px] text-[8px] leading-[1.55] text-slate-500 sm:text-[10px]">
+              {/* DESCRIPTION */}
+              <p className="mt-2 max-w-[310px] text-[12px] leading-[1.7] text-slate-600 sm:text-[14px] md:text-[15px]">
                 {activeSubject.description}
               </p>
 
-              {/* =================================================
-                  BENEFITS
-              ================================================= */}
-
-              <div className="mt-3 space-y-1.5">
+              {/* BENEFITS */}
+              <div className="mt-4 space-y-2.5">
                 {activeSubject.benefits.map((benefit) => (
                   <div
                     key={benefit}
                     className="
-                      flex items-center gap-1.5
-                      text-[8px]
+                      flex items-center gap-2
+                      text-[11px]
                       font-medium
-                      text-slate-600
-                      sm:text-[9px]
+                      leading-relaxed
+                      text-slate-700
+                      sm:text-[13px]
+                      md:text-[14px]
                     "
                   >
                     <CheckCircle2
-                      size={11}
+                      size={15}
                       strokeWidth={2.5}
                       className="shrink-0 text-[#30388d]"
                     />
 
-                    <span>
-                      {benefit}
-                    </span>
+                    <span>{benefit}</span>
                   </div>
                 ))}
               </div>
 
-              {/* =================================================
-                  LEARN MORE BUTTON
-              ================================================= */}
-
+              {/* LEARN MORE BUTTON */}
               <button
                 type="button"
                 onClick={handleLearnMore}
                 className="
-                  group mt-3
+                  group mt-5
                   inline-flex items-center gap-2
                   rounded-full
                   bg-[#30388d]
-                  px-3 py-1.5
-                  text-[7px]
+                  px-4 py-2.5
+                  text-[11px]
                   font-semibold
                   text-white
                   shadow-sm
@@ -384,17 +320,15 @@ function SubjectsSection() {
                   hover:bg-[#252e78]
                   hover:shadow-lg
                   active:scale-95
-                  sm:px-4
-                  sm:py-2
-                  sm:text-[8px]
+                  sm:px-5
+                  sm:py-3
+                  sm:text-[13px]
                 "
               >
-                <span>
-                  Learn More
-                </span>
+                <span>Learn More</span>
 
                 <ArrowRight
-                  size={9}
+                  size={14}
                   className="
                     transition-transform
                     duration-300
@@ -404,23 +338,19 @@ function SubjectsSection() {
               </button>
             </div>
 
-            {/* =================================================
-                IMAGE AREA
-            ================================================= */}
-
+            {/* IMAGE AREA */}
             <div
               className="
                 absolute
                 right-0
                 top-0
                 h-full
-                w-[54%]
+                w-[50%]
                 overflow-hidden
                 sm:w-[56%]
               "
             >
-
-              {/* Main Image */}
+              {/* MAIN IMAGE */}
               <img
                 src={activeSubject.image}
                 alt={activeSubject.name}
@@ -436,7 +366,7 @@ function SubjectsSection() {
                 "
               />
 
-              {/* Image Overlay */}
+              {/* IMAGE OVERLAY */}
               <div
                 className="
                   absolute
@@ -448,10 +378,7 @@ function SubjectsSection() {
                 "
               />
 
-              {/* =================================================
-                  CURVED IMAGE MASK
-              ================================================= */}
-
+              {/* CURVED IMAGE MASK */}
               <div
                 className="
                   absolute
@@ -468,7 +395,7 @@ function SubjectsSection() {
                 "
               />
 
-              {/* Inner Circle */}
+              {/* INNER CIRCLE */}
               <div
                 className="
                   absolute
@@ -488,22 +415,16 @@ function SubjectsSection() {
           </div>
         </div>
 
-        {/* =================================================
-            CAROUSEL CONTROLS
-        ================================================= */}
+        {/* CAROUSEL CONTROLS */}
+        <div className="mt-5 flex items-center justify-center gap-4">
 
-        <div className="mt-4 flex items-center justify-center gap-3">
-
-          {/* =================================================
-              PREVIOUS BUTTON
-          ================================================= */}
-
+          {/* PREVIOUS BUTTON */}
           <button
             type="button"
             onClick={previousSubject}
             aria-label="Previous subject"
             className="
-              flex h-6 w-6
+              flex h-8 w-8
               items-center justify-center
               rounded-full
               bg-[#d5e2f7]
@@ -513,19 +434,14 @@ function SubjectsSection() {
               hover:scale-105
               hover:bg-[#c3d4f1]
               active:scale-95
+              sm:h-9 sm:w-9
             "
           >
-            <ArrowLeft
-              size={11}
-              strokeWidth={2.5}
-            />
+            <ArrowLeft size={15} strokeWidth={2.5} />
           </button>
 
-          {/* =================================================
-              PAGINATION DOTS
-          ================================================= */}
-
-          <div className="flex items-center gap-1.5">
+          {/* PAGINATION DOTS */}
+          <div className="flex items-center gap-2">
             {subjects.map((subject, index) => (
               <button
                 key={subject.id}
@@ -533,9 +449,7 @@ function SubjectsSection() {
                 onClick={() => selectSubject(index)}
                 aria-label={`Go to ${subject.name}`}
                 aria-current={
-                  activeIndex === index
-                    ? "true"
-                    : undefined
+                  activeIndex === index ? "true" : undefined
                 }
                 className={`
                   rounded-full
@@ -544,24 +458,21 @@ function SubjectsSection() {
 
                   ${
                     activeIndex === index
-                      ? "h-1.5 w-1.5 bg-[#30388d]"
-                      : "h-1.5 w-1.5 bg-slate-300 hover:bg-slate-400"
+                      ? "h-2 w-2 bg-[#30388d]"
+                      : "h-2 w-2 bg-slate-300 hover:bg-slate-400"
                   }
                 `}
               />
             ))}
           </div>
 
-          {/* =================================================
-              NEXT BUTTON
-          ================================================= */}
-
+          {/* NEXT BUTTON */}
           <button
             type="button"
             onClick={nextSubject}
             aria-label="Next subject"
             className="
-              flex h-6 w-6
+              flex h-8 w-8
               items-center justify-center
               rounded-full
               bg-[#30388d]
@@ -572,12 +483,10 @@ function SubjectsSection() {
               hover:scale-105
               hover:bg-[#252e78]
               active:scale-95
+              sm:h-9 sm:w-9
             "
           >
-            <ArrowRight
-              size={11}
-              strokeWidth={2.5}
-            />
+            <ArrowRight size={15} strokeWidth={2.5} />
           </button>
         </div>
       </div>

@@ -1,35 +1,19 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { Calendar } from "lucide-react";
-import ImageChild from "../../assets/images/0f8e1d9734e359a5f167b12e36f573ba6133942a.jpg";
-import ImageTwo from "../../assets/images/ff2c1ec6db577f2e345c44c9bf9e3999ff815caa.jpg";
+import { formatTime, sessionDateLabel } from "./childrenData";
+import { initials } from "../Dashboard/dashboardData";
 
-export default function UpcomingSessions({ onViewSchedule = () => {} }) {
-  const sessions = [
-    {
-      id: 1,
-      dateLabel: "Today — May 14",
-      name: "Olivia Johnson",
-      subject: "Mathematics",
-      time: "4:00 PM",
-      avatar: ImageChild,
-    },
-    {
-      id: 2,
-      dateLabel: "Today — May 14",
-      name: "Liam Johnson",
-      subject: "Mathematics",
-      time: "4:00 PM",
-      avatar: ImageTwo,
-    },
-    {
-      id: 3,
-      dateLabel: "Friday — May 16",
-      name: "Olivia Johnson",
-      subject: "Mathematics",
-      time: "4:00 PM",
-      avatar: ImageChild,
-    },
-  ];
+export default function UpcomingSessions({ classes = [] }) {
+  const navigate = useNavigate();
+
+  const sessions = classes.map((cls) => ({
+    id: cls.id,
+    dateLabel: sessionDateLabel(cls.startsAt),
+    name: cls.childName,
+    subject: cls.subject,
+    time: formatTime(cls.startsAt),
+  }));
 
   return (
     <div
@@ -42,6 +26,12 @@ export default function UpcomingSessions({ onViewSchedule = () => {} }) {
           Upcoming Sessions
         </h1>
 
+        {sessions.length === 0 && (
+          <p className="text-sm text-slate-400">
+            No classes are scheduled right now.
+          </p>
+        )}
+
         {/* Sessions List */}
         <div className="flex flex-col gap-3 sm:gap-3.5">
           {sessions.map((session) => (
@@ -51,11 +41,12 @@ export default function UpcomingSessions({ onViewSchedule = () => {} }) {
               </span>
               <div className="bg-white border border-slate-200/80 rounded-xl p-3 flex items-center justify-between shadow-2xs">
                 <div className="flex items-center gap-3 min-w-0">
-                  <img
-                    src={session.avatar}
-                    alt={session.name}
-                    className="w-9 h-9 sm:w-10 sm:h-10 rounded-full object-cover ring-1 ring-slate-100 shrink-0"
-                  />
+                  <span
+                    aria-hidden="true"
+                    className="flex w-9 h-9 sm:w-10 sm:h-10 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700 ring-1 ring-slate-100"
+                  >
+                    {initials(session.name)}
+                  </span>
                   <div className="min-w-0">
                     <h3 className="text-xs sm:text-sm font-bold text-slate-900 leading-tight truncate">
                       {session.name}
@@ -79,7 +70,7 @@ export default function UpcomingSessions({ onViewSchedule = () => {} }) {
       {/* Footer Button */}
       <button
         type="button"
-        onClick={onViewSchedule}
+        onClick={() => navigate("/parent/schedule")}
         className="w-full py-2.5 sm:py-3 bg-white border border-indigo-200/70 hover:border-indigo-300 text-indigo-900 font-semibold text-xs sm:text-sm rounded-xl shadow-2xs transition-all duration-200 flex items-center justify-center cursor-pointer mt-3"
       >
         View Week’s Schedule

@@ -5,191 +5,8 @@ import {
   ChevronDown,
 } from "lucide-react";
 
-const sessions = [
-  {
-    id: 1,
-    date: "Aug 18, 2025",
-    subject: "Mathematics",
-    time: (
-      <>
-        4:00 PM –
-        <br />
-        5:00 PM
-      </>
-    ),
-    joinedAt: "3:58 PM",
-    timeSpent: "58 min",
-    status: "Attended",
-  },
-  {
-    id: 2,
-    date: "Aug 18, 2025",
-    subject: "English Language",
-    time: (
-      <>
-        5:30 PM –
-        <br />
-        6:30 PM
-      </>
-    ),
-    joinedAt: "5:28 PM",
-    timeSpent: "59 min",
-    status: "Attended",
-  },
-  {
-    id: 3,
-    date: "Aug 19, 2025",
-    subject: "Science",
-    time: (
-      <>
-        4:00 PM –
-        <br />
-        5:00 PM
-      </>
-    ),
-    joinedAt: "—",
-    timeSpent: "—",
-    status: "Missed",
-  },
-  {
-    id: 4,
-    date: "Aug 19, 2025",
-    subject: "Mathematics",
-    time: (
-      <>
-        5:30 PM –
-        <br />
-        6:30 PM
-      </>
-    ),
-    joinedAt: "5:34 PM",
-    timeSpent: "54 min",
-    status: "Attended",
-  },
-  {
-    id: 5,
-    date: "Aug 20, 2025",
-    subject: "English Language",
-    time: (
-      <>
-        4:00 PM –
-        <br />
-        5:00 PM
-      </>
-    ),
-    joinedAt: "4:01 PM",
-    timeSpent: "57 min",
-    status: "Attended",
-  },
-  {
-    id: 6,
-    date: "Aug 20, 2025",
-    subject: "Science",
-    time: (
-      <>
-        5:30 PM –
-        <br />
-        6:30 PM
-      </>
-    ),
-    joinedAt: "5:29 PM",
-    timeSpent: "60 min",
-    status: "Attended",
-  },
-  {
-    id: 7,
-    date: "Aug 21, 2025",
-    subject: "Mathematics",
-    time: (
-      <>
-        4:00 PM –
-        <br />
-        5:00 PM
-      </>
-    ),
-    joinedAt: "—",
-    timeSpent: "—",
-    status: "Missed",
-  },
-  {
-    id: 8,
-    date: "Aug 21, 2025",
-    subject: "English Language",
-    time: (
-      <>
-        5:30 PM –
-        <br />
-        6:30 PM
-      </>
-    ),
-    joinedAt: "5:27 PM",
-    timeSpent: "60 min",
-    status: "Attended",
-  },
-  {
-    id: 9,
-    date: "Aug 22, 2025",
-    subject: "Science",
-    time: (
-      <>
-        4:00 PM –
-        <br />
-        5:00 PM
-      </>
-    ),
-    joinedAt: "4:03 PM",
-    timeSpent: "55 min",
-    status: "Attended",
-  },
-  {
-    id: 10,
-    date: "Aug 22, 2025",
-    subject: "Mathematics",
-    time: (
-      <>
-        5:30 PM –
-        <br />
-        6:30 PM
-      </>
-    ),
-    joinedAt: "5:30 PM",
-    timeSpent: "58 min",
-    status: "Attended",
-  },
-  {
-    id: 11,
-    date: "Aug 23, 2025",
-    subject: "English Language",
-    time: (
-      <>
-        10:00 AM –
-        <br />
-        11:00 AM
-      </>
-    ),
-    joinedAt: "—",
-    timeSpent: "—",
-    status: "Missed",
-  },
-  {
-    id: 12,
-    date: "Aug 23, 2025",
-    subject: "Science",
-    time: (
-      <>
-        11:30 AM –
-        <br />
-        12:30 PM
-      </>
-    ),
-    joinedAt: "11:28 AM",
-    timeSpent: "59 min",
-    status: "Attended",
-  },
-];
-
 const StatusBadge = ({ status }) => {
-  const attended = status === "Attended";
+  const attended = status === "Attended" || status === "Late";
 
   return (
     <span
@@ -227,7 +44,7 @@ const StatusBadge = ({ status }) => {
   );
 };
 
-const SessionAttendance = () => {
+const SessionAttendance = ({ sessions = [] }) => {
   const [selectedFilter, setSelectedFilter] = useState("This Week");
   const [isOpen, setIsOpen] = useState(false);
 
@@ -240,8 +57,8 @@ const SessionAttendance = () => {
       const currentDate = parseDate(session.date);
 
       return currentDate > latest ? currentDate : latest;
-    }, parseDate(sessions[0].date));
-  }, []);
+    }, sessions[0] ? parseDate(sessions[0].date) : new Date());
+  }, [sessions]);
 
   const getStartOfWeek = (date) => {
     const result = new Date(date);
@@ -301,7 +118,7 @@ const SessionAttendance = () => {
     }
 
     return sessions;
-  }, [selectedFilter, latestSessionDate]);
+  }, [selectedFilter, latestSessionDate, sessions]);
 
   const handleFilterChange = (filter) => {
     setSelectedFilter(filter);

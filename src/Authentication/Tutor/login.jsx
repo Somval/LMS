@@ -1,6 +1,7 @@
 
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   Eye,
   EyeOff,
@@ -17,6 +18,8 @@ export default function LoginPage({
   onLoginSuccess,
 }) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { login } = useAuth();
 
   const [formData, setFormData] = useState({
     email: "",
@@ -55,11 +58,7 @@ export default function LoginPage({
     setIsSubmitting(true);
 
     try {
-      /*
-       * Replace this simulated verification with your actual
-       * authentication API request if you already have one.
-       */
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      await login({ email: formData.email.trim(), password: formData.password, role: "TUTOR" });
 
       setSuccessMessage(
         "Login successful! Redirecting to your dashboard..."
@@ -71,7 +70,7 @@ export default function LoginPage({
       }
 
       // Navigate to the parent dashboard after successful login.
-      navigate("/parent/dashboard", { replace: true });
+      navigate(location.state?.from?.pathname || "/tutor/dashboard", { replace: true });
     } catch (error) {
       setErrorMessage(
         error?.message || "Login failed. Please try again."
@@ -175,7 +174,7 @@ export default function LoginPage({
               <button
                 type="button"
                 onClick={() =>
-                  navigate("/forgot-password")
+                  navigate("/tutor/forgot-password")
                 }
                 className="cursor-pointer border-none bg-transparent p-0 text-[11px] font-semibold text-[#635BFF] hover:underline"
               >

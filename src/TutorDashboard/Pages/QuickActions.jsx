@@ -1,5 +1,13 @@
 import React from "react";
 import { ClipboardList } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+
+const PATHS = {
+  "Create Lesson Note": "/tutor/lessons",
+  "Create Assignment": "/tutor/create-assignment",
+  "Create Quiz": "/tutor/create-quize",
+  "Attendance Overview": "/tutor/attendance",
+};
 
 const quickActions = [
   {
@@ -96,6 +104,7 @@ const quickActions = [
 ];
 
 const QuickActions = () => {
+  const navigate = useNavigate();
   return (
     <section
       className="
@@ -136,6 +145,7 @@ const QuickActions = () => {
           <button
             key={action.title}
             type="button"
+            onClick={() => navigate(PATHS[action.title])}
             className="
               flex
               min-h-[110px]

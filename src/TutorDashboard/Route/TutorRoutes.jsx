@@ -2,6 +2,9 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Layout from "../Layout";
+import ClassDetail from "../Pages/MyClasses/ClassDetail";
+import StudentDetail from "../Pages/Students/StudentDetail";
+import NotificationsInbox from "../../StudentPortal/NotificationsInbox";
 
 import TutorDashboard from "../Pages/TutorDashboard";
 
@@ -50,6 +53,7 @@ export default function TutorRoutes() {
       <Route element={<Layout />}>
         {/* Dashboard */}
         <Route path="/dashboard" element={<TutorDashboard />} />
+        <Route path="/notifications" element={<NotificationsInbox />} />
 
         {/* Subjects */}
         <Route path="/subjects" element={<Subject />} />
@@ -66,21 +70,21 @@ export default function TutorRoutes() {
         />
         <Route
           path="/open-class/:id"
-          element={<Openclass />}
+          element={<ClassDetail />}
         />
 
         {/* Past classes */}
         <Route path="/past-classes" element={<Pastclass />} />
         <Route
           path="/past-classes/:id"
-          element={<PastClassDetails />}
+          element={<ClassDetail />}
         />
 
         {/* Students */}
         <Route path="/students" element={<StudentHome />} />
         <Route
        path="/view-student/:id"
-          element={<ViewstudnetDetaails />}
+          element={<StudentDetail />}
         />
         <Route
           path="/create-reward"

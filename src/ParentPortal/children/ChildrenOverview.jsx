@@ -1,33 +1,55 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
-import ImageChild from "../../assets/images/0f8e1d9734e359a5f167b12e36f573ba6133942a.jpg";
-import ImageTwo from "../../assets/images/ff2c1ec6db577f2e345c44c9bf9e3999ff815caa.jpg";
+import { formatLinkedDate, initials, tutorsOf } from "./childrenData";
 
-export default function ChildrenOverviewTable() {
-  const childrenData = [
-    {
-      id: 1,
-      name: "Olivia Johnson",
-      avatar: ImageChild,
-      subject: "Mathematics",
-      tutor: "Sarah J.",
-      achievements: "+12",
-      attendance: "90%",
-      dateLinked: "July 19, 2026",
-      status: "Active"
-    },
-    {
-      id: 2,
-      name: "Liam Johnson",
-      avatar: ImageTwo,
-      subject: "Mathematics",
-      tutor: "Sarah J.",
-      achievements: "+12",
-      attendance: "90%",
-      dateLinked: "July 19, 2026",
-      status: "Active"
-    }
-  ];
+// Shows the first item; with more than one, it expands to list the rest.
+function ListCell({ items, empty }) {
+  const [open, setOpen] = useState(false);
+
+  if (items.length === 0) return <span className="text-slate-400">{empty}</span>;
+  if (items.length === 1) return <span>{items[0]}</span>;
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        aria-expanded={open}
+        className="inline-flex items-center gap-1.5 hover:text-indigo-600 transition-colors"
+      >
+        <span>
+          {items[0]}
+          {!open && ` +${items.length - 1}`}
+        </span>
+        <ChevronDown
+          className={`w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`}
+        />
+      </button>
+
+      {open && (
+        <ul className="mt-1 space-y-0.5 text-slate-500">
+          {items.slice(1).map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+export default function ChildrenOverviewTable({ kids = [] }) {
+  const childrenData = kids.map((kid) => ({
+    id: kid.studentId,
+    name: kid.fullName,
+    initials: initials(kid.fullName),
+    subjects: kid.subjects.map((subject) => subject.subject),
+    tutors: tutorsOf(kid),
+    achievements: String(kid.overall.achievements),
+    attendance:
+      kid.overall.attendanceRate == null ? "—" : `${kid.overall.attendanceRate}%`,
+    dateLinked: formatLinkedDate(kid.linkedAt),
+    status: "Active",
+  }));
 
   return (
     <div className="w-full max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-4">
@@ -67,11 +89,12 @@ export default function ChildrenOverviewTable() {
                   {/* Child Profile & Name */}
                   <td className="py-3 sm:py-4 px-4 sm:px-6 whitespace-nowrap">
                     <div className="flex items-center gap-3">
-                      <img 
-                        src={child.avatar} 
-                        alt={child.name} 
-                        className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover ring-1 ring-slate-200 dark:ring-slate-700 flex-shrink-0"
-                      />
+                      <span
+                        aria-hidden="true"
+                        className="flex h-8 w-8 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs sm:text-sm font-bold text-indigo-700 ring-1 ring-slate-200 dark:ring-slate-700"
+                      >
+                        {child.initials}
+                      </span>
                       <span className="font-semibold text-slate-900 dark:text-slate-100">
                         {child.name}
                       </span>
@@ -80,18 +103,12 @@ export default function ChildrenOverviewTable() {
 
                   {/* Subjects Dropdown Field */}
                   <td className="py-3 sm:py-4 px-4 sm:px-6 text-slate-600 dark:text-slate-300 whitespace-nowrap">
-                    <div className="inline-flex items-center gap-1.5 cursor-pointer hover:text-indigo-600 transition-colors">
-                      <span>{child.subject}</span>
-                      <ChevronDown className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400" />
-                    </div>
+                    <ListCell items={child.subjects} empty="None yet" />
                   </td>
 
                   {/* Tutors Dropdown Field */}
                   <td className="py-3 sm:py-4 px-4 sm:px-6 text-slate-600 dark:text-slate-300 whitespace-nowrap">
-                    <div className="inline-flex items-center gap-1.5 cursor-pointer hover:text-indigo-600 transition-colors">
-                      <span>{child.tutor}</span>
-                      <ChevronDown className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400" />
-                    </div>
+                    <ListCell items={child.tutors} empty="Not assigned yet" />
                   </td>
 
                   {/* Achievements */}

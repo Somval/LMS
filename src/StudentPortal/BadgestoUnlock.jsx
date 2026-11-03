@@ -1,36 +1,14 @@
 import React from "react";
 import lockedBadgeImage from "../assets/images/e56258f43adae3c4472035f7e3c92d3ac89210c8 (1).png";
 
-export default function BadgesToUnlock() {
-  const lockedBadges = [
-    {
-      title: "Coding Pro",
-      description: "Complete 5 Science lessons",
-      progress: "1/5",
-      imageSrc: lockedBadgeImage,
-    },
-    {
-      title: "Coding Pro",
-      description: "Complete 5 Science lessons",
-      imageSrc: lockedBadgeImage,
-    },
-    {
-      title: "Coding Pro",
-      description: "Complete 5 Science lessons",
-      imageSrc: lockedBadgeImage,
-    },
-    {
-      title: "Coding Pro",
-      description: "Complete 5 Science lessons",
-      progress: "1/5",
-      imageSrc: lockedBadgeImage,
-    },
-    {
-      title: "Coding Pro",
-      description: "Complete 5 Science lessons",
-      imageSrc: lockedBadgeImage,
-    },
-  ];
+export default function BadgesToUnlock({ badges = [] }) {
+  const lockedBadges = badges.map((b) => ({
+    title: b.title,
+    description: b.description || "Keep learning to unlock this badge.",
+    imageSrc: b.icon || lockedBadgeImage,
+  }));
+
+  if (lockedBadges.length === 0) return null;
 
   return (
     <section

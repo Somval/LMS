@@ -37,6 +37,8 @@ export default function CompletePayment({
   selectedCourses: coursesProp,
   onEditCourses,
   onPaymentMethodChange,
+  bank,
+  error,
 }) {
   const [paymentMethod, setPaymentMethod] = useState("");
   const [showBankDetails, setShowBankDetails] = useState(false);
@@ -130,7 +132,7 @@ export default function CompletePayment({
 
             <div className="shrink-0 text-right text-xs sm:text-sm">
               <span className="font-semibold">
-                ${Number(course.price || 0).toFixed(2)}
+                ₦{Number(course.price || 0).toLocaleString()}
               </span>
 
               <span className="ml-1 text-[#8181A5]">/ month</span>
@@ -146,7 +148,7 @@ export default function CompletePayment({
         </h2>
 
         <p className="shrink-0 text-xl font-bold text-[#3366FF] sm:text-2xl">
-          ${total.toFixed(2)}
+          ₦{total.toLocaleString()}
         </p>
       </div>
 
@@ -188,6 +190,10 @@ export default function CompletePayment({
           </label>
         </div>
       </div>
+
+      {error && (
+        <p role="alert" className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>
+      )}
 
       {/* Bank Transfer Details Popup */}
       {showBankDetails && (
@@ -232,7 +238,7 @@ export default function CompletePayment({
 
             {/* Bank Transfer Component */}
             <div className="py-2">
-              <BankTransferDetails totalAmount={total} />
+              <BankTransferDetails totalAmount={total} bank={bank} />
             </div>
 
             {/* Close Popup */}

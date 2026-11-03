@@ -1,30 +1,19 @@
 import React from "react";
 import { UsersRound } from "lucide-react";
 
-const DashboardMetrics = () => {
+const avg = (values) => {
+  const nums = values.filter((v) => v != null);
+  return nums.length ? `${Math.round(nums.reduce((a, b) => a + b, 0) / nums.length)}%` : "–";
+};
+
+const DashboardMetrics = ({ students = [] }) => {
+  const recent = Date.now() - 30 * 24 * 3600 * 1000;
+  const active = students.filter((s) => s.lastClassAt && new Date(s.lastClassAt).getTime() > recent).length;
   const metrics = [
-    {
-      title: "Total Students",
-      value: "28",
-      subtitle: "All your students",
-    },
-    {
-      title: "Active Students",
-      value: "24",
-      subtitle: "Currently learning",
-    },
-    {
-      title: "Average Performance",
-      value: "78%",
-      subtitle: "Across all students",
-      change: "↑ 8%",
-    },
-    {
-      title: "Average Attendance",
-      value: "92%",
-      subtitle: "Across all students",
-      change: "↑ 5%",
-    },
+    { title: "Total Students", value: String(students.length), subtitle: "All your students" },
+    { title: "Active Students", value: String(active), subtitle: "Attended a class in the last 30 days" },
+    { title: "Average Performance", value: avg(students.map((s) => s.performance)), subtitle: "Across graded work" },
+    { title: "Average Attendance", value: avg(students.map((s) => s.attendanceRate)), subtitle: "Across your classes" },
   ];
 
   return (

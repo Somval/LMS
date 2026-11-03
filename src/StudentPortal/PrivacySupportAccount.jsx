@@ -1,4 +1,6 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import {
   Headphones,
   ChevronRight,
@@ -8,12 +10,16 @@ import {
 } from "lucide-react";
 
 export default function PrivacySupportAccount() {
-  const handleItemClick = (title) => {
-    console.log(`Clicked: ${title}`);
-  };
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+
+  const handleItemClick = () => {};
 
   const handleAction = (action) => {
-    console.log(`Action triggered: ${action}`);
+    if (action === "Log Out") {
+      logout();
+      navigate("/student-auth/login", { replace: true });
+    }
   };
 
   const supportItems = [

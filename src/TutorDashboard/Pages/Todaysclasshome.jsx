@@ -1,33 +1,21 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
+import { classStatusLabel, openLink } from "../../StudentPortal/classFormat";
 
-const TodaysClasses = () => {
-  const classesData = [
-    {
-      id: 1,
-      time: "5:00 PM",
-      duration: "60 min",
-      title: "Mathematics – Year 1",
-      students: "8 students",
-      status: "Starting in 45 min",
-    },
-    {
-      id: 2,
-      time: "5:00 PM",
-      duration: "60 min",
-      title: "Mathematics – Year 1",
-      students: "8 students",
-      status: "Starting in 45 min",
-    },
-    {
-      id: 3,
-      time: "5:00 PM",
-      duration: "60 min",
-      title: "Mathematics – Year 1",
-      students: "8 students",
-      status: "Starting in 45 min",
-    },
-  ];
+const fmtTime = (iso) => new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+
+const TodaysClasses = ({ classes = [], loading = false }) => {
+  const navigate = useNavigate();
+  const classesData = classes.map((c) => ({
+    id: c.id,
+    time: fmtTime(c.startsAt),
+    duration: `${Math.round((new Date(c.endsAt) - new Date(c.startsAt)) / 60000)} min`,
+    title: `${c.subject} – ${c.title}`,
+    students: `${c.students} student${c.students === 1 ? "" : "s"}`,
+    status: classStatusLabel(c),
+    meetingUrl: c.meetingUrl,
+  }));
 
   return (
     <section className="flex h-full w-full min-w-0 flex-col rounded-lg bg-white p-5 shadow-[0_1px_4px_rgba(0,0,0,0.08)]">
@@ -39,6 +27,7 @@ const TodaysClasses = () => {
 
         <button
           type="button"
+          onClick={() => navigate("/tutor/class")}
           className="group flex items-center gap-1.5 rounded-lg px-1 py-1 text-sm font-semibold text-blue-600 transition-colors hover:text-blue-700 focus:outline-none"
         >
           <span>View All</span>
@@ -48,6 +37,9 @@ const TodaysClasses = () => {
 
       {/* Class List */}
       <div className="flex-1 space-y-3">
+        {!loading && classesData.length === 0 && (
+          <p className="py-8 text-center text-sm text-gray-400">No classes scheduled for today.</p>
+        )}
         {classesData.map((item) => (
           <div
             key={item.id}
@@ -108,6 +100,7 @@ const TodaysClasses = () => {
               {/* Start Class keeps its original width */}
               <button
                 type="button"
+                onClick={() => (item.meetingUrl ? openLink(item.meetingUrl) : navigate(`/tutor/open-class/${item.id}`))}
                 className="
                   block
                   whitespace-nowrap

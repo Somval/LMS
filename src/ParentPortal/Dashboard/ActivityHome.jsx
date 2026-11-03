@@ -1,25 +1,18 @@
-
 import HomeworkStatus from "./HomeworkStatus";
 import RecentReports from "./RecentReport";
 import AchievementCards from "./Achievementbatch";
 
-export default function ActivityHome({ studentId, student }) {
+export default function ActivityHome({ data }) {
   return (
     <div className="block lg:flex flex-col-3 gap-3 mt-10">
-      <HomeworkStatus
-        studentId={studentId}
-        student={student}
-      />
+      <HomeworkStatus data={data} />
 
       <RecentReports
-        studentId={studentId}
-        student={student}
+        studentId={data.student.id}
+        student={{ name: data.student.fullName }}
       />
 
-      <AchievementCards
-        studentId={studentId}
-        student={student}
-      />
+      <AchievementCards data={data} />
     </div>
   );
 }

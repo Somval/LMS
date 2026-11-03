@@ -1,38 +1,20 @@
 
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { Clock, CalendarDays, ChevronRight } from "lucide-react";
+import { formatSession } from "./dashboardData";
 
-const sessionsData = [
-  {
-    id: 1,
-    month: "May",
-    date: "15",
-    subject: "Mathematics",
-    time: "4:00 PM – 5:00 PM",
-    status: "Live Class",
-  },
-  {
-    id: 2,
-    month: "May",
-    date: "15",
-    subject: "Mathematics",
-    time: "4:00 PM – 5:00 PM",
-    status: "Live Class",
-  },
-  {
-    id: 3,
-    month: "May",
-    date: "15",
-    subject: "Mathematics",
-    time: "4:00 PM – 5:00 PM",
-    status: "Live Class",
-  },
-];
+export default function UpcomingSessions({ data }) {
+  const navigate = useNavigate();
 
-export default function UpcomingSessions() {
-  const handleViewSchedule = () => {
-    console.log("View Full Schedule clicked");
-  };
+  const sessionsData = (data?.upcomingClasses ?? []).map((session) => ({
+    id: session.id,
+    subject: session.subject,
+    status: session.status === "LIVE" ? "Live Now" : "Scheduled",
+    ...formatSession(session.startsAt, session.endsAt),
+  }));
+
+  const handleViewSchedule = () => navigate("/parent/schedule");
 
   return (
     <section className="box-border w-full min-w-0 max-w-none rounded-xl border border-gray-100 bg-white p-4 shadow-sm sm:rounded-2xl sm:p-5 lg:p-6">
@@ -62,6 +44,12 @@ export default function UpcomingSessions() {
           <ChevronRight className="h-3.5 w-3.5" strokeWidth={2} />
         </button>
       </div>
+
+      {sessionsData.length === 0 && (
+        <p className="py-4 text-sm text-gray-400">
+          No classes are scheduled right now.
+        </p>
+      )}
 
       {/* SESSIONS LIST */}
       <div className="flex w-full min-w-0 flex-col">

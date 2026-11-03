@@ -1,5 +1,5 @@
 
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ChevronDown,
   UploadCloud,
@@ -16,8 +16,9 @@ const ACCEPTED_TYPES = [
   "image/png",
 ];
 
-export default function Step3Qualifications({ formData, onChange }) {
+export default function Step3Qualifications({ formData, onChange, onExtra }) {
   const [uploadedFile, setUploadedFile] = useState(null);
+  useEffect(() => { onExtra?.('certificate', uploadedFile); }, [uploadedFile, onExtra]);
   const [isDragging, setIsDragging] = useState(false);
   const [fileError, setFileError] = useState("");
 

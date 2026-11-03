@@ -14,228 +14,50 @@ import {
   Quote,
 } from "lucide-react";
 
-const subjectsData = {
-  Mathematics: {
-    title: "Mathematics",
-    icon: Calculator,
-    iconColor: "text-indigo-700",
-    iconBg: "bg-indigo-900",
-    tabActive: "bg-purple-100 border-purple-100",
-    progress: 78,
-    statusText: "On Track",
-    summaryText: "You are on track in Mathematics.",
-    improvement: "+12%",
-    lastMonth: "66%",
-    stats: [
-      {
-        label: "Lessons Completed",
-        value: "18",
-        icon: BookOpen,
-        color: "text-emerald-500",
-        bg: "bg-emerald-50",
-      },
-      {
-        label: "Assessments Taken",
-        value: "5",
-        icon: FileText,
-        color: "text-blue-500",
-        bg: "bg-blue-50",
-      },
-      {
-        label: "Time Spent Learning",
-        value: "9h 45m",
-        icon: Clock3,
-        color: "text-purple-500",
-        bg: "bg-purple-50",
-      },
-    ],
-    doingWell: [
-      { name: "Fractions & Decimals", score: 90 },
-      { name: "Basic Algebra", score: 85 },
-      { name: "Word Problems", score: 80 },
-      { name: "Data Interpretation", score: 75 },
-    ],
-    needsPractice: [
-      { name: "Linear Equations", score: 50 },
-      { name: "Geometry Basics", score: 40 },
-      { name: "Percentages", score: 35 },
-      { name: "Ratio & Proportion", score: 25 },
-    ],
-    recentActivity: [
-      {
-        title: "Completed: Fractions Quiz",
-        date: "May 15, 2026",
-        completed: true,
-      },
-      {
-        title: "Completed: Algebra Basics",
-        date: "May 10, 2026",
-        completed: true,
-      },
-      {
-        title: "Practice: Percentages Worksheet",
-        date: "May 8, 2026",
-        completed: false,
-      },
-    ],
-    tutorInsight: {
-      quote:
-        "Olivia is showing consistent improvement in her problem-solving skills. With more practice on linear equations and geometry concepts, she will continue to progress even faster.",
-      tutorName: "Ms. Sarah Johnson",
-      tutorRole: "Mathematics Tutor",
-      avatar:
-        "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=faces",
-    },
-  },
-
-  "English Language": {
-    title: "English Language",
-    icon: Languages,
-    iconColor: "text-yellow-600",
-    iconBg: "bg-yellow-500",
-    tabActive: "bg-yellow-50 border-yellow-100",
-    progress: 85,
-    statusText: "Excelling",
-    summaryText: "You are exceeding expectations in English.",
-    improvement: "+8%",
-    lastMonth: "77%",
-    stats: [
-      {
-        label: "Lessons Completed",
-        value: "22",
-        icon: BookOpen,
-        color: "text-emerald-500",
-        bg: "bg-emerald-50",
-      },
-      {
-        label: "Assessments Taken",
-        value: "7",
-        icon: FileText,
-        color: "text-blue-500",
-        bg: "bg-blue-50",
-      },
-      {
-        label: "Time Spent Learning",
-        value: "3h 15m",
-        icon: Clock3,
-        color: "text-purple-500",
-        bg: "bg-purple-50",
-      },
-    ],
-    doingWell: [
-      { name: "Reading Comprehension", score: 92 },
-      { name: "Vocabulary & Context", score: 88 },
-      { name: "Creative Writing", score: 84 },
-      { name: "Grammar", score: 80 },
-    ],
-    needsPractice: [
-      { name: "Advanced Grammar", score: 60 },
-      { name: "Passive Voice Structure", score: 52 },
-      { name: "Sentence Analysis", score: 48 },
-      { name: "Punctuation", score: 44 },
-    ],
-    recentActivity: [
-      {
-        title: "Completed: Essay Drafting",
-        date: "May 16, 2026",
-        completed: true,
-      },
-      {
-        title: "Practice: Vocabulary Builder",
-        date: "May 12, 2026",
-        completed: true,
-      },
-      {
-        title: "Completed: Grammar Quiz",
-        date: "May 9, 2026",
-        completed: true,
-      },
-    ],
-    tutorInsight: {
-      quote:
-        "Fantastic vocabulary range in recent essays. Focus slightly more on complex grammar mechanics to elevate your writing to the next level.",
-      tutorName: "Mr. David Smith",
-      tutorRole: "English Literature Tutor",
-      avatar:
-        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=faces",
-    },
-  },
-
-  Science: {
-    title: "Science",
-    icon: Atom,
-    iconColor: "text-emerald-600",
-    iconBg: "bg-emerald-500",
-    tabActive: "bg-emerald-50 border-emerald-100",
-    progress: 70,
-    statusText: "On Track",
-    summaryText: "You are making steady progress in Science.",
-    improvement: "+15%",
-    lastMonth: "55%",
-    stats: [
-      {
-        label: "Lessons Completed",
-        value: "14",
-        icon: BookOpen,
-        color: "text-emerald-500",
-        bg: "bg-emerald-50",
-      },
-      {
-        label: "Assessments Taken",
-        value: "4",
-        icon: FileText,
-        color: "text-blue-500",
-        bg: "bg-blue-50",
-      },
-      {
-        label: "Time Spent Learning",
-        value: "2h 10m",
-        icon: Clock3,
-        color: "text-purple-500",
-        bg: "bg-purple-50",
-      },
-    ],
-    doingWell: [
-      { name: "Cell Biology", score: 88 },
-      { name: "States of Matter", score: 82 },
-      { name: "Human Biology", score: 78 },
-      { name: "Ecology", score: 74 },
-    ],
-    needsPractice: [
-      { name: "Chemical Reactions", score: 55 },
-      { name: "Physics Kinematics", score: 48 },
-      { name: "Atomic Structure", score: 43 },
-      { name: "Energy Transfer", score: 38 },
-    ],
-    recentActivity: [
-      {
-        title: "Completed: Biology Lab Quiz",
-        date: "May 14, 2026",
-        completed: true,
-      },
-      {
-        title: "Practice: Periodic Table",
-        date: "May 9, 2026",
-        completed: true,
-      },
-      {
-        title: "Completed: Science Assessment",
-        date: "May 5, 2026",
-        completed: true,
-      },
-    ],
-    tutorInsight: {
-      quote:
-        "Great curiosity shown during biology units. Let's spend more time balancing chemical equations next week to bridge the remaining gaps.",
-      tutorName: "Dr. Elena Rostova",
-      tutorRole: "Science Lead Instructor",
-      avatar:
-        "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&h=100&fit=crop&crop=faces",
-    },
-  },
+// Look and feel per subject; everything else is built from the API data.
+const STYLES = {
+  mathematics: { icon: Calculator, iconColor: "text-indigo-700", iconBg: "bg-indigo-900", tabActive: "bg-purple-100 border-purple-100" },
+  english: { icon: Languages, iconColor: "text-amber-600", iconBg: "bg-amber-400", tabActive: "bg-amber-100 border-amber-100" },
+  science: { icon: Atom, iconColor: "text-emerald-600", iconBg: "bg-emerald-500", tabActive: "bg-emerald-100 border-emerald-100" },
+  coding: { icon: BookOpen, iconColor: "text-fuchsia-700", iconBg: "bg-fuchsia-700", tabActive: "bg-fuchsia-100 border-fuchsia-100" },
 };
+const DEFAULT_STYLE = { icon: BookOpen, iconColor: "text-slate-700", iconBg: "bg-slate-700", tabActive: "bg-slate-100 border-slate-100" };
 
-const subjects = Object.keys(subjectsData);
+const shortDate = (d) =>
+  new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+
+const buildView = (s) => {
+  const results = s.assessments ?? [];
+  const doingWell = results.filter((r) => r.percent >= 70).sort((a, b) => b.percent - a.percent).slice(0, 4);
+  const needsPractice = results.filter((r) => r.percent < 70).sort((a, b) => a.percent - b.percent).slice(0, 4);
+  const best = doingWell[0];
+  const tutor = s.tutors?.[0];
+  return {
+    key: s.subject,
+    title: s.subject,
+    ...(STYLES[s.subject.toLowerCase()] || DEFAULT_STYLE),
+    progress: s.lessonProgress,
+    statusText: s.lessonProgress >= 75 ? "On Track" : s.lessonProgress >= 40 ? "Making Progress" : "Just Getting Started",
+    summaryText: `You have completed ${s.lessonsCompleted} of ${s.lessonsTotal} lessons in ${s.subject}.`,
+    stats: [
+      { label: "Lessons Completed", value: `${s.lessonsCompleted}/${s.lessonsTotal}`, icon: BookOpen, color: "text-emerald-500", bg: "bg-emerald-50" },
+      { label: "Assessments Taken", value: String(s.courseworkSubmitted), icon: FileText, color: "text-blue-500", bg: "bg-blue-50" },
+      { label: "Average Score", value: s.averageScore == null ? "–" : `${s.averageScore}%`, icon: Clock3, color: "text-purple-500", bg: "bg-purple-50" },
+    ],
+    doingWell: doingWell.map((r) => ({ name: r.title, score: r.percent })),
+    needsPractice: needsPractice.map((r) => ({ name: r.title, score: r.percent })),
+    recentActivity: (s.recent ?? []).map((r) => ({
+      title: `${r.graded ? "Graded" : "Submitted"}: ${r.title}`,
+      date: shortDate(r.at),
+      completed: r.graded,
+    })),
+    insight: best
+      ? `Your strongest result in ${s.subject} so far is “${best.title}” (${best.percent}%). Keep working through the lessons to keep building on it.`
+      : `Complete some assessments in ${s.subject} and your results will show up here.`,
+    tutorName: tutor ?? "To be assigned",
+    tutorRole: `${s.subject} Tutor`,
+  };
+};
 
 function ProgressRing({ progress }) {
   const radius = 38;
@@ -336,10 +158,20 @@ function SkillRow({ item, type }) {
   );
 }
 
-export default function SubjectDashboard() {
-  const [activeSubject, setActiveSubject] = useState("Mathematics");
+export default function SubjectDashboard({ subjects = [] }) {
+  const [activeSubject, setActiveSubject] = useState(null);
 
-  const data = subjectsData[activeSubject];
+  const views = subjects.map(buildView);
+  const activeKey = activeSubject ?? views[0]?.key;
+  const data = views.find((v) => v.key === activeKey) ?? views[0];
+
+  if (!data) {
+    return (
+      <div className="w-full rounded-[8px] border border-slate-100 bg-white px-5 py-8 text-center text-[11px] text-slate-500 shadow-sm">
+        Your subject breakdown will appear here once you are enrolled in a subject.
+      </div>
+    );
+  }
 
   return (
     /*
@@ -365,9 +197,9 @@ export default function SubjectDashboard() {
 
           {/* SUBJECT TABS */}
           <div className="mt-4 grid w-full grid-cols-1 gap-2 sm:grid-cols-3">
-            {subjects.map((subjectName) => {
-              const subject = subjectsData[subjectName];
-              const active = activeSubject === subjectName;
+            {views.map((subject) => {
+              const subjectName = subject.key;
+              const active = activeKey === subjectName;
 
               return (
                 <button
@@ -423,26 +255,13 @@ export default function SubjectDashboard() {
 
               <div className="min-w-0">
                 <h3 className="text-[12px] font-bold text-slate-900">
-                  Good progress
+                  {data.progress >= 40 ? "Good progress" : "Getting started"}
                 </h3>
 
                 <p className="mt-1 max-w-[180px] text-[8px] leading-[1.45] text-slate-600">
                   {data.summaryText}
                 </p>
 
-                <div className="mt-2 flex items-center gap-1">
-                  <TrendingUp className="h-4 w-4 text-emerald-500" />
-
-                  <span className="text-[15px] font-bold text-emerald-500">
-                    {data.improvement}
-                  </span>
-                </div>
-
-                <p className="mt-0.5 text-[8px] leading-tight text-slate-500">
-                  Improvement from last
-                  <br />
-                  month ({data.lastMonth})
-                </p>
 
                 <div className="mt-2 flex items-center gap-1.5">
                   <span className="h-2 w-2 rounded-full bg-emerald-500" />
@@ -601,29 +420,27 @@ export default function SubjectDashboard() {
                   <Quote className="h-4 w-4 fill-purple-600 text-purple-600" />
 
                   <h3 className="text-[10px] font-bold text-purple-900">
-                    Tutor Insight
+                    Your Tutor
                   </h3>
                 </div>
 
                 <p className="mt-3 text-[8px] leading-[1.55] text-slate-600">
-                  {data.tutorInsight.quote}
+                  {data.insight}
                 </p>
               </div>
 
               <div className="mt-3 flex items-center gap-2 border-t border-purple-100 pt-2.5">
-                <img
-                  src={data.tutorInsight.avatar}
-                  alt={data.tutorInsight.tutorName}
-                  className="h-7 w-7 rounded-full border border-white object-cover"
-                />
+                <span className="flex h-7 w-7 items-center justify-center rounded-full border border-white bg-purple-600 text-[8px] font-bold text-white">
+                  {data.tutorName.split(" ").filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join("") || "T"}
+                </span>
 
                 <div>
                   <p className="text-[8px] font-bold text-slate-900">
-                    {data.tutorInsight.tutorName}
+                    {data.tutorName}
                   </p>
 
                   <p className="text-[6px] text-slate-500">
-                    {data.tutorInsight.tutorRole}
+                    {data.tutorRole}
                   </p>
                 </div>
               </div>

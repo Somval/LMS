@@ -1,12 +1,9 @@
 import React from "react";
 import { Heart } from "lucide-react";
 
-const StudentPerformance = () => {
-  const subjects = [
-    { id: 1, name: "Mathematics-Year 1", score: "86%" },
-    { id: 2, name: "Mathematics-Year 2", score: "86%" },
-    { id: 3, name: "Mathematics-Year 3", score: "86%" },
-  ];
+const StudentPerformance = ({ performance }) => {
+  const overall = performance?.overall ?? null;
+  const subjects = (performance?.subjects ?? []).map((s) => ({ id: s.name, name: s.name, score: `${s.average}%` }));
 
   return (
     <div className="flex h-full w-full min-w-0 flex-col rounded-2xl border border-slate-100 bg-white p-5 font-sans shadow-sm sm:p-6 lg:p-8">
@@ -50,7 +47,7 @@ const StudentPerformance = () => {
                 className="text-indigo-950"
                 strokeWidth="12"
                 strokeDasharray="301.59"
-                strokeDashoffset={301.59 * (1 - 0.82)}
+                strokeDashoffset={301.59 * (1 - (overall ?? 0) / 100)}
                 strokeLinecap="round"
                 stroke="currentColor"
                 fill="transparent"
@@ -60,7 +57,7 @@ const StudentPerformance = () => {
             {/* Center Text */}
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
               <span className="text-2xl font-extrabold tracking-tight text-indigo-950 sm:text-3xl">
-                82%
+                {overall == null ? "–" : `${overall}%`}
               </span>
 
               <span className="mt-0.5 text-xs font-semibold text-slate-400 sm:text-sm">
@@ -119,7 +116,7 @@ const StudentPerformance = () => {
         </div>
 
         <p className="text-xs font-semibold leading-snug tracking-tight text-blue-600 sm:text-sm lg:text-base">
-          Great job! Your students are improving.
+          {overall == null ? "Grade some work to see how your students are doing." : overall >= 70 ? "Great job! Your students are doing well." : "Your students could use some extra support."}
         </p>
       </div>
     </div>

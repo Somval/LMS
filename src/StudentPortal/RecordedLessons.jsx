@@ -1,44 +1,50 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { api } from '../lib/api';
+import { dayLabel, durationLabel, fullDate, openLink } from './classFormat';
 import AllRecordedLessons from "./AllRecordedLessons"
 import ImageTutorial from "../assets/images/19fad061fbe0cc8aa7726aacc749b1ccd57c8161.jpg"
 // Sample data for recently recorded lessons
-const lessonsData = [
-  {
-    id: 1,
-    subject: 'Mathematics',
-    title: 'Introduction to Linear Equations',
-    instructor: 'Miss. Sarah Adeyemi',
-    date: 'Today, 14 May 2025',
-    duration: '58min',
-    image: ImageTutorial,
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80',
-    timeframe: 'This Month',
-  },
-  {
-    id: 2,
-    subject: 'Physics',
-    title: 'Newton\'s Laws of Motion',
-    instructor: 'Mr. John Doe',
-    date: 'Yesterday, 13 May 2025',
-    duration: '45min',
-    image: ImageTutorial,
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80',
-    timeframe: 'This Month',
-  },
-  {
-    id: 3,
-    subject: 'Chemistry',
-    title: 'Understanding the Periodic Table',
-    instructor: 'Dr. Emily Watson',
-    date: '10 Apr 2025',
-    duration: '50min',
-    image:ImageTutorial,
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80',
-    timeframe: 'Earlier',
-  },
-];
+
+const initials = (name = '') =>
+  name.split(' ').filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('') || 'T';
 
 export default function RecordedLessons() {
+  const [lessonsData, setLessonsData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    // Recordings are past classes that have a recording link.
+    api
+      .get('/classes', { to: new Date().toISOString() })
+      .then((classes) => {
+        const now = new Date();
+        setLessonsData(
+          classes
+            .filter((c) => c.recordingUrl)
+            .map((c) => {
+              const start = new Date(c.startsAt);
+              const day = dayLabel(c.startsAt);
+              return {
+                id: c.id,
+                subject: c.subject.name,
+                title: c.title,
+                instructor: c.tutor.user.fullName,
+                date: fullDate(c.startsAt),
+                shortDate: day.date,
+                subDate: day.day,
+                duration: durationLabel(c.startsAt, c.endsAt),
+                image: ImageTutorial,
+                recordingUrl: c.recordingUrl,
+                timeframe: start.getMonth() === now.getMonth() && start.getFullYear() === now.getFullYear() ? 'This Month' : 'Earlier',
+              };
+            })
+        );
+      })
+      .catch((err) => setError(err.message || 'Could not load your recordings.'))
+      .finally(() => setLoading(false));
+  }, []);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSubject, setSelectedSubject] = useState('All Subjects');
   const [selectedTimeframe, setSelectedTimeframe] = useState('This Month');
@@ -47,7 +53,7 @@ export default function RecordedLessons() {
   const [isSubjectOpen, setIsSubjectOpen] = useState(false);
   const [isTimeframeOpen, setIsTimeframeOpen] = useState(false);
 
-  const subjects = ['All Subjects', 'Mathematics', 'Physics', 'Chemistry'];
+  const subjects = ['All Subjects', ...new Set(lessonsData.map((l) => l.subject))];
   const timeframes = ['This Month', 'Earlier', 'All Time'];
 
   // Filter logic based on search and dropdowns
@@ -165,7 +171,7 @@ export default function RecordedLessons() {
 
                   {/* Instructor Info */}
                   <div className="flex items-center gap-3 mb-4">
-                    <img src={lesson.avatar} alt={lesson.instructor} className="w-8 h-8 rounded-full object-cover" />
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-900">{initials(lesson.instructor)}</span>
                     <span className="text-gray-600 text-sm font-medium">{lesson.instructor}</span>
                   </div>
 
@@ -187,7 +193,7 @@ export default function RecordedLessons() {
                 </div>
 
                 {/* Watch Lesson Button */}
-                <button className="w-full flex items-center justify-center gap-2 py-2.5 px-4 border border-indigo-900/30 rounded-xl text-indigo-950 font-medium text-sm hover:bg-indigo-50/50 transition-colors">
+                <button type="button" onClick={() => openLink(lesson.recordingUrl)} className="w-full flex items-center justify-center gap-2 py-2.5 px-4 border border-indigo-900/30 rounded-xl text-indigo-950 font-medium text-sm hover:bg-indigo-50/50 transition-colors">
                   <svg className="w-4 h-4 fill-indigo-950" viewBox="0 0 24 24">
                     <path d="M8 5v14l11-7z" />
                   </svg>
@@ -197,13 +203,13 @@ export default function RecordedLessons() {
             ))
           ) : (
             <div className="col-span-full py-12 text-center text-gray-400">
-              No lessons found matching your filters.
+              {loading ? 'Loading…' : error || (lessonsData.length === 0 ? 'No recorded lessons yet. Recordings appear here after your tutor adds them to a class.' : 'No lessons found matching your filters.')}
             </div>
           )}
         </div>
 
       </div>
-      <AllRecordedLessons/>
+      <AllRecordedLessons lessons={lessonsData} />
     </div>
   );
 }

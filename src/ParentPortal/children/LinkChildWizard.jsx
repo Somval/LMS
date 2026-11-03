@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
+import { api } from "../../lib/api";
 import EnterLearnerID from "./EnterLearnerIDsections";
 import VerifyOtp from "./VerifywithOTP";
 import Linkcomplete from "./LinkComplete";// Step 3 Layout Container
@@ -23,6 +24,8 @@ export default function LinkChildren({
   const [relationship, setRelationship] = useState("");
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
+  const [linkedChild, setLinkedChild] = useState(null); // returned by the server once linked
+  const linking = useRef(false);
 
   // Navigation handlers for completion step
   const handleGoToDashboard = () => {
@@ -39,11 +42,16 @@ export default function LinkChildren({
     } else if (onComplete) {
       onComplete();
     } else {
-      window.location.href = "/student/dashboard";
+      window.location.href = "/parent/children";
     }
   };
 
-  const handleNext = (data) => {
+  const apiLearnerId = (value) => {
+    const compact = value.replace(/\s/g, "").toUpperCase();
+    return /^\d{8}$/.test(compact) ? `LRN-${compact}` : compact;
+  };
+
+  const handleNext = async (data) => {
     setError("");
 
     if (currentStep === 1) {
@@ -69,7 +77,20 @@ export default function LinkChildren({
         return;
       }
 
-      setCurrentStep(3);
+      if (linking.current) return;
+      linking.current = true;
+      try {
+        const result = await api.post("/parent/children/link", {
+          learnerId: apiLearnerId(learnerId),
+          code: activeOtp,
+        });
+        setLinkedChild(result.child);
+        setCurrentStep(3);
+      } catch (err) {
+        setError(err.message || "Could not link this child. Please try again.");
+      } finally {
+        linking.current = false;
+      }
       return;
     }
   };
@@ -199,6 +220,7 @@ export default function LinkChildren({
         {/* Step 2: Verify OTP */}
         {currentStep === 2 && (
           <VerifyOtp
+            learnerId={apiLearnerId(learnerId)}
             otp={otp}
             setOtp={setOtp}
             error={error}
@@ -211,6 +233,7 @@ export default function LinkChildren({
         {/* Step 3: Completion */}
         {currentStep === 3 && (
           <Linkcomplete
+            childData={linkedChild ? [{ childName: linkedChild.fullName, learnerId: linkedChild.learnerId }] : undefined}
             onGoToDashboard={handleGoToDashboard}
             onGoToLinkedChildren={handleGoToLinkedChildren}
           />

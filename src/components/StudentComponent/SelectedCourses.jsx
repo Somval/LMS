@@ -2,21 +2,13 @@
 import React from "react";
 import { Calculator } from "lucide-react";
 
-export default function SelectedCourse() {
-  const CoursesList = [
-    {
-      id: 1,
-      course: "Mathematics",
-      year: "Year 1",
-      status: "Pending",
-    },
-    {
-      id: 2,
-      course: "Mathematics",
-      year: "Year 1",
-      status: "Pending",
-    },
-  ];
+export default function SelectedCourse({ courses = [], active = false }) {
+  const CoursesList = courses.map((c) => ({
+    id: c.id,
+    course: c.name,
+    year: c.yearLevel,
+    status: active ? "Active" : "Pending",
+  }));
 
   const handleViewEdit = () => {
     // Add your edit/navigation logic here.
@@ -41,6 +33,9 @@ export default function SelectedCourse() {
 
       {/* Selected courses */}
       <div className="space-y-3">
+        {CoursesList.length === 0 && (
+          <p className="text-xs text-[#8B94AD]">Loading your courses…</p>
+        )}
         {CoursesList.map((item) => (
           <div
             key={item.id}

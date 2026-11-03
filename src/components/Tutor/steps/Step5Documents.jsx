@@ -1,5 +1,5 @@
 
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { UploadCloud, FileText, X, CheckCircle2, AlertCircle } from "lucide-react";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
@@ -10,12 +10,13 @@ const ACCEPTED_TYPES = [
   "image/png",
 ];
 
-export default function VerificationDocumentsForm() {
+export default function VerificationDocumentsForm({ onExtra }) {
   const [files, setFiles] = useState({
     qualification: null,
     governmentId: null,
     supportingDoc: null,
   });
+  useEffect(() => { onExtra?.('documents', files); }, [files, onExtra]);
 
   const [errors, setErrors] = useState({});
   const [dragging, setDragging] = useState(null);

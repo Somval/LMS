@@ -4,41 +4,25 @@ import imageFirst from "../assets/images/95f2564a8e808f73d164231fb9cd42d6b043373
 import imageTwo from "../assets/images/6b1cbcaa5558fa4d38624c3d95bb99cacf66eea0.png";
 import imageThree from "../assets/images/bb5d8823f9b0ecbbe9b31f1815673a07b475cd32.png";
 
-export default function RewardsSection() {
-  const rewards = [
-    {
-      title: "Learning Star",
-      description: "Awarded for consistent learning progress.",
-      date: "Earned Aug 8, 2026",
-      imageSrc: imageFirst,
-      cardBg: "bg-[#fffdf0]",
-      borderBg: "border-[#fef3c7]",
-      tagBg: "bg-[#fef9c3] text-[#ca8a04]",
-      calendarBorder: "border-[#eab308]",
-    },
-    {
-      title: "English Achievement Reward",
-      description:
-        "Awarded for reaching a significant milestone in English.",
-      date: "Earned Aug 8, 2026",
-      imageSrc: imageTwo,
-      cardBg: "bg-[#f0fdf4]",
-      borderBg: "border-[#dcfce7]",
-      tagBg: "bg-[#d1fae5] text-[#059669]",
-      calendarBorder: "border-[#10b981]",
-    },
-    {
-      title: "Perfect Attendance Reward",
-      description:
-        "Awarded for maintaining excellent attendance.",
-      date: "Earned Aug 8, 2026",
-      imageSrc: imageThree,
-      cardBg: "bg-[#faf5ff]",
-      borderBg: "border-[#f3e8ff]",
-      tagBg: "bg-[#ede9fe] text-[#7c3aed]",
-      calendarBorder: "border-[#8b5cf6]",
-    },
-  ];
+import { shortDate } from "./useRewards";
+
+// Three card colour schemes, reused in turn.
+const PALETTE = [
+  { imageSrc: imageFirst, cardBg: "bg-[#fffdf0]", borderBg: "border-[#fef3c7]", tagBg: "bg-[#fef9c3] text-[#ca8a04]", calendarBorder: "border-[#eab308]" },
+  { imageSrc: imageTwo, cardBg: "bg-[#f0fdf4]", borderBg: "border-[#dcfce7]", tagBg: "bg-[#d1fae5] text-[#059669]", calendarBorder: "border-[#10b981]" },
+  { imageSrc: imageThree, cardBg: "bg-[#faf5ff]", borderBg: "border-[#f3e8ff]", tagBg: "bg-[#ede9fe] text-[#7c3aed]", calendarBorder: "border-[#8b5cf6]" },
+];
+
+export default function RewardsSection({ rewards: earned = [] }) {
+  const rewards = earned.map((r, i) => ({
+    ...PALETTE[i % PALETTE.length],
+    ...(r.icon ? { imageSrc: r.icon } : {}),
+    title: r.title,
+    description: r.description || "Awarded by your tutor.",
+    date: `Earned ${shortDate(r.awardedAt)}`,
+  }));
+
+  if (rewards.length === 0) return null;
 
   return (
     <section

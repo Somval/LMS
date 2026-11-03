@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { api } from "../../lib/api";
 import AppLayout from "./registartionlayout";
 import RegistrationNavbar from "../../components/StudentComponent/RegistrationNavbar";
 
@@ -12,7 +14,25 @@ export default function OnboardingStepper() {
   const [currentStep, setCurrentStep] = useState(1);
   const [registrationData, setRegistrationData] = useState(null);
 
+  const navigate = useNavigate();
+  const [selectedCourses, setSelectedCourses] = useState([]);
+
   const handleNext = () => setCurrentStep((prev) => Math.min(prev + 1, 5));
+
+  // Step 2: remember the chosen subjects (each has its own school year).
+  const handleSubjectsNext = (courses) => {
+    setSelectedCourses(courses || []);
+    handleNext();
+  };
+
+  // Step 3: save subjects + availability. Throws on failure so the form can show the error.
+  const handlePreferencesNext = async ({ selectedDays, selectedTime }) => {
+    await api.put("/student/onboarding", {
+      subjects: selectedCourses.map((c) => ({ subjectId: c.id, yearLevel: c.level })),
+      learningPreference: { days: selectedDays, timeOfDay: selectedTime },
+    });
+    handleNext();
+  };
   const handleBack = () => setCurrentStep((prev) => Math.max(prev - 1, 1));
 
   const handlePaymentComplete = (paymentDetails) => {
@@ -21,14 +41,13 @@ export default function OnboardingStepper() {
   };
 
   const handleGoToDashboard = () => {
-    // Handle navigation to your dashboard, e.g., using router or window.location
-    window.location.href = '/student/dashboard'; 
+    navigate("/student/dashboard");
   };
 
   const steps = [
     { number: 1, label: "Create Account", component: <CreateAccount onNext={handleNext} /> },
-    { number: 2, label: "Select Subject", component: <SelectSubject onNext={handleNext} onBack={handleBack} /> },
-    { number: 3, label: "Learning Preference", component: <LearningPreference onNext={handleNext} onBack={handleBack} /> },
+    { number: 2, label: "Select Subject", component: <SelectSubject onNext={handleSubjectsNext} onBack={handleBack} /> },
+    { number: 3, label: "Learning Preference", component: <LearningPreference onNext={handlePreferencesNext} onBack={handleBack} /> },
     { number: 4, label: "Account Setup Complete", component: <RegistrationSuccess onGoToDashboard={handleGoToDashboard} /> },
   ];
 

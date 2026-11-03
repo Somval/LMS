@@ -1,14 +1,17 @@
 
-import React, { useId, useState } from "react";
-import learningProgressData from "../../Data/learningProgressData";
+import React, { useId, useMemo, useState } from "react";
+import { buildLearningProgress } from "./dashboardData";
 
-export default function LearningProgress() {
+export default function LearningProgress({ data }) {
   const [selectedPeriod, setSelectedPeriod] = useState("thisWeek");
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const chartId = useId().replace(/:/g, "");
 
-  const periods = learningProgressData.periods;
+  const periods = useMemo(
+    () => buildLearningProgress(data?.lessons).periods,
+    [data]
+  );
 
   const currentPeriod =
     periods.find((period) => period.value === selectedPeriod) ??
@@ -34,7 +37,7 @@ export default function LearningProgress() {
       chart.left + (index / 20) * chartWidth
   );
 
-  const weekLabels = ["Week 1", "Week 2", "Week 3", "Week 4"];
+  const weekLabels = currentPeriod.labels; // four dates spread across the chosen period
 
   // Convert JSON progress values to SVG coordinates.
   const points = weeks.map((item, index) => ({

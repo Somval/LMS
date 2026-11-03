@@ -1,15 +1,25 @@
-import React from "react";
-import { Bell } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Bell, LogOut } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { api } from "../../lib/api";
+import { useAuth } from "../../context/AuthContext";
+import Avatar from "../../components/Avatar";
+
+
+const greeting = () => {
+  const h = new Date().getHours();
+
+  return h < 12
+    ? "Good morning"
+    : h < 17
+    ? "Good afternoon"
+    : "Good evening";
+};
+
 
 const pageInfo = {
   "/Tutor/dashboard": {
-    title: (
-      <>
-        Good morning, Sarah!{" "}
-        <span className="inline-block animate-wave">👋</span>
-      </>
-    ),
+    title: "Dashboard",
     description:
       "Keep track of your teaching activities and student progress.",
   },
@@ -42,6 +52,24 @@ const pageInfo = {
     title: "Assignments & Quizzes",
     description:
       "Create and manage assignments, quizzes, submissions, and student assessments.",
+  },
+
+  // The real routes for assignments and quizzes (the key above is kept as you had it).
+  "/Tutor/assignment-quize": {
+    title: "Assignments & Quizzes",
+    description:
+      "Create and manage assignments, quizzes, submissions, and student assessments.",
+  },
+
+  "/Tutor/create-assignment": {
+    title: "Create Assignment",
+    description: "Create an assignment for your students to complete.",
+  },
+
+  "/Tutor/create-quize": {
+    title: "Create Quiz",
+    description:
+      "Create a multiple-choice quiz that is marked automatically.",
   },
 
   "/Tutor/attendance": {
@@ -77,9 +105,43 @@ const defaultPage = {
 
 export default function Header() {
   const location = useLocation();
+  const navigate = useNavigate();
 
-  const currentPage =
-    pageInfo[location.pathname] || defaultPage;
+  const { user, logout } = useAuth();
+
+  const [unread, setUnread] = useState(0);
+
+  const firstName = user?.fullName?.split(" ")[0] ?? "";
+
+  useEffect(() => {
+    api
+      .get("/notifications", { unread: "true" })
+      .then((res) => setUnread(res.unread))
+      .catch(() => {});
+  }, [location.pathname]);
+
+  
+  const pageKey = Object.keys(pageInfo).find(
+    (k) => k.toLowerCase() === location.pathname.toLowerCase()
+  );
+
+  const currentPage = (pageKey && pageInfo[pageKey]) || defaultPage;
+
+  // Display a personalized greeting on the tutor dashboard.
+  const pageTitle =
+    location.pathname.toLowerCase() === "/tutor/dashboard" ? (
+      <>
+        {greeting()}, {firstName}!{" "}
+        <span className="inline-block animate-wave">👋</span>
+      </>
+    ) : (
+      currentPage.title
+    );
+
+  const handleLogout = () => {
+    logout();
+    navigate("/tutor/login", { replace: true });
+  };
 
   return (
     <header
@@ -130,7 +192,7 @@ export default function Header() {
           "
         >
           <span className="truncate">
-            {currentPage.title}
+            {pageTitle}
           </span>
         </h1>
 
@@ -166,6 +228,7 @@ export default function Header() {
         {/* NOTIFICATION */}
         <button
           type="button"
+          onClick={() => navigate("/tutor/notifications")}
           aria-label="View notifications"
           className="
             relative
@@ -197,22 +260,24 @@ export default function Header() {
             strokeWidth={1.8}
           />
 
-          {/* RED NOTIFICATION DOT */}
-          <span
-            className="
-              absolute
-              right-[5px]
-              top-[5px]
-              h-2
-              w-2
-              rounded-full
-              bg-red-500
-              ring-2
-              ring-white
-              sm:right-[6px]
-              sm:top-[6px]
-            "
-          />
+          {unread > 0 && (
+            <span
+              title={`${unread} unread`}
+              className="
+                absolute
+                right-[5px]
+                top-[5px]
+                h-2
+                w-2
+                rounded-full
+                bg-red-500
+                ring-2
+                ring-white
+                sm:right-[6px]
+                sm:top-[6px]
+              "
+            />
+          )}
         </button>
 
         {/* DIVIDER */}
@@ -230,6 +295,7 @@ export default function Header() {
         <button
           type="button"
           aria-label="Open profile"
+          onClick={() => navigate("/tutor/profile")}
           className="
             relative
             z-10
@@ -252,22 +318,48 @@ export default function Header() {
             sm:w-10
           "
         >
-          <Link to="/Tutor/profile">
-          <img
-            src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80"
-            alt="Sarah's profile avatar"
-            className="
-              block
-              h-full
-              w-full
-              object-cover
-              object-center
-            "
-            onError={(e) => {
-              e.currentTarget.style.display = "none";
-            }}
+          <Avatar
+            name={user?.fullName}
+            avatarUrl={user?.avatarUrl}
+            className="h-full w-full"
+            textClassName="text-sm"
           />
-          </Link>
+        </button>
+
+        {/* LOG OUT */}
+        <button
+          type="button"
+          onClick={handleLogout}
+          aria-label="Log out"
+          title="Log out"
+          className="
+            relative
+            z-10
+            flex
+            h-9
+            w-9
+            shrink-0
+            items-center
+            justify-center
+            rounded-full
+            bg-white
+            text-slate-500
+            transition-all
+            duration-200
+            hover:bg-slate-100
+            hover:text-slate-800
+            active:scale-95
+            focus:outline-none
+            focus-visible:ring-2
+            focus-visible:ring-indigo-500
+            sm:h-10
+            sm:w-10
+          "
+        >
+          <LogOut
+            className="h-4 w-4 sm:h-5 sm:w-5"
+            strokeWidth={1.8}
+          />
         </button>
       </div>
     </header>

@@ -1,5 +1,7 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { api } from "../../../lib/api";
 import {
   UsersRound,
   GraduationCap,
@@ -60,6 +62,23 @@ const statistics = [
 ];
 
 export default function DashboardStats() {
+  const navigate = useNavigate();
+  const [counts, setCounts] = useState(null);
+
+  useEffect(() => {
+    api.get("/admin/stats").then(setCounts).catch(() => {});
+  }, []);
+
+  const fmt = (n) => (counts ? Number(n).toLocaleString() : "–");
+  const values = {
+    1: fmt(counts?.students),
+    2: fmt(counts?.tutors),
+    3: fmt(counts?.parents),
+    4: fmt(counts?.subjects),
+  };
+  // Only the tutor card has something to flag: applications waiting for review.
+  const pending = counts?.pendingTutors ?? 0;
+
   return (
     <section
       aria-label="Dashboard statistics"
@@ -89,30 +108,22 @@ export default function DashboardStats() {
               {/* Statistic Details */}
               <div className="min-w-0 flex-1 pt-0.5">
                 <h3 className="font-[Inter] text-[23px] font-bold leading-[1.2] tracking-[-0.5px] text-black sm:text-[25px] lg:text-[23px] xl:text-[25px]">
-                  {stat.value}
+                  {values[stat.id]}
                 </h3>
 
                 <p className="mt-1 truncate font-[Inter] text-[13px] leading-[1.3] text-[#818DA8] sm:text-[14px] lg:text-[13px] xl:text-[14px]">
                   {stat.label}
                 </p>
 
-                {/* Monthly Growth */}
-                <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1">
-                  <span
-                    className={`inline-flex h-[29px] items-center gap-1 rounded-[6px] px-2.5 font-[Inter] text-[12px] font-semibold ${stat.growthBg} ${stat.growthColor}`}
+                {stat.id === 2 && pending > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => navigate("/admin/users/applications")}
+                    className={`mt-3 inline-flex h-[29px] items-center rounded-[6px] px-2.5 font-[Inter] text-[12px] font-semibold ${stat.growthBg} ${stat.growthColor}`}
                   >
-                    <TrendingUp
-                      size={13}
-                      strokeWidth={2}
-                      aria-hidden="true"
-                    />
-                    {stat.growth}
-                  </span>
-
-                  <span className="whitespace-nowrap font-[Inter] text-[10px] text-[#8B96AC]">
-                    from last month
-                  </span>
-                </div>
+                    {pending} awaiting approval
+                  </button>
+                )}
               </div>
             </article>
           );

@@ -9,18 +9,36 @@ const CreateAccountForm = ({ onNext }) => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
 
-  const handleSubmit = (e) => {
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (submitting) return;
 
     if (password !== confirmPassword) {
       setError("Passwords do not match.");
       return;
     }
-
     setError("");
 
-    if (onNext) {
-      onNext();
+    const form = new FormData(e.currentTarget);
+    const digits = String(form.get("phone") || "").replace(/\D/g, "").replace(/^0/, "");
+
+    setSubmitting(true);
+    try {
+      // onNext registers the account and throws if the server rejects it.
+      await onNext?.({
+        fullName: String(form.get("fullName") || "").trim(),
+        email: String(form.get("email") || "").trim(),
+        phoneNumber: digits ? `+234${digits}` : undefined,
+        password,
+        confirmPassword,
+        agreed: true, // the terms checkbox is required by the form itself
+      });
+    } catch (err) {
+      setError(err.message || "Could not create your account.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -43,7 +61,7 @@ const CreateAccountForm = ({ onNext }) => {
       </div>
 
       {/* Account Form */}
-      <form onSubmit={handleSubmit} className="w-full space-y-5">
+      <form id="onboarding-form" onSubmit={handleSubmit} className="w-full space-y-5">
         {/* Full Name */}
         <div className="w-full space-y-2">
           <label htmlFor="fullName" className={labelClass}>

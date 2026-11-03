@@ -1,206 +1,265 @@
-import React from 'react';
-import { Clock, CheckCircle2, AlertCircle, PlayCircle, Calendar } from 'lucide-react';
+import React, { useMemo } from "react";
+import {
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+  PlayCircle,
+  Calendar,
+  Loader2,
+} from "lucide-react";
+import {
+  HOUR_PX,
+  durationMinutes,
+  formatTimeRange,
+  layoutDay,
+  sameDay,
+  statusInfo,
+} from "./scheduleData";
 
-export default function WeeklySchedule({ currentChild, weekOffset }) {
-  // Days of the week header data (can be customized per week offset if needed)
-  const days = [
-    { name: 'MON', date: 'May 18' },
-    { name: 'TUE', date: 'May 19' },
-    { name: 'WED', date: 'May 20' },
-    { name: 'THU', date: 'May 21' },
-    { name: 'FRI', date: 'May 22' },
-    { name: 'SAT', date: 'May 23' },
-    { name: 'SUN', date: 'May 24' },
-  ];
+// Look of a class card for each status.
+const STATUS_STYLES = {
+  completed: {
+    bgTheme: "bg-emerald-50 border-emerald-200 text-emerald-900",
+    statusColor: "text-emerald-600",
+    icon: CheckCircle2,
+  },
+  ongoing: {
+    bgTheme: "bg-purple-50 border-purple-200 text-purple-900",
+    statusColor: "text-purple-600",
+    icon: PlayCircle,
+  },
+  upcoming: {
+    bgTheme: "bg-blue-50 border-blue-200 text-blue-900",
+    statusColor: "text-blue-600",
+    icon: Clock,
+  },
+  ended: {
+    bgTheme: "bg-slate-50 border-slate-200 text-slate-700",
+    statusColor: "text-slate-500",
+    icon: Clock,
+  },
+  cancelled: {
+    bgTheme: "bg-red-50 border-red-200 text-red-900",
+    statusColor: "text-red-600",
+    icon: AlertCircle,
+  },
+};
 
-  // Time slots from 8:00 AM to 5:00 PM
-  const timeSlots = [
-    '8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM', 
-    '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM', 
-    '4:00 PM', '5:00 PM'
-  ];
+const hourLabel = (hour) => {
+  const suffix = hour >= 12 ? "PM" : "AM";
+  const twelve = hour % 12 === 0 ? 12 : hour % 12;
+  return `${twelve}:00 ${suffix}`;
+};
 
-  // Sample schedule events that dynamically vary slightly based on child ID and week offset
-  const baseEvents = [
-    {
-      id: 1,
-      childId: 1,
-      weekOffset: 0,
-      dayIndex: 1, // Tuesday
-      startHourIndex: 6, // 2:00 PM
-      duration: 1,
-      title: 'English',
-      time: '2:00 PM - 3:00 PM',
-      teacher: 'David James',
-      durationMinutes: '60 min',
-      status: 'Completed',
-      statusColor: 'text-emerald-600',
-      bgTheme: 'bg-emerald-50 border-emerald-200 text-emerald-900',
-      icon: <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />,
-    },
-    {
-      id: 2,
-      childId: 1,
-      weekOffset: 0,
-      dayIndex: 2, // Wednesday
-      startHourIndex: 4, // 12:00 PM
-      duration: 1,
-      title: 'Science',
-      time: '12:00 PM - 1:00 PM',
-      teacher: 'Sarah Johnson',
-      durationMinutes: '60 min',
-      status: 'Ongoing',
-      statusColor: 'text-purple-600',
-      bgTheme: 'bg-purple-50 border-purple-200 text-purple-900',
-      icon: <PlayCircle className="w-3.5 h-3.5 text-purple-600" />,
-    },
-    {
-      id: 3,
-      childId: 1,
-      weekOffset: 0,
-      dayIndex: 3, // Thursday
-      startHourIndex: 6, // 2:00 PM
-      duration: 1,
-      title: 'Coding',
-      time: '2:00 PM - 3:00 PM',
-      teacher: 'Michael Brown',
-      durationMinutes: '60 min',
-      status: 'Upcoming',
-      statusColor: 'text-blue-600',
-      bgTheme: 'bg-blue-50 border-blue-200 text-blue-900',
-      icon: <Clock className="w-3.5 h-3.5 text-blue-600" />,
-    },
-    {
-      id: 4,
-      childId: 2,
-      weekOffset: 0,
-      dayIndex: 0, // Monday
-      startHourIndex: 2, // 10:00 AM
-      duration: 1,
-      title: 'Mathematics',
-      time: '10:00 AM - 11:00 AM',
-      teacher: 'Amanda Lee',
-      durationMinutes: '60 min',
-      status: 'Completed',
-      statusColor: 'text-emerald-600',
-      bgTheme: 'bg-emerald-50 border-emerald-200 text-emerald-900',
-      icon: <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />,
-    },
-    {
-      id: 5,
-      childId: 3,
-      weekOffset: 0,
-      dayIndex: 4, // Friday
-      startHourIndex: 3, // 11:00 AM
-      duration: 1,
-      title: 'Art & Design',
-      time: '11:00 AM - 12:00 PM',
-      teacher: 'Clara Oswald',
-      durationMinutes: '60 min',
-      status: 'Upcoming',
-      statusColor: 'text-blue-600',
-      bgTheme: 'bg-blue-50 border-blue-200 text-blue-900',
-      icon: <Clock className="w-3.5 h-3.5 text-blue-600" />,
-    }
-  ];
+// classes: the child's classes for the shown week (null while loading).
+export default function WeeklySchedule({
+  currentChild,
+  days,
+  classes,
+  error,
+  onRetry,
+  selectedDay,
+  selectedClassId,
+  onSelectDay,
+  onSelectClass,
+}) {
+  const events = classes ?? [];
 
-  // Filter events matching the selected child, or fallback to general demo events
-  const events = baseEvents.filter(
-    (e) => e.childId === currentChild?.id && e.weekOffset === (weekOffset % 2)
+  // 8 AM to 5 PM by default, stretched if a class falls outside that.
+  const { startHour, endHour } = useMemo(() => {
+    let first = 8;
+    let last = 17;
+    events.forEach((cls) => {
+      const start = new Date(cls.startsAt);
+      const end = new Date(cls.endsAt);
+      first = Math.min(first, start.getHours());
+      last = Math.max(last, end.getHours() + (end.getMinutes() > 0 ? 1 : 0));
+    });
+    return { startHour: Math.max(first, 0), endHour: Math.min(Math.max(last, first + 1), 24) };
+  }, [events]);
+
+  const timeSlots = Array.from({ length: endHour - startHour }, (_, i) => hourLabel(startHour + i));
+
+  // Position of every class: which day column, how far down, how tall, which lane.
+  const placed = useMemo(
+    () =>
+      days.flatMap((day, dayIndex) =>
+        layoutDay(events.filter((cls) => sameDay(new Date(cls.startsAt), day))).map((item) => {
+          const start = new Date(item.cls.startsAt);
+          const minutesFromTop = (start.getHours() - startHour) * 60 + start.getMinutes();
+          const height = (durationMinutes(item.cls) / 60) * HOUR_PX;
+          return {
+            ...item,
+            dayIndex,
+            top: (minutesFromTop / 60) * HOUR_PX,
+            height: Math.max(height, 48),
+          };
+        })
+      ),
+    [days, events, startHour]
   );
+
+  const now = new Date();
 
   return (
     <div className="mx-auto w-full max-w-6xl bg-white border border-slate-200 rounded-xl shadow-sm p-6 overflow-x-auto font-sans">
-      
       {/* Header Title with Active Child Indicator */}
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
           <Calendar className="w-5 h-5 text-slate-600" />
-          Weekly Schedule — <span className="text-blue-600 font-semibold">{currentChild?.name}</span>
+          Weekly Schedule —{" "}
+          <span className="text-blue-600 font-semibold">{currentChild?.fullName}</span>
         </h2>
       </div>
 
       {/* Schedule Grid Wrapper */}
       <div className="min-w-[768px]">
-        
-        {/* Days Header Row */}
+        {/* Days Header Row (click a day to see its class) */}
         <div className="grid grid-cols-8 border-b border-slate-200 pb-3 text-center">
           <div className="text-xs font-semibold text-slate-400 uppercase"></div>
-          {days.map((day, idx) => (
-            <div key={idx} className="flex flex-col items-center">
-              <span className="text-xs font-bold text-slate-700">{day.name}</span>
-              <span className="text-xs text-slate-500">{day.date}</span>
-            </div>
-          ))}
+          {days.map((day) => {
+            const isSelected = sameDay(day, selectedDay);
+            const isToday = sameDay(day, now);
+            return (
+              <button
+                type="button"
+                key={day.toISOString()}
+                onClick={() => onSelectDay(day)}
+                aria-pressed={isSelected}
+                className={`mx-1 flex flex-col items-center rounded-lg py-1 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                  isSelected ? "bg-blue-50" : "hover:bg-slate-50"
+                }`}
+              >
+                <span
+                  className={`text-xs font-bold ${isSelected ? "text-blue-600" : "text-slate-700"}`}
+                >
+                  {day.toLocaleDateString("en-US", { weekday: "short" }).toUpperCase()}
+                </span>
+                <span
+                  className={`text-xs ${
+                    isToday ? "font-bold text-blue-600" : "text-slate-500"
+                  }`}
+                >
+                  {day.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
         {/* Time Rows & Events */}
         <div className="relative">
-          {timeSlots.map((time, timeIdx) => (
-            <div key={timeIdx} className="grid grid-cols-8 h-16 border-b border-slate-100 items-start">
-              
+          {timeSlots.map((time) => (
+            <div
+              key={time}
+              style={{ height: HOUR_PX }}
+              className="grid grid-cols-8 border-b border-slate-100 items-start"
+            >
               {/* Time Label */}
               <div className="text-xs font-medium text-slate-400 pr-4 pt-1 text-right select-none">
                 {time}
               </div>
 
               {/* 7 Columns for Days */}
-              {days.map((_, dayIdx) => (
-                <div key={dayIdx} className="border-r border-slate-100 h-full relative"></div>
+              {days.map((day) => (
+                <div
+                  key={day.toISOString()}
+                  className={`border-r border-slate-100 h-full relative ${
+                    sameDay(day, selectedDay) ? "bg-blue-50/30" : ""
+                  }`}
+                ></div>
               ))}
             </div>
           ))}
 
-          {/* Absolute Positioned Event Cards */}
-          {events.map((event) => {
-            const topOffset = event.startHourIndex * 64; 
-            const leftPercent = ((event.dayIndex + 1) / 8) * 100;
-            const widthPercent = (1 / 8) * 100;
+          {/* Absolutely positioned class cards */}
+          {placed.map(({ cls, dayIndex, top, height, lane, lanes }) => {
+            const info = statusInfo(cls, now);
+            const style = STATUS_STYLES[info.key];
+            const Icon = style.icon;
+            const isSelected = cls.id === selectedClassId;
+            const leftPercent = ((dayIndex + 1 + lane / lanes) / 8) * 100;
+            const widthPercent = (1 / lanes / 8) * 100;
 
             return (
-              <div
-                key={event.id}
+              <button
+                type="button"
+                key={cls.id}
+                onClick={() => onSelectClass(cls)}
+                aria-pressed={isSelected}
+                aria-label={`${cls.subject.name}, ${formatTimeRange(cls)}, ${info.label}`}
                 style={{
-                  top: `${topOffset + 4}px`,
-                  left: `calc(${leftPercent}% + 4px)`,
-                  width: `calc(${widthPercent}% - 8px)`,
+                  top: `${top + 2}px`,
+                  height: `${height - 4}px`,
+                  left: `calc(${leftPercent}% + 3px)`,
+                  width: `calc(${widthPercent}% - 6px)`,
                 }}
-                className={`absolute rounded-lg p-3 border shadow-sm transition-all hover:shadow-md flex flex-col justify-between ${event.bgTheme}`}
+                className={`absolute overflow-hidden rounded-lg px-2 py-1.5 border text-left shadow-sm transition-all hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${style.bgTheme} ${
+                  isSelected ? "ring-2 ring-blue-500" : ""
+                } ${info.key === "cancelled" ? "opacity-70" : ""}`}
               >
-                <div>
-                  <div className="text-[10px] font-semibold opacity-75 mb-0.5">
-                    {event.time}
+                <div className="flex items-start justify-between gap-1">
+                  <div className="min-w-0">
+                    <div className="truncate text-[10px] font-semibold opacity-75">
+                      {formatTimeRange(cls)}
+                    </div>
+                    <div
+                      className={`truncate text-xs font-bold text-slate-900 ${
+                        info.key === "cancelled" ? "line-through" : ""
+                      }`}
+                    >
+                      {cls.subject.name}
+                    </div>
                   </div>
-                  <div className="text-xs font-bold text-slate-900">
-                    {event.title}
-                  </div>
-                  <div className="text-[11px] text-slate-600 mt-0.5">
-                    {event.teacher}
-                  </div>
+                  <Icon className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${style.statusColor}`} />
                 </div>
 
-                <div className="mt-2 pt-2 border-t border-slate-200/50 flex items-center justify-between text-[10px]">
-                  <span className="flex items-center gap-1 text-slate-500">
-                    <Clock className="w-3 h-3" /> {event.durationMinutes}
-                  </span>
-                  <span className={`flex items-center gap-1 font-semibold ${event.statusColor}`}>
-                    {event.icon} {event.status}
-                  </span>
+                <div className="truncate text-[11px] text-slate-600">
+                  {cls.tutor?.user?.fullName}
                 </div>
-              </div>
+
+                {/* Footer only where the card is tall enough */}
+                {height >= 110 && (
+                  <div className="mt-2 pt-2 border-t border-slate-200/50 flex items-center justify-between text-[10px]">
+                    <span className="flex items-center gap-1 text-slate-500">
+                      <Clock className="w-3 h-3" /> {durationMinutes(cls)} min
+                    </span>
+                    <span className={`font-semibold ${style.statusColor}`}>{info.label}</span>
+                  </div>
+                )}
+              </button>
             );
           })}
 
-          {events.length === 0 && (
-            <div className="absolute inset-0 flex items-center justify-center bg-white/80 backdrop-blur-xs">
-              <p className="text-sm font-medium text-slate-500">No scheduled sessions for {currentChild?.name} this week.</p>
+          {/* Loading / error / empty states */}
+          {classes === null && !error && (
+            <div className="absolute inset-0 flex items-center justify-center bg-white/80">
+              <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
             </div>
           )}
 
+          {error && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-white/90">
+              <p className="text-sm font-medium text-red-600">{error}</p>
+              <button
+                type="button"
+                onClick={onRetry}
+                className="rounded-lg border border-red-300 px-3 py-1.5 text-sm font-semibold text-red-600 hover:bg-red-50"
+              >
+                Try again
+              </button>
+            </div>
+          )}
+
+          {classes !== null && !error && events.length === 0 && (
+            <div className="absolute inset-0 flex items-center justify-center bg-white/80 backdrop-blur-xs">
+              <p className="text-sm font-medium text-slate-500">
+                No scheduled sessions for {currentChild?.fullName} this week.
+              </p>
+            </div>
+          )}
         </div>
-
       </div>
-
     </div>
   );
 }

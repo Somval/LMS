@@ -1,90 +1,9 @@
 import React, { useState } from "react";
 import { ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
-const completedTasks = [
-  {
-    id: 1,
-    submitted: "Aug 18, 2024",
-    submittedTime: "11:59 PM",
-    subject: "Mathematics",
-    task: "Algebra Practice",
-    type: "Assignment",
-    grade: "9/10",
-    action: "View Feedback",
-  },
-  {
-    id: 2,
-    submitted: "Aug 18, 2024",
-    submittedTime: "11:59 PM",
-    subject: "Mathematics",
-    task: "Algebra Practice",
-    type: "Quiz",
-    grade: "9/10",
-    action: "View Results",
-  },
-  {
-    id: 3,
-    submitted: "Aug 18, 2024",
-    submittedTime: "11:59 PM",
-    subject: "Mathematics",
-    task: "Algebra Practice",
-    type: "Assignment",
-    grade: "9/10",
-    action: "View Feedback",
-  },
-  {
-    id: 4,
-    submitted: "Aug 17, 2024",
-    submittedTime: "11:59 PM",
-    subject: "Science",
-    task: "Forces & Motion",
-    type: "Assignment",
-    grade: "10/10",
-    action: "View Feedback",
-  },
-  {
-    id: 5,
-    submitted: "Aug 17, 2024",
-    submittedTime: "11:59 PM",
-    subject: "Science",
-    task: "Chapter 4 Quiz",
-    type: "Quiz",
-    grade: "8/10",
-    action: "View Results",
-  },
-  {
-    id: 6,
-    submitted: "Aug 16, 2024",
-    submittedTime: "11:59 PM",
-    subject: "Mathematics",
-    task: "Linear Equations",
-    type: "Assignment",
-    grade: "9/10",
-    action: "View Feedback",
-  },
-  {
-    id: 7,
-    submitted: "Aug 16, 2024",
-    submittedTime: "11:59 PM",
-    subject: "English",
-    task: "Reading Comprehension",
-    type: "Assignment",
-    grade: "9/10",
-    action: "View Feedback",
-  },
-  {
-    id: 8,
-    submitted: "Aug 15, 2024",
-    submittedTime: "11:59 PM",
-    subject: "Science",
-    task: "Energy & Matter",
-    type: "Quiz",
-    grade: "10/10",
-    action: "View Results",
-  },
-];
-
-export default function CompletedTasks() {
+export default function CompletedTasks({ tasks: completedTasks = [] }) {
+  const navigate = useNavigate();
   const [showAll, setShowAll] = useState(false);
 
   const INITIAL_VISIBLE_COUNT = 3;
@@ -94,6 +13,8 @@ export default function CompletedTasks() {
     : completedTasks.slice(0, INITIAL_VISIBLE_COUNT);
 
   const hasMore = completedTasks.length > INITIAL_VISIBLE_COUNT;
+
+  if (completedTasks.length === 0) return null;
 
   const toggleViewAll = () => {
     setShowAll((current) => !current);
@@ -229,6 +150,7 @@ export default function CompletedTasks() {
                   <div>
                     <button
                       type="button"
+ onClick={() => navigate(`/student/assignment/${item.id}`)}
                       className="
                         flex
                         h-[27px]
@@ -379,6 +301,7 @@ export default function CompletedTasks() {
                     {/* ACTION */}
                     <button
                       type="button"
+ onClick={() => navigate(`/student/assignment/${item.id}`)}
                       className="
                         flex
                         h-[28px]

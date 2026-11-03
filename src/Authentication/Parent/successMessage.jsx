@@ -4,9 +4,10 @@ import { LayoutGrid, ArrowRight } from 'lucide-react';
 import Image from "../../assets/images/f8032fd0f249f3e29bb1d22d52d131500a6714a0 (1).png";
 
 export default function PaymentSuccess({ 
-  childName = "Olivia", 
-  successImageSrc = Image, 
-  onDashboardClick 
+  childName = "your child",
+  successImageSrc = Image,
+  onDashboardClick,
+  pending = false,
 }) {
   return (
     <div className="w-full min-h-[500px] flex flex-col items-center justify-between px-4 py-6 sm:p-8 bg-white font-sans text-center">
@@ -23,16 +24,18 @@ export default function PaymentSuccess({
 
         {/* Heading & Subtitles */}
         <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight mb-2">
-          Payment Successful!
+          {pending ? "Receipt Received!" : "Payment Successful!"}
         </h2>
         
         <p className="text-sm sm:text-base font-bold text-emerald-500 mb-2 sm:mb-3">
-          {childName} is all set!
+          {pending ? "We are confirming your payment" : `${childName} is all set!`}
         </p>
 
         <p className="text-xs sm:text-sm text-gray-400 max-w-xs leading-relaxed mb-6 sm:mb-8">
-          {childName}'s account is now active.<br />
-          They can now log in and start learning.
+          {pending
+            ? `${childName}'s account will be activated as soon as your transfer is confirmed.`
+            : `${childName}'s account is now active.`}<br />
+          {pending ? "You can follow the status from your dashboard." : "They can now log in and start learning."}
         </p>
 
         {/* Go to Dashboard Button with Link Wrapper */}

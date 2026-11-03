@@ -1,5 +1,8 @@
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { api } from "../lib/api";
+import { useAuth } from "../context/AuthContext";
+import Avatar, { forgetAvatar } from "../components/Avatar";
 import {
   User,
   Mail,
@@ -17,16 +20,71 @@ import PrivacySupportAccount from "./PrivacySupportAccount";
 export default function ProfileInformation() {
   const [isEditing, setIsEditing] = useState(false);
 
-  const [profile, setProfile] = useState({
-    fullName: "Amaka Johnson",
-    email: "amaka@gmail.com",
-    phone: "+234 801 234 5678",
-    learnerId: "11111ID",
-    avatarUrl:
-      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&h=300&q=80",
-  });
-
+  const { updateUser } = useAuth();
+  const [profile, setProfile] = useState({ fullName: "", email: "", phone: "", learnerId: "" });
   const [savedProfile, setSavedProfile] = useState(profile);
+  const [saving, setSaving] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState(null);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const fileInput = React.useRef(null);
+  const [message, setMessage] = useState({ type: "", text: "" });
+
+  useEffect(() => {
+    api
+      .get("/auth/me")
+      .then((me) => {
+        const loaded = {
+          fullName: me.fullName,
+          email: me.email,
+          phone: me.phoneNumber ?? "",
+          learnerId: me.learnerId ?? "",
+        };
+        setAvatarUrl(me.avatarUrl ?? null);
+        setProfile(loaded);
+        setSavedProfile(loaded);
+      })
+      .catch((err) => setMessage({ type: "error", text: err.message || "Could not load your profile." }));
+  }, []);
+
+  const choosePhoto = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // lets the same file be picked again later
+    if (!file) return;
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      return setMessage({ type: "error", text: "Please choose a JPG, PNG or WebP image." });
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      return setMessage({ type: "error", text: "The photo must not be larger than 5 MB." });
+    }
+    setPhotoBusy(true);
+    setMessage({ type: "", text: "" });
+    try {
+      const res = await api.upload("/account/avatar", file);
+      forgetAvatar(avatarUrl);
+      setAvatarUrl(res.avatarUrl);
+      updateUser({ avatarUrl: res.avatarUrl });
+      setMessage({ type: "success", text: "Profile photo updated." });
+    } catch (err) {
+      setMessage({ type: "error", text: err.message || "Could not upload your photo." });
+    } finally {
+      setPhotoBusy(false);
+    }
+  };
+
+  const removePhoto = async () => {
+    setPhotoBusy(true);
+    try {
+      await api.delete("/account/avatar");
+      forgetAvatar(avatarUrl);
+      setAvatarUrl(null);
+      updateUser({ avatarUrl: null });
+      setMessage({ type: "success", text: "Profile photo removed." });
+    } catch (err) {
+      setMessage({ type: "error", text: err.message || "Could not remove your photo." });
+    } finally {
+      setPhotoBusy(false);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -37,15 +95,35 @@ export default function ProfileInformation() {
     }));
   };
 
-  const handleEdit = () => {
-    if (isEditing) {
+  const handleEdit = async () => {
+    if (!isEditing) {
       setSavedProfile(profile);
-      setIsEditing(false);
+      setMessage({ type: "", text: "" });
+      setIsEditing(true);
       return;
     }
-
-    setSavedProfile(profile);
-    setIsEditing(true);
+    if (saving) return;
+    if (profile.fullName.trim().length < 2) {
+      return setMessage({ type: "error", text: "Enter your full name." });
+    }
+    setSaving(true);
+    setMessage({ type: "", text: "" });
+    try {
+      const updated = await api.patch("/account/profile", {
+        fullName: profile.fullName.trim(),
+        phoneNumber: profile.phone.trim() || undefined,
+      });
+      const next = { ...profile, fullName: updated.fullName, phone: updated.phoneNumber ?? "" };
+      setProfile(next);
+      setSavedProfile(next);
+      updateUser({ fullName: updated.fullName });
+      setIsEditing(false);
+      setMessage({ type: "success", text: "Profile updated." });
+    } catch (err) {
+      setMessage({ type: "error", text: err.message || "Could not save your profile." });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleCancel = () => {
@@ -64,26 +142,38 @@ export default function ProfileInformation() {
             Profile Information
           </h2>
 
+          {message.text && (
+            <p role={message.type === "error" ? "alert" : "status"}
+               className={`mb-2 text-[12px] ${message.type === "error" ? "text-red-600" : "text-emerald-600"}`}>
+              {message.text}
+            </p>
+          )}
+
           <div className="grid grid-cols-1 gap-5 md:grid-cols-[125px_minmax(0,1fr)] md:gap-5">
             {/* Profile Photo and Button */}
             <div className="flex flex-col items-center gap-3 md:items-start">
               <div className="relative ml-0 md:ml-3">
-                <img
-                  src={profile.avatarUrl}
-                  alt={profile.fullName}
-                  className="h-[86px] w-[86px] rounded-full object-cover"
-                />
+                <Avatar name={profile.fullName} avatarUrl={avatarUrl} className="h-[86px] w-[86px] rounded-full" textClassName="text-2xl" />
 
                 <button
                   type="button"
-                  disabled={!isEditing}
+                  onClick={() => fileInput.current?.click()}
+                  disabled={photoBusy}
                   title="Change profile photo"
                   aria-label="Change profile photo"
-                  className="absolute -bottom-0.5 -right-1 flex h-7 w-7 items-center justify-center rounded-full border border-[#E4E7ED] bg-white text-[#61758E] shadow-sm transition hover:text-blue-600 disabled:cursor-default"
+                  className="absolute -bottom-0.5 -right-1 flex h-7 w-7 items-center justify-center rounded-full border border-[#E4E7ED] bg-white text-[#61758E] shadow-sm transition hover:text-blue-600 disabled:opacity-60"
                 >
                   <Camera size={15} strokeWidth={1.6} />
                 </button>
+                <input ref={fileInput} type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={choosePhoto} />
               </div>
+              {avatarUrl && (
+                <button type="button" onClick={removePhoto} disabled={photoBusy}
+                  className="text-[10px] font-medium text-[#8585B1] underline hover:text-red-600 disabled:opacity-60 md:ml-3">
+                  Remove photo
+                </button>
+              )}
+
 
               <button
                 type="button"
@@ -169,7 +259,7 @@ export default function ProfileInformation() {
                     name="email"
                     value={profile.email}
                     onChange={handleChange}
-                    disabled={!isEditing}
+                    disabled readOnly
                     className={inputClass}
                   />
                 </div>

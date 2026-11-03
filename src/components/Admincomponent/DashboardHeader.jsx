@@ -1,9 +1,21 @@
 
 import React, { useState } from "react";
-import { Search, Bell, Menu } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Search, Bell, Menu, LogOut } from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
+import Avatar from "../Avatar";
 
 export default function DashboardHeader({ onMenuClick = () => {} }) {
   const [search, setSearch] = useState("");
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const initials =
+    (user?.fullName ?? "")
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((w) => w[0].toUpperCase())
+      .join("") || "A";
 
   return (
     <header className="sticky top-0 z-40 flex h-[52px] w-full min-w-0 shrink-0 items-center justify-between gap-2 border-b border-[#E8E8EB] bg-[#FCFCFD] px-3 sm:h-[47px] sm:gap-4 sm:px-5 lg:rounded-t-[12px]">
@@ -57,17 +69,17 @@ export default function DashboardHeader({ onMenuClick = () => {} }) {
         </button>
 
         {/* Profile Avatar */}
+        <Avatar name={user?.fullName} avatarUrl={user?.avatarUrl} className="h-[27px] w-[27px] rounded-full sm:h-[23px] sm:w-[23px]" textClassName="text-[10px]" />
+
+        {/* Log out */}
         <button
           type="button"
-          aria-label="Open profile"
-          className="h-[27px] w-[27px] shrink-0 overflow-hidden rounded-full border border-[#E4E4E7] bg-[#E8E1D8] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#159A42] sm:h-[23px] sm:w-[23px]"
+          aria-label="Log out"
+          title="Log out"
+          onClick={() => { logout(); navigate("/admin/login", { replace: true }); }}
+          className="flex h-[27px] w-[27px] shrink-0 items-center justify-center rounded-full text-[#6B7280] hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#159A42] sm:h-[23px] sm:w-[23px]"
         >
-          <img
-            src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&h=80&fit=crop&crop=faces"
-            alt="User profile"
-            loading="lazy"
-            className="h-full w-full object-cover"
-          />
+          <LogOut className="h-4 w-4" />
         </button>
       </div>
     </header>

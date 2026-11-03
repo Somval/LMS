@@ -1,34 +1,22 @@
 import React from "react";
 import badgeImage from "../assets/images/c2582da116168ead7191b53b24caa4b4015bf713.png";
 
-export default function BadgesSection() {
-  const badges = [
-    {
-      title: "Mathematics Star",
-      date: "Earned Aug 8, 2026",
-      imageSrc: badgeImage,
-    },
-    {
-      title: "Mathematics Star",
-      date: "Earned Aug 8, 2026",
-      imageSrc: badgeImage,
-    },
-    {
-      title: "Mathematics Star",
-      date: "Earned Aug 8, 2026",
-      imageSrc: badgeImage,
-    },
-    {
-      title: "Mathematics Star",
-      date: "Earned Aug 8, 2026",
-      imageSrc: badgeImage,
-    },
-    {
-      title: "Mathematics Star",
-      date: "Earned Aug 8, 2026",
-      imageSrc: badgeImage,
-    },
-  ];
+import { shortDate } from "./useRewards";
+
+export default function BadgesSection({ badges: earned = [] }) {
+  const badges = earned.map((b) => ({
+    title: b.title,
+    date: `Earned ${shortDate(b.awardedAt)}`,
+    imageSrc: b.icon || badgeImage,
+  }));
+
+  if (badges.length === 0) {
+    return (
+      <div className="w-full rounded-2xl bg-white p-8 text-center text-sm text-slate-500 shadow-sm">
+        You have not earned any badges yet. They will show up here as your tutor awards them.
+      </div>
+    );
+  }
 
   return (
     <section

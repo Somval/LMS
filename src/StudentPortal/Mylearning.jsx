@@ -1,34 +1,29 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Calculator,
   BookOpen,
   Atom,
+  Code2,
   ArrowRight,
 } from "lucide-react";
 
-const subjects = [
-  {
-    name: "Mathematics",
-    tutor: "William Johnson",
-    progress: 70,
-    color: "#30358A",
-    icon: Calculator,
-  },
-  {
-    name: "English",
-    tutor: "William Johnson",
-    progress: 70,
-    color: "#E8D000",
-    icon: BookOpen,
-  },
-  {
-    name: "Science",
-    tutor: "William Johnson",
-    progress: 70,
-    color: "#05C957",
-    icon: Atom,
-  },
-];
+// Look and feel per subject; progress and tutor come from the API.
+const SUBJECT_STYLES = {
+  mathematics: { color: "#30358A", icon: Calculator },
+  english: { color: "#E8D000", icon: BookOpen },
+  science: { color: "#05C957", icon: Atom },
+  coding: { color: "#8F3985", icon: Code2 },
+};
+const DEFAULT_STYLE = { color: "#30336B", icon: BookOpen };
+
+const toCard = (s) => ({
+  id: s.subjectId,
+  name: s.subject,
+  tutor: s.tutors?.length ? s.tutors.join(", ") : "To be assigned",
+  progress: s.lessonProgress ?? 0,
+  ...(SUBJECT_STYLES[s.subject.toLowerCase()] || DEFAULT_STYLE),
+});
 
 function SubjectCard({ subject }) {
   const Icon = subject.icon;
@@ -233,7 +228,10 @@ function SubjectCard({ subject }) {
   );
 }
 
-export default function Mylearning() {
+export default function Mylearning({ subjects = [], loading = false }) {
+  const navigate = useNavigate();
+  const cards = subjects.map(toCard);
+
   return (
     <section
       className="
@@ -276,6 +274,7 @@ export default function Mylearning() {
 
         <button
           type="button"
+          onClick={() => navigate("/student/learning")}
           className="
             group
             flex
@@ -330,11 +329,13 @@ export default function Mylearning() {
           max-[639px]:gap-[12px]
         "
       >
-        {subjects.map((subject) => (
-          <SubjectCard
-            key={subject.name}
-            subject={subject}
-          />
+        {!loading && cards.length === 0 && (
+          <p className="col-span-full py-8 text-center text-sm text-[#8589A8]">
+            You have not selected any subjects yet.
+          </p>
+        )}
+        {cards.map((subject) => (
+          <SubjectCard key={subject.id} subject={subject} />
         ))}
       </div>
     </section>

@@ -2,8 +2,13 @@ import React from "react";
 import RewardsEarned from "./RewardsEarned";
 import AlreadyEarnedReward from "./EarnedBadges";
 import BadgesToUnlock from "./BadgestoUnlock";
+import useRewards from "./useRewards";
 
 export default function StatsCard() {
+  const { earned, locked, error } = useRewards({ withLocked: true });
+  const badgesEarned = earned.filter((a) => a.kind !== "REWARD");
+  const rewardsEarned = earned.filter((a) => a.kind === "REWARD");
+
   return (
     <section className="w-full bg-slate-50 font-sans">
       <div className="w-full px-4 pb-10 pt-5 sm:px-5 sm:pt-6 lg:px-6">
@@ -74,7 +79,7 @@ export default function StatsCard() {
               {/* Badge Content */}
               <div className="flex min-w-0 flex-col">
                 <span className="mb-[5px] text-[21px] font-bold leading-none text-[#111827]">
-                  8
+                  {badgesEarned.length}
                 </span>
 
                 <span className="mb-[6px] truncate text-[11px] font-semibold leading-none text-[#111827]">
@@ -163,7 +168,7 @@ export default function StatsCard() {
               {/* Reward Content */}
               <div className="flex min-w-0 flex-col">
                 <span className="mb-[5px] text-[21px] font-bold leading-none text-[#111827]">
-                  3
+                  {rewardsEarned.length}
                 </span>
 
                 <span className="mb-[6px] truncate text-[11px] font-semibold leading-none text-[#111827]">
@@ -178,9 +183,10 @@ export default function StatsCard() {
           </div>
 
           {/* OTHER SECTIONS */}
-          <RewardsEarned />
-          <AlreadyEarnedReward />
-          <BadgesToUnlock />
+          {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
+          <RewardsEarned rewards={rewardsEarned} />
+          <AlreadyEarnedReward badges={badgesEarned} />
+          <BadgesToUnlock badges={locked} />
 
         </div>
       </div>

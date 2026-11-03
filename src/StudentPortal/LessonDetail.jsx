@@ -1,209 +1,184 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { 
-  ChevronRight, 
-  ArrowLeft, 
-  ArrowRight,
-  BookOpen, 
-  Video, 
-  FileText, 
-  CheckCircle2, 
-  Clock,
-  Layers
-} from 'lucide-react';
+import { ChevronRight, ChevronDown, BookOpen, Video, FileText, Image as ImageIcon, Link2, CheckCircle2 } from 'lucide-react';
+import { api, assetUrl } from '../lib/api';
 
-const lessonsList = [
-  {
-    id: 1,
-    number: "01",
-    title: "Introduction to Place Value",
-    description: "Understand what equivalent fractions are and how to identify them.",
-    status: "Completed", // Completed, In Progress, Not Started
-    statusColor: "bg-[#2EE59D]/20 text-[#00A859] border border-[#2EE59D]/30",
-    tags: [
-      { label: "Lesson Note", icon: BookOpen, color: "text-rose-500 bg-rose-50 border-rose-100" },
-      { label: "Video", icon: Video, color: "text-purple-500 bg-purple-50 border-purple-100" },
-      { label: "Worksheet", icon: FileText, color: "text-blue-500 bg-blue-50 border-blue-100" },
-      { label: "Practice Activity", icon: Layers, color: "text-cyan-500 bg-cyan-50 border-cyan-100" },
-      { label: "Assessment", icon: CheckCircle2, color: "text-amber-500 bg-amber-50 border-amber-100" },
-    ]
-  },
-  {
-    id: 2,
-    number: "01",
-    title: "Introduction to Place Value",
-    description: "Understand what equivalent fractions are and how to identify them.",
-    status: "In Progress",
-    statusColor: "bg-amber-400/20 text-amber-700 border border-amber-400/30",
-    tags: [
-      { label: "Lesson Note", icon: BookOpen, color: "text-rose-500 bg-rose-50 border-rose-100" },
-      { label: "Video", icon: Video, color: "text-purple-500 bg-purple-50 border-purple-100" },
-      { label: "Practice Activity", icon: Layers, color: "text-cyan-500 bg-cyan-50 border-cyan-100" },
-    ]
-  },
-  {
-    id: 3,
-    number: "01",
-    title: "Introduction to Place Value",
-    description: "Understand what equivalent fractions are and how to identify them.",
-    status: "Not Started",
-    statusColor: "bg-slate-200/70 text-slate-600 border border-slate-300/50",
-    tags: [
-      { label: "Lesson Note", icon: BookOpen, color: "text-rose-500 bg-rose-50 border-rose-100" },
-      { label: "Video", icon: Video, color: "text-purple-500 bg-purple-50 border-purple-100" },
-      { label: "Practice Activity", icon: Layers, color: "text-cyan-500 bg-cyan-50 border-cyan-100" },
-    ]
-  }
-];
+const kindOf = (a) => {
+  const t = a.mimeType || '';
+  if (t.startsWith('video/')) return 'video';
+  if (t.startsWith('image/')) return 'image';
+  if (t.startsWith('audio/')) return 'audio';
+  return 'file';
+};
+
+const ICONS = { video: Video, image: ImageIcon, audio: Video, file: FileText };
+
+function Resource({ a }) {
+  const kind = kindOf(a);
+  const src = assetUrl(a.fileUrl);
+  if (kind === 'video') return <video controls preload="metadata" src={src} className="w-full max-h-[420px] rounded-xl bg-black" />;
+  if (kind === 'audio') return <audio controls src={src} className="w-full" />;
+  if (kind === 'image') return <img src={src} alt={a.fileName} className="max-h-[420px] rounded-xl border border-slate-200" />;
+  const Icon = a.fileUrl.startsWith('https://') ? Link2 : ICONS[kind];
+  return (
+    <a href={src} target="_blank" rel="noopener noreferrer"
+       className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-medium text-slate-700 hover:border-slate-300">
+      <Icon className="h-4 w-4 text-blue-500" /> {a.fileName}
+    </a>
+  );
+}
 
 export default function LessonDetail() {
   const navigate = useNavigate();
-  const { courseId, lessonId } = useParams();
-  const [activeTab, setActiveTab] = useState("lessons");
+  const { courseId, lessonId: topicId } = useParams(); // the URL segment :lessonId is the topic id
+  const [subjectName, setSubjectName] = useState('');
+  const [topic, setTopic] = useState(null);
+  const [activeTab, setActiveTab] = useState('lessons');
+  const [openId, setOpenId] = useState(null);
+  const [busyId, setBusyId] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    Promise.all([api.get('/student/subjects'), api.get(`/curriculum/subjects/${courseId}/topics`)])
+      .then(([subjects, topics]) => {
+        setSubjectName(subjects.find((s) => String(s.id) === String(courseId))?.name ?? 'Course');
+        const t = topics.find((x) => String(x.id) === String(topicId));
+        if (!t) throw new Error('This topic could not be found.');
+        setTopic(t);
+        setOpenId((t.lessons.find((l) => !l.completed) ?? t.lessons[0])?.id ?? null);
+      })
+      .catch((err) => setError(err.message || 'Could not load this topic.'))
+      .finally(() => setLoading(false));
+  }, [courseId, topicId]);
+
+  const markComplete = async (lesson) => {
+    setBusyId(lesson.id);
+    try {
+      await api.post(`/curriculum/lessons/${lesson.id}/complete`);
+      setTopic((t) => ({ ...t, lessons: t.lessons.map((l) => (l.id === lesson.id ? { ...l, completed: true } : l)) }));
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const lessons = topic?.lessons ?? [];
+  const done = lessons.filter((l) => l.completed).length;
+  const progress = lessons.length ? Math.round((done / lessons.length) * 100) : 0;
+  const firstOpen = lessons.find((l) => !l.completed) ?? lessons[0];
+
+  const tab = (name, label) => (
+    <button onClick={() => setActiveTab(name)}
+      className={`pb-3 relative transition-colors ${activeTab === name ? 'text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}>
+      {label}
+      {activeTab === name && <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-blue-600 rounded-full" />}
+    </button>
+  );
 
   return (
     <div className="w-full min-h-screen p-6 md:p-10 font-sans text-slate-800 bg-[#f8fafc]">
       <div className="max-w-5xl mx-auto space-y-6">
-        
-        {/* Breadcrumb Navigation */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-xs md:text-sm font-medium">
-            <span 
-              className="text-blue-600 hover:text-blue-700 cursor-pointer transition-colors" 
-              onClick={() => navigate('/student/learning')}
-            >
-              My Learning Journey
-            </span>
-            <ChevronRight className="w-4 h-4 text-blue-500" />
-            <span 
-              className="text-blue-600 hover:text-blue-700 cursor-pointer transition-colors"
-              onClick={() => navigate(-1)}
-            >
-              Mathematics
-            </span>
-            <ChevronRight className="w-4 h-4 text-blue-500" />
-            <span className="text-blue-600 font-medium">
-              Numbers
-            </span>
-          </div>
+        <div className="flex items-center gap-2 text-xs md:text-sm font-medium">
+          <span className="text-blue-600 hover:text-blue-700 cursor-pointer" onClick={() => navigate('/student/learning')}>My Learning Journey</span>
+          <ChevronRight className="w-4 h-4 text-blue-500" />
+          <span className="text-blue-600 hover:text-blue-700 cursor-pointer" onClick={() => navigate(`/student/learning/${courseId}`)}>{subjectName}</span>
+          {topic && (<><ChevronRight className="w-4 h-4 text-blue-500" /><span className="text-blue-600 font-medium">{topic.title}</span></>)}
         </div>
 
-        {/* Main Topic Header Section */}
-        <div className="space-y-6 bg-transparent pt-2">
-          <div className="space-y-2">
-            <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">
-               Numbers
-            </h1>
-            <p className="text-sm text-slate-500 leading-relaxed max-w-2xl font-normal">
-              Understand numbers, place value, and how to work with them.
-            </p>
-          </div>
+        {error && <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
+        {loading && <p className="py-10 text-center text-sm text-slate-400">Loading…</p>}
 
-          {/* Progress Section & Continue Learning Button Side-by-Side */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="space-y-2.5 flex-1 max-w-xl">
-              <div className="flex justify-between items-center text-xs md:text-sm">
-                <span className="font-bold text-slate-900">
-                  82% Complete
-                </span>
-                <span className="text-slate-500 font-medium text-xs">
-                  6 of 8 lessons completed
-                </span>
+        {topic && (
+          <>
+            <div className="space-y-6 pt-2">
+              <div className="space-y-2">
+                <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">{topic.title}</h1>
+                {topic.description && <p className="text-sm text-slate-500 leading-relaxed max-w-2xl">{topic.description}</p>}
               </div>
-              
-              {/* Progress Bar */}
-              <div className="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden flex">
-                <div 
-                  className="h-full bg-slate-900 rounded-full transition-all duration-500" 
-                  style={{ width: `82%` }}
-                />
-              </div>
-            </div>
 
-            {/* Dark Continue Learning Button */}
-            <div>
-              <button className="flex items-center justify-center gap-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs md:text-sm font-medium py-3 px-6 rounded-xl transition-all shadow-md group whitespace-nowrap">
-                <span>Continue Learning</span>
-                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-              </button>
-            </div>
-          </div>
-
-          {/* Tabs Navigation (Lessons / About this topic) */}
-          <div className="flex items-center gap-8 border-b border-slate-200 pt-4 text-sm font-semibold">
-            <button 
-              onClick={() => setActiveTab("lessons")}
-              className={`pb-3 relative transition-colors ${activeTab === "lessons" ? "text-slate-900" : "text-slate-400 hover:text-slate-600"}`}
-            >
-              Lessons
-              {activeTab === "lessons" && (
-                <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-blue-600 rounded-full" />
-              )}
-            </button>
-            <button 
-              onClick={() => setActiveTab("about")}
-              className={`pb-3 relative transition-colors ${activeTab === "about" ? "text-slate-900" : "text-slate-400 hover:text-slate-600"}`}
-            >
-              About this topic
-              {activeTab === "about" && (
-                <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-blue-600 rounded-full" />
-              )}
-            </button>
-          </div>
-        </div>
-
-        {/* Lessons Cards List */}
-        <div className="space-y-4 pt-2">
-          {lessonsList.map((lesson) => (
-            <div 
-              key={lesson.id}
-              className="bg-white rounded-2xl border border-slate-200/80 p-5 md:p-6 shadow-sm hover:border-slate-300 transition-all space-y-4"
-            >
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                
-                {/* Left: Number circle & Title/Desc */}
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-800 font-bold text-base flex items-center justify-center shrink-0">
-                    {lesson.number}
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-slate-900 text-base md:text-lg">
-                      {lesson.title}
-                    </h3>
-                    <p className="text-xs md:text-sm text-slate-500 mt-0.5">
-                      {lesson.description}
-                    </p>
-                  </div>
+              <div className="space-y-2.5 max-w-xl">
+                <div className="flex justify-between items-center text-xs md:text-sm">
+                  <span className="font-bold text-slate-900">{progress}% Complete</span>
+                  <span className="text-slate-500 font-medium text-xs">{done} of {lessons.length} lessons completed</span>
                 </div>
-
-                {/* Right: Status Badge */}
-                <div className="self-start md:self-center">
-                  <span className={`inline-flex items-center px-4 py-1.5 rounded-full text-xs font-semibold ${lesson.statusColor}`}>
-                    {lesson.status}
-                  </span>
+                <div className="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden">
+                  <div className="h-full bg-slate-900 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
                 </div>
               </div>
 
-              {/* Bottom Tags / Resource Buttons */}
-              <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100">
-                {lesson.tags.map((tag, idx) => {
-                  const IconComp = tag.icon;
+              <div className="flex items-center gap-8 border-b border-slate-200 pt-4 text-sm font-semibold">
+                {tab('lessons', 'Lessons')}
+                {tab('about', 'About this topic')}
+              </div>
+            </div>
+
+            {activeTab === 'about' && (
+              <p className="rounded-2xl border border-slate-200/80 bg-white p-6 text-sm text-slate-600 shadow-sm">
+                {topic.description || 'No description has been added for this topic yet.'}
+              </p>
+            )}
+
+            {activeTab === 'lessons' && (
+              <div className="space-y-4 pt-2">
+                {lessons.length === 0 && <p className="py-8 text-center text-sm text-slate-400">No lessons in this topic yet.</p>}
+                {lessons.map((lesson, i) => {
+                  const open = openId === lesson.id;
                   return (
-                    <div 
-                      key={idx} 
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium ${tag.color}`}
-                    >
-                      <IconComp className="w-3.5 h-3.5" />
-                      <span>{tag.label}</span>
+                    <div key={lesson.id} className="bg-white rounded-2xl border border-slate-200/80 p-5 md:p-6 shadow-sm space-y-4">
+                      <button type="button" onClick={() => setOpenId(open ? null : lesson.id)} className="flex w-full items-center justify-between gap-4 text-left">
+                        <div className="flex items-start gap-4">
+                          <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-800 font-bold text-base flex items-center justify-center shrink-0">
+                            {String(i + 1).padStart(2, '0')}
+                          </div>
+                          <div>
+                            <h3 className="font-bold text-slate-900 text-base md:text-lg">{lesson.title}</h3>
+                            <p className="text-xs md:text-sm text-slate-500 mt-0.5">
+                              {lesson.attachments.length} resource{lesson.attachments.length === 1 ? '' : 's'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className={`inline-flex items-center px-4 py-1.5 rounded-full text-xs font-semibold ${
+                            lesson.completed ? 'bg-[#2EE59D]/20 text-[#00A859] border border-[#2EE59D]/30' : 'bg-slate-200/70 text-slate-600 border border-slate-300/50'}`}>
+                            {lesson.completed ? 'Completed' : 'Not Started'}
+                          </span>
+                          <ChevronDown className={`h-5 w-5 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+                        </div>
+                      </button>
+
+                      {open && (
+                        <div className="space-y-4 border-t border-slate-100 pt-4">
+                          {lesson.content && (
+                            <div className="flex gap-3">
+                              <BookOpen className="mt-0.5 h-4 w-4 shrink-0 text-rose-500" />
+                              <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-700">{lesson.content}</p>
+                            </div>
+                          )}
+                          <div className="space-y-3">
+                            {lesson.attachments.map((a) => <Resource key={a.id} a={a} />)}
+                          </div>
+                          {!lesson.completed && (
+                            <button type="button" onClick={() => markComplete(lesson)} disabled={busyId === lesson.id}
+                              className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60">
+                              <CheckCircle2 className="h-4 w-4" /> {busyId === lesson.id ? 'Saving…' : 'Mark as complete'}
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
+                {firstOpen && done < lessons.length && openId !== firstOpen.id && (
+                  <button type="button" onClick={() => setOpenId(firstOpen.id)} className="text-sm font-semibold text-blue-600 hover:text-blue-700">
+                    Jump to next lesson
+                  </button>
+                )}
               </div>
-
-            </div>
-          ))}
-        </div>
-
+            )}
+          </>
+        )}
       </div>
     </div>
   );

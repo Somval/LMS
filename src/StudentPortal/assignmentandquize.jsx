@@ -1,116 +1,11 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { api } from "../lib/api";
+import { toCompleted, toTodo } from "./courseworkFormat";
 import { ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import CompletedTasks from "./completedTask";
 
-const todos = [
-  {
-    id: 1,
-    type: "assignment",
-    date: "Today",
-    dateSub: "Aug 17",
-    subject: "Mathematics",
-    task: "Algebra Practice",
-    taskType: "Assignment",
-    due: "Aug 18, 2024",
-    dueTime: "11:59 PM",
-    status: "Pending",
-    action: "View Assignment",
-  },
-  {
-    id: 2,
-    type: "assignment",
-    date: "Today",
-    dateSub: "Aug 17",
-    subject: "Mathematics",
-    task: "Algebra Practice",
-    taskType: "Assignment",
-    due: "Aug 18, 2024",
-    dueTime: "11:59 PM",
-    status: "Pending",
-    action: "View Assignment",
-  },
-  {
-    id: 3,
-    type: "quiz",
-    date: "Today",
-    dateSub: "Aug 17",
-    subject: "Mathematics",
-    task: "Chapter 3 Quiz",
-    taskType: "Quiz",
-    due: "Aug 18, 2024",
-    dueTime: "11:59 PM",
-    status: "Pending",
-    action: "Take Quiz",
-  },
-  {
-    id: 4,
-    type: "assignment",
-    date: "Today",
-    dateSub: "Aug 17",
-    subject: "Science",
-    task: "Physics Practice",
-    taskType: "Assignment",
-    due: "Aug 19, 2024",
-    dueTime: "11:59 PM",
-    status: "Pending",
-    action: "View Assignment",
-  },
-  {
-    id: 5,
-    type: "quiz",
-    date: "Today",
-    dateSub: "Aug 17",
-    subject: "Science",
-    task: "Chapter 5 Quiz",
-    taskType: "Quiz",
-    due: "Aug 20, 2024",
-    dueTime: "11:59 PM",
-    status: "Pending",
-    action: "Take Quiz",
-  },
-  {
-    id: 6,
-    type: "completed",
-    date: "Yesterday",
-    dateSub: "Aug 16",
-    subject: "Mathematics",
-    task: "Linear Equations",
-    taskType: "Assignment",
-    due: "Aug 16, 2024",
-    dueTime: "11:59 PM",
-    status: "Completed",
-    action: "View Result",
-  },
-  {
-    id: 7,
-    type: "completed",
-    date: "Yesterday",
-    dateSub: "Aug 16",
-    subject: "Mathematics",
-    task: "Chapter 2 Quiz",
-    taskType: "Quiz",
-    due: "Aug 16, 2024",
-    dueTime: "11:59 PM",
-    status: "Completed",
-    action: "View Result",
-  },
-  {
-    id: 8,
-    type: "completed",
-    date: "Aug 15",
-    dateSub: "Thursday",
-    subject: "Science",
-    task: "Forces & Motion",
-    taskType: "Assignment",
-    due: "Aug 15, 2024",
-    dueTime: "11:59 PM",
-    status: "Completed",
-    action: "View Result",
-  },
-];
-
-const tabs = [
+const baseTabs = [
   {
     id: "all",
     label: "All",
@@ -135,6 +30,25 @@ const tabs = [
 
 export default function TodoClasses() {
   const navigate = useNavigate();
+  const [todos, setTodos] = useState([]);
+  const [completed, setCompleted] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    api
+      .get("/coursework")
+      .then((list) => {
+        setTodos(list.map(toTodo));
+        setCompleted(list.filter((w) => w.submission).map(toCompleted));
+      })
+      .catch((err) => setError(err.message || "Could not load your coursework."))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const countOf = (id) =>
+    id === "all" ? todos.length : todos.filter((t) => t.type === id).length;
+  const tabs = baseTabs.map((t) => ({ ...t, count: countOf(t.id) }));
 
   const [activeTab, setActiveTab] = useState("all");
   const [showAll, setShowAll] = useState(false);
@@ -154,7 +68,7 @@ export default function TodoClasses() {
       default:
         return todos;
     }
-  }, [activeTab]);
+  }, [activeTab, todos]);
 
   const visibleTodos = showAll
     ? filteredTodos
@@ -179,28 +93,17 @@ export default function TodoClasses() {
    * Handle navigation for each action
    */
   const handleActionClick = (item) => {
-    switch (item.type) {
-      case "assignment":
-        navigate(`/student/assignment/${item.id}`);
-        break;
-
-      case "quiz":
-        navigate(`/quiz/${item.id}`);
-        break;
-
-      case "completed":
-        navigate(`/assignment-result/${item.id}`);
-        break;
-
-      default:
-        break;
-    }
+    navigate(`/student/assignment/${item.id}`);
   };
 
   return (
     <>
       <section className="w-full px-4 py-5 sm:px-5">
         <div className="w-full">
+          {error && (
+            <p role="alert" className="mb-4 rounded-md bg-red-50 px-3 py-2 text-xs text-red-600">{error}</p>
+          )}
+          {loading && <p className="mb-4 text-xs text-[#747ca1]">Loading…</p>}
 
           {/* FILTER TABS */}
           <div className="mb-5 flex flex-wrap items-center gap-2">
@@ -648,7 +551,7 @@ export default function TodoClasses() {
         </div>
       </section>
 
-      <CompletedTasks />
+      <CompletedTasks tasks={completed} />
     </>
   );
 }

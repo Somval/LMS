@@ -7,378 +7,40 @@ import {
   ChevronRight,
 } from "lucide-react";
 
-const studentsData = [
-  {
-    id: 1,
-    name: "Olivia Johnson",
-    subject: "Mathematics",
-    year: "Year 1",
-    performance: "82%",
-    attendance: "92%",
-    status: "Active",
-    pending: "2 Assignment, 1 Quiz",
-    lastClass: "May 26, 2025",
-    time: "5:00 PM",
-    type: "New Students",
-  },
-  {
-    id: 2,
-    name: "James Anderson",
-    subject: "Mathematics",
-    year: "Year 1",
-    performance: "88%",
-    attendance: "95%",
-    status: "Active",
-    pending: "1 Assignment",
-    lastClass: "May 26, 2025",
-    time: "4:00 PM",
-    type: "New Students",
-  },
-  {
-    id: 3,
-    name: "Sophia Williams",
-    subject: "English",
-    year: "Year 2",
-    performance: "91%",
-    attendance: "94%",
-    status: "Active",
-    pending: "1 Quiz",
-    lastClass: "May 25, 2025",
-    time: "3:00 PM",
-    type: "Active Students",
-  },
-  {
-    id: 4,
-    name: "Noah Brown",
-    subject: "Science",
-    year: "Year 2",
-    performance: "76%",
-    attendance: "89%",
-    status: "Active",
-    pending: "3 Assignments",
-    lastClass: "May 25, 2025",
-    time: "5:00 PM",
-    type: "New Students",
-  },
-  {
-    id: 5,
-    name: "Emma Davis",
-    subject: "Mathematics",
-    year: "Year 3",
-    performance: "85%",
-    attendance: "96%",
-    status: "Active",
-    pending: "1 Assignment, 1 Quiz",
-    lastClass: "May 24, 2025",
-    time: "4:30 PM",
-    type: "Active Students",
-  },
-  {
-    id: 6,
-    name: "Liam Miller",
-    subject: "English",
-    year: "Year 1",
-    performance: "79%",
-    attendance: "91%",
-    status: "Active",
-    pending: "2 Assignments",
-    lastClass: "May 24, 2025",
-    time: "2:00 PM",
-    type: "New Students",
-  },
-  {
-    id: 7,
-    name: "Ava Wilson",
-    subject: "Science",
-    year: "Year 3",
-    performance: "94%",
-    attendance: "97%",
-    status: "Active",
-    pending: "No pending work",
-    lastClass: "May 23, 2025",
-    time: "5:00 PM",
-    type: "Active Students",
-  },
-  {
-    id: 8,
-    name: "William Moore",
-    subject: "Mathematics",
-    year: "Year 2",
-    performance: "81%",
-    attendance: "90%",
-    status: "Active",
-    pending: "2 Assignments",
-    lastClass: "May 23, 2025",
-    time: "3:30 PM",
-    type: "New Students",
-  },
-  {
-    id: 9,
-    name: "Isabella Taylor",
-    subject: "English",
-    year: "Year 3",
-    performance: "89%",
-    attendance: "93%",
-    status: "Active",
-    pending: "1 Quiz",
-    lastClass: "May 22, 2025",
-    time: "4:00 PM",
-    type: "Active Students",
-  },
-  {
-    id: 10,
-    name: "Lucas Thomas",
-    subject: "Science",
-    year: "Year 1",
-    performance: "74%",
-    attendance: "88%",
-    status: "Active",
-    pending: "2 Assignments, 1 Quiz",
-    lastClass: "May 22, 2025",
-    time: "5:00 PM",
-    type: "New Students",
-  },
-  {
-    id: 11,
-    name: "Mia Jackson",
-    subject: "Mathematics",
-    year: "Year 2",
-    performance: "93%",
-    attendance: "98%",
-    status: "Active",
-    pending: "No pending work",
-    lastClass: "May 21, 2025",
-    time: "4:00 PM",
-    type: "Active Students",
-  },
-  {
-    id: 12,
-    name: "Benjamin White",
-    subject: "English",
-    year: "Year 1",
-    performance: "83%",
-    attendance: "92%",
-    status: "Active",
-    pending: "1 Assignment",
-    lastClass: "May 21, 2025",
-    time: "3:00 PM",
-    type: "New Students",
-  },
-  {
-    id: 13,
-    name: "Charlotte Harris",
-    subject: "Science",
-    year: "Year 2",
-    performance: "87%",
-    attendance: "94%",
-    status: "Active",
-    pending: "1 Quiz",
-    lastClass: "May 20, 2025",
-    time: "5:00 PM",
-    type: "Active Students",
-  },
-  {
-    id: 14,
-    name: "Henry Martin",
-    subject: "Mathematics",
-    year: "Year 3",
-    performance: "78%",
-    attendance: "90%",
-    status: "Active",
-    pending: "2 Assignments",
-    lastClass: "May 20, 2025",
-    time: "4:30 PM",
-    type: "New Students",
-  },
-  {
-    id: 15,
-    name: "Amelia Thompson",
-    subject: "English",
-    year: "Year 2",
-    performance: "95%",
-    attendance: "99%",
-    status: "Active",
-    pending: "No pending work",
-    lastClass: "May 19, 2025",
-    time: "3:30 PM",
-    type: "Active Students",
-  },
-  {
-    id: 16,
-    name: "Alexander Garcia",
-    subject: "Science",
-    year: "Year 1",
-    performance: "80%",
-    attendance: "91%",
-    status: "Active",
-    pending: "1 Assignment",
-    lastClass: "May 19, 2025",
-    time: "5:00 PM",
-    type: "New Students",
-  },
-  {
-    id: 17,
-    name: "Harper Martinez",
-    subject: "Mathematics",
-    year: "Year 2",
-    performance: "86%",
-    attendance: "94%",
-    status: "Active",
-    pending: "2 Assignments",
-    lastClass: "May 18, 2025",
-    time: "4:00 PM",
-    type: "Active Students",
-  },
-  {
-    id: 18,
-    name: "Michael Robinson",
-    subject: "English",
-    year: "Year 3",
-    performance: "72%",
-    attendance: "86%",
-    status: "Active",
-    pending: "3 Assignments",
-    lastClass: "May 18, 2025",
-    time: "3:00 PM",
-    type: "New Students",
-  },
-  {
-    id: 19,
-    name: "Evelyn Clark",
-    subject: "Science",
-    year: "Year 2",
-    performance: "90%",
-    attendance: "96%",
-    status: "Active",
-    pending: "1 Quiz",
-    lastClass: "May 17, 2025",
-    time: "5:00 PM",
-    type: "Active Students",
-  },
-  {
-    id: 20,
-    name: "Daniel Rodriguez",
-    subject: "Mathematics",
-    year: "Year 1",
-    performance: "84%",
-    attendance: "93%",
-    status: "Active",
-    pending: "1 Assignment",
-    lastClass: "May 17, 2025",
-    time: "4:00 PM",
-    type: "New Students",
-  },
-  {
-    id: 21,
-    name: "Abigail Lewis",
-    subject: "English",
-    year: "Year 2",
-    performance: "88%",
-    attendance: "95%",
-    status: "Active",
-    pending: "No pending work",
-    lastClass: "May 16, 2025",
-    time: "3:00 PM",
-    type: "Active Students",
-  },
-  {
-    id: 22,
-    name: "Matthew Lee",
-    subject: "Science",
-    year: "Year 3",
-    performance: "77%",
-    attendance: "89%",
-    status: "Active",
-    pending: "2 Assignments",
-    lastClass: "May 16, 2025",
-    time: "5:00 PM",
-    type: "New Students",
-  },
-  {
-    id: 23,
-    name: "Emily Walker",
-    subject: "Mathematics",
-    year: "Year 1",
-    performance: "92%",
-    attendance: "97%",
-    status: "Active",
-    pending: "1 Quiz",
-    lastClass: "May 15, 2025",
-    time: "4:00 PM",
-    type: "Active Students",
-  },
-  {
-    id: 24,
-    name: "Joseph Hall",
-    subject: "English",
-    year: "Year 3",
-    performance: "80%",
-    attendance: "91%",
-    status: "Active",
-    pending: "2 Assignments",
-    lastClass: "May 15, 2025",
-    time: "3:30 PM",
-    type: "New Students",
-  },
-  {
-    id: 25,
-    name: "Elizabeth Allen",
-    subject: "Science",
-    year: "Year 1",
-    performance: "89%",
-    attendance: "94%",
-    status: "Active",
-    pending: "1 Assignment",
-    lastClass: "May 14, 2025",
-    time: "5:00 PM",
-    type: "Active Students",
-  },
-  {
-    id: 26,
-    name: "David Young",
-    subject: "Mathematics",
-    year: "Year 3",
-    performance: "83%",
-    attendance: "92%",
-    status: "Active",
-    pending: "1 Quiz",
-    lastClass: "May 14, 2025",
-    time: "4:00 PM",
-    type: "New Students",
-  },
-  {
-    id: 27,
-    name: "Sofia Hernandez",
-    subject: "English",
-    year: "Year 1",
-    performance: "96%",
-    attendance: "98%",
-    status: "Active",
-    pending: "No pending work",
-    lastClass: "May 13, 2025",
-    time: "3:00 PM",
-    type: "Active Students",
-  },
-  {
-    id: 28,
-    name: "Samuel King",
-    subject: "Science",
-    year: "Year 2",
-    performance: "75%",
-    attendance: "87%",
-    status: "Active",
-    pending: "2 Assignments, 1 Quiz",
-    lastClass: "May 13, 2025",
-    time: "5:00 PM",
-    type: "New Students",
-  },
-];
+const fmtDay = (iso) =>
+  new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+const fmtTime = (iso) =>
+  new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 
-export default function StudentsTable() {
+const toRow = (s) => {
+  const parts = [
+    s.pendingAssignments ? `${s.pendingAssignments} Assignment${s.pendingAssignments === 1 ? "" : "s"}` : "",
+    s.pendingQuizzes ? `${s.pendingQuizzes} Quiz${s.pendingQuizzes === 1 ? "" : "zes"}` : "",
+  ].filter(Boolean);
+  const first = s.subjects[0];
+  return {
+    id: s.id,
+    name: s.fullName,
+    subjectNames: s.subjects.map((x) => x.name),
+    subject: s.subjects.length > 1 ? `${first.name} +${s.subjects.length - 1}` : first?.name ?? "—",
+    year: first?.yearLevel ?? "",
+    performance: s.performance == null ? "—" : `${s.performance}%`,
+    attendance: s.attendanceRate == null ? "—" : `${s.attendanceRate}%`,
+    status: "Active",
+    pending: parts.join(", ") || "None",
+    lastClass: s.lastClassAt ? fmtDay(s.lastClassAt) : "No classes yet",
+    time: s.lastClassAt ? fmtTime(s.lastClassAt) : "",
+    type: s.isNew ? "New Students" : "Existing Students",
+  };
+};
+
+export default function StudentsTable({ students = [], loading = false }) {
   const navigate = useNavigate();
+  const studentsData = useMemo(() => students.map(toRow), [students]);
+  const subjectOptions = useMemo(() => [...new Set(studentsData.flatMap((s) => s.subjectNames))], [studentsData]);
   const [search, setSearch] = useState("");
   const [subject, setSubject] = useState("All Subjects");
-  const [studentType, setStudentType] = useState("New Students");
+  const [studentType, setStudentType] = useState("All Students");
 
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(8);
@@ -394,7 +56,7 @@ export default function StudentsTable() {
 
       const matchesSubject =
         subject === "All Subjects" ||
-        student.subject.toLowerCase() === subject.toLowerCase();
+        student.subjectNames.some((n) => n.toLowerCase() === subject.toLowerCase());
 
       const matchesStudentType =
         studentType === "All Students" ||
@@ -402,7 +64,7 @@ export default function StudentsTable() {
 
       return matchesSearch && matchesSubject && matchesStudentType;
     });
-  }, [search, subject, studentType]);
+  }, [studentsData, search, subject, studentType]);
 
   const totalPages = Math.max(
     1,
@@ -467,9 +129,9 @@ export default function StudentsTable() {
               className="h-[40px] w-full appearance-none rounded-[6px] border border-[#D7DCE5] bg-white px-3 pr-9 text-[12px] font-normal text-[#20242A] outline-none transition focus:border-[#2E6DFF] focus:ring-1 focus:ring-[#2E6DFF]/10"
             >
               <option>All Subjects</option>
-              <option>Mathematics</option>
-              <option>English</option>
-              <option>Science</option>
+              {subjectOptions.map((name) => (
+                <option key={name}>{name}</option>
+              ))}
             </select>
             <ChevronDown
               size={15}
@@ -484,9 +146,9 @@ export default function StudentsTable() {
               onChange={(e) => setStudentType(e.target.value)}
               className="h-[40px] w-full appearance-none rounded-[6px] border border-[#D7DCE5] bg-white px-3 pr-9 text-[12px] font-normal text-[#20242A] outline-none transition focus:border-[#2E6DFF] focus:ring-1 focus:ring-[#2E6DFF]/10"
             >
-              <option>New Students</option>
               <option>All Students</option>
-              <option>Active Students</option>
+              <option>New Students</option>
+              <option>Existing Students</option>
             </select>
             <ChevronDown
               size={15}
@@ -600,7 +262,7 @@ export default function StudentsTable() {
                       colSpan={8}
                       className="h-[150px] text-center text-[11px] text-[#8C929B]"
                     >
-                      No students found
+                      {loading ? "Loading…" : students.length === 0 ? "No students yet. Students appear here once they enrol in one of your subjects." : "No students found"}
                     </td>
                   </tr>
                 )}

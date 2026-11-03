@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useAuth } from "../../../context/AuthContext";
 
 export default function CreateAccount({ onNext }) {
   const [showPassword, setShowPassword] = useState(false);
@@ -27,6 +28,8 @@ export default function CreateAccount({ onNext }) {
   });
 
   const [errors, setErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
+  const { register } = useAuth();
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -63,7 +66,7 @@ export default function CreateAccount({ onNext }) {
     return newErrors;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const validationErrors = validate();
     if (Object.keys(validationErrors).length > 0) {
@@ -71,8 +74,26 @@ export default function CreateAccount({ onNext }) {
       return;
     }
 
-    if (onNext) {
-      onNext();
+    setSubmitting(true);
+    try {
+      // Creates the account and signs the student in, so the later
+      // onboarding steps (subjects, payment) can call authenticated endpoints.
+      await register("student", {
+        fullName: formData.fullName.trim(),
+        email: formData.email.trim(),
+        phoneNumber: formData.phoneNumber?.trim() || undefined,
+        password: formData.password,
+        confirmPassword: formData.confirmPassword,
+        agreed: formData.agreed,
+      });
+      if (onNext) onNext();
+    } catch (err) {
+      // Show server-side field errors (e.g. "email already exists") next to the form.
+      const fieldErrors = {};
+      (err.errors || []).forEach((x) => { if (x.field) fieldErrors[x.field] = x.message; });
+      setErrors(Object.keys(fieldErrors).length ? fieldErrors : { email: err.message });
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -342,9 +363,10 @@ export default function CreateAccount({ onNext }) {
         <div className="pt-2">
           <button
             type="submit"
-            className="w-full h-12 bg-[#30336b] hover:bg-[#252854] text-white font-bold text-xs rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+            disabled={submitting}
+            className="w-full h-12 bg-[#30336b] hover:bg-[#252854] text-white font-bold text-xs rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            <span>Continue</span>
+            <span>{submitting ? "Creating account…" : "Continue"}</span>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="5" y1="12" x2="19" y2="12"></line>
               <polyline points="12 5 19 12 12 19"></polyline>

@@ -1,10 +1,28 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { api } from "../../lib/api";
 import SuccessImage from "../../assets/images/5ef1e0f9d2c50905138cb0c9a7e6f15fd7f95c37 (1).png";
 import ParentLinkCode from "../../components/parentlinkcode";
 import SelectedCourse from "../../components/StudentComponent/SelectedCourses";
 import AccountVerification from "../../components/StudentComponent/AccountVerificationstatus";
 
 export default function RegistrationSuccess({ onGoToDashboard }) {
+  const [summary, setSummary] = useState(null);
+  const [link, setLink] = useState(null); // { learnerId, code, expiresAt }
+  const [error, setError] = useState("");
+  const started = useRef(false);
+
+  useEffect(() => {
+    // Generating a code replaces the previous one, so only ever do it once per visit.
+    if (started.current) return;
+    started.current = true;
+    Promise.all([api.get("/student/summary"), api.post("/student/link-code")])
+      .then(([sum, code]) => {
+        setSummary(sum);
+        setLink(code);
+      })
+      .catch((err) => setError(err.message || "Could not load your details."));
+  }, []);
+
   return (
     <div className="flex w-full flex-col items-center bg-white px-4 py-8 font-inria">
       {/* Success Image */}
@@ -27,12 +45,12 @@ export default function RegistrationSuccess({ onGoToDashboard }) {
 
       {/* Parent Link Code */}
       <div className="mt-6 w-full max-w-[820px]">
-        <ParentLinkCode />
+        <ParentLinkCode link={link} error={error} />
       </div>
 
       {/* Selected Courses */}
       <div className="mt-6 w-full max-w-[776px]">
-        <SelectedCourse />
+        <SelectedCourse courses={summary?.subjects} active={summary?.active} />
       </div>
 
       {/* Account Verification */}
@@ -46,7 +64,7 @@ export default function RegistrationSuccess({ onGoToDashboard }) {
         className="group mt-8 flex h-[81px] w-full max-w-[776px] items-center justify-center gap-4 rounded-[10px] bg-[#2F327D] transition-all hover:bg-[#252865] focus:outline-none focus:ring-2 focus:ring-[#2F327D] focus:ring-offset-2"
       >
         <span className="font-[nunito] text-lg font-bold text-white sm:text-xl">
-          Go to Login
+          Go to Dashboard
         </span>
         <svg
           width="27"

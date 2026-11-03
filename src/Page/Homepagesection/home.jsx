@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link } from "react-router-dom";
 import {
@@ -16,10 +17,11 @@ import TutorLoginImage from "../../assets/images/a91aa928c569b30aaea81469aa8ddb1
 import WhyChooseUs from "./WhyChooseUs";
 import HowItWorks from "./howitworks";
 import Whoweare from "./whoweempower";
-import Student from "./Subjects"
-import TrackProgress from "./Trackprogress"
-import Confidence from "./Confidence"
+import Student from "./Subjects";
+import TrackProgress from "./Trackprogress";
+import Confidence from "./Confidence";
 import Footer from "../../components/footer";
+
 // =====================================================
 // LOGIN CARD
 // =====================================================
@@ -43,7 +45,6 @@ const LoginCard = ({ image, title, to }) => {
         hover:shadow-lg
       "
     >
-      {/* Background Image */}
       <img
         src={image}
         alt={title}
@@ -59,7 +60,6 @@ const LoginCard = ({ image, title, to }) => {
         "
       />
 
-      {/* Overlay */}
       <div
         className="
           absolute
@@ -71,13 +71,12 @@ const LoginCard = ({ image, title, to }) => {
         "
       />
 
-      {/* Content */}
       <div className="absolute inset-x-0 bottom-0 p-3.5">
-        <p className="flex items-center gap-1.5 text-[11px] font-semibold text-white sm:text-xs">
+        <p className="flex items-center gap-1.5 text-sm font-semibold text-white sm:text-base">
           {title}
 
           <ArrowRight
-            size={12}
+            size={15}
             strokeWidth={2.5}
             className="
               transition-transform
@@ -114,9 +113,7 @@ const LiveClassCard = () => {
         lg:top-[125px]
       "
     >
-      {/* Top Content */}
       <div className="flex items-center gap-2.5">
-        {/* Tutor */}
         <div className="relative shrink-0">
           <img
             src={TutorImage}
@@ -139,19 +136,17 @@ const LiveClassCard = () => {
           />
         </div>
 
-        {/* Text */}
         <div className="min-w-0">
-          <p className="text-[10px] font-semibold text-[#343343]">
+          <p className="text-xs font-semibold text-[#343343] sm:text-sm">
             Live Class
           </p>
 
-          <p className="mt-0.5 text-[9px] text-[#77758b]">
+          <p className="mt-0.5 text-[11px] text-[#77758b] sm:text-xs">
             Today at 4.00 PM
           </p>
         </div>
       </div>
 
-      {/* Button */}
       <button
         type="button"
         className="
@@ -160,11 +155,12 @@ const LiveClassCard = () => {
           bg-[#30317f]
           px-5
           py-1.5
-          text-[9px]
+          text-[11px]
           font-semibold
           text-white
           transition
           hover:bg-[#252665]
+          sm:text-xs
         "
       >
         Join Now
@@ -195,7 +191,6 @@ const LessonCompletedCard = () => {
       "
     >
       <div className="flex items-center gap-2.5">
-        {/* Icon */}
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#5b57d9]">
           <BookOpenCheck
             size={17}
@@ -204,13 +199,12 @@ const LessonCompletedCard = () => {
           />
         </div>
 
-        {/* Text */}
         <div className="whitespace-nowrap">
-          <p className="text-[10px] font-semibold text-[#41404b]">
+          <p className="text-xs font-semibold text-[#41404b] sm:text-sm">
             Lesson Completed
           </p>
 
-          <p className="mt-0.5 text-[9px] text-[#858393]">
+          <p className="mt-0.5 text-[11px] text-[#858393] sm:text-xs">
             Keep up the great work!
           </p>
         </div>
@@ -242,7 +236,6 @@ const ActiveStudentsCard = () => {
       "
     >
       <div className="flex items-center gap-2.5">
-        {/* Icon */}
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#ff9948]">
           <Users
             size={18}
@@ -251,13 +244,12 @@ const ActiveStudentsCard = () => {
           />
         </div>
 
-        {/* Text */}
         <div className="whitespace-nowrap">
-          <p className="text-[10px] font-semibold text-[#555360]">
+          <p className="text-xs font-semibold text-[#555360] sm:text-sm">
             5,000+ Active Students
           </p>
 
-          <p className="mt-0.5 text-[9px] text-[#898793]">
+          <p className="mt-0.5 text-[11px] text-[#898793] sm:text-xs">
             Learning every day
           </p>
         </div>
@@ -315,11 +307,7 @@ const DecorativeStar = () => {
 export default function Hero() {
   return (
     <>
-      {/* =====================================================
-          HERO SECTION
-      ====================================================== */}
-
-      <section className="relative overflow-hidden bg-[#fff8f6] mt-8">
+      <section className="relative mt-8 overflow-hidden bg-[#fff8f6]">
         <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
           <div
             className="
@@ -333,25 +321,22 @@ export default function Hero() {
               lg:grid-cols-[1fr_0.9fr]
               lg:gap-12
               lg:py-20
-          "
+            "
           >
-            {/* =================================================
-                LEFT SIDE
-            ================================================== */}
+            {/* LEFT SIDE */}
 
             <div className="relative z-10">
-              {/* Heading */}
               <h1
                 className="
                   max-w-[580px]
                   font-serif
-                  text-[46px]
+                  text-[49px]
                   font-medium
-                  leading-[1.04]
+                  leading-[1.08]
                   tracking-[-1.8px]
                   text-[#413c3a]
-                  sm:text-[56px]
-                  lg:text-[62px]
+                  sm:text-[58px]
+                  lg:text-[66px]
                 "
               >
                 Expert{" "}
@@ -359,7 +344,6 @@ export default function Hero() {
                 <span className="relative inline-block text-[#30317f]">
                   Tutoring.
 
-                  {/* Decorative Lines */}
                   <span
                     className="
                       absolute
@@ -406,16 +390,18 @@ export default function Hero() {
                 Learner.
               </h1>
 
-              {/* Description */}
+              {/* DESCRIPTION */}
+
               <p
                 className="
                   mt-6
                   max-w-[520px]
-                  text-[13px]
-                  leading-6
+                  text-[15px]
+                  leading-7
                   text-[#676582]
-                  sm:text-sm
-                  sm:leading-7
+                  sm:text-base
+                  sm:leading-8
+                  lg:text-lg
                 "
               >
                 Empowering students with live instruction, expert tutors,
@@ -423,12 +409,9 @@ export default function Hero() {
                 to create a smarter, more engaging learning experience.
               </p>
 
-              {/* =================================================
-                  CTA BUTTONS
-              ================================================== */}
+              {/* CTA BUTTONS */}
 
               <div className="mt-7 flex flex-wrap gap-3">
-                {/* Primary */}
                 <Link
                   to="/programs"
                   className="
@@ -440,26 +423,26 @@ export default function Hero() {
                     rounded-[4px]
                     bg-[#f4d500]
                     px-5
-                    text-[10px]
+                    text-xs
                     font-semibold
-                    text-white
+                    text-[#413c3a]
                     shadow-sm
                     transition-all
                     duration-300
                     hover:-translate-y-0.5
                     hover:bg-[#dec300]
                     hover:shadow-md
+                    sm:text-sm
                   "
                 >
                   Start Learning Today
 
                   <ArrowRight
-                    size={14}
+                    size={16}
                     strokeWidth={2.5}
                   />
                 </Link>
 
-                {/* Secondary */}
                 <Link
                   to="/free-trial"
                   className="
@@ -473,16 +456,17 @@ export default function Hero() {
                     border-[#e7cc00]
                     bg-transparent
                     px-5
-                    text-[10px]
+                    text-xs
                     font-medium
-                    text-[#c4a900]
+                    text-[#a78e00]
                     transition-all
                     duration-300
                     hover:bg-[#fff4b8]
+                    sm:text-sm
                   "
                 >
                   <CalendarDays
-                    size={14}
+                    size={16}
                     strokeWidth={2}
                   />
 
@@ -490,12 +474,10 @@ export default function Hero() {
                 </Link>
               </div>
 
-              {/* =================================================
-                  LOGIN CARDS
-              ================================================== */}
+              {/* LOGIN CARDS */}
 
               <div className="mt-8">
-                <p className="mb-3 text-[10px] font-semibold uppercase tracking-[1.5px] text-[#9b96a8]">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-[1.5px] text-[#9b96a8] sm:text-sm">
                   Quick Login
                 </p>
 
@@ -521,9 +503,7 @@ export default function Hero() {
               </div>
             </div>
 
-            {/* =================================================
-                RIGHT SIDE
-            ================================================== */}
+            {/* RIGHT SIDE */}
 
             <div
               className="
@@ -536,7 +516,6 @@ export default function Hero() {
                 lg:justify-end
               "
             >
-              {/* Image Wrapper */}
               <div
                 className="
                   relative
@@ -548,7 +527,6 @@ export default function Hero() {
                   lg:w-[430px]
                 "
               >
-                {/* Main Image */}
                 <img
                   src={ImageRight}
                   alt="Student learning"
@@ -561,7 +539,6 @@ export default function Hero() {
                   "
                 />
 
-                {/* Soft image border */}
                 <div
                   className="
                     pointer-events-none
@@ -573,21 +550,15 @@ export default function Hero() {
                   "
                 />
 
-                {/* Decorative Star */}
                 <DecorativeStar />
-
-                {/* Floating Cards */}
                 <LiveClassCard />
-
                 <LessonCompletedCard />
-
                 <ActiveStudentsCard />
               </div>
             </div>
           </div>
         </div>
 
-        {/* Bottom Decorative Shape */}
         <div
           className="
             absolute
@@ -600,21 +571,16 @@ export default function Hero() {
         />
       </section>
 
-      {/* =====================================================
-          OTHER SECTIONS
-      ====================================================== */}
+      {/* OTHER SECTIONS */}
 
       <main>
         <WhyChooseUs />
-
         <HowItWorks />
-   
-       <Whoweare/>
-       <Student/>
-       <TrackProgress/>
-       <Confidence/>
-       <Footer/>
-       
+        <Whoweare />
+        <Student />
+        <TrackProgress />
+        <Confidence />
+        <Footer />
       </main>
     </>
   );

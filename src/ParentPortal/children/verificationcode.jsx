@@ -4,7 +4,7 @@ export default function VerifywithOTP({
   onNext, 
   onResend, 
   onChangeLearnerId, 
-  studentEmail = "olivia.johnson@studentmail.com",
+  learnerId = "",
   error,
   setError 
 }) {
@@ -76,7 +76,7 @@ export default function VerifywithOTP({
           Enter Verification Code
         </h2>
         <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">
-          Enter the 6-digit code sent to your child's email.
+          Enter the 6-digit link code from your child's account.
         </p>
       </div>
 
@@ -89,10 +89,10 @@ export default function VerifywithOTP({
         </div>
         <div className="overflow-hidden">
           <p className="text-[11px] sm:text-xs text-slate-500">
-            Verification code sent to
+            Linking learner ID
           </p>
           <p className="text-xs sm:text-sm font-semibold text-purple-900 truncate">
-            {JSON.stringify(studentEmail).replace(/^"(.*)"$/, '$1')}
+            {learnerId}
           </p>
         </div>
       </div>
@@ -122,7 +122,7 @@ export default function VerifywithOTP({
 
         {/* Expiration text */}
         <p className="text-xs text-slate-500 text-center sm:text-left">
-          The code will expire in <span className="text-blue-600 font-semibold">10:00</span> minutes.
+          Your child can find this code on their account setup page.
         </p>
 
         <hr className="border-slate-100 my-4" />
@@ -130,24 +130,9 @@ export default function VerifywithOTP({
         {/* Didn't receive code options */}
         <div className="space-y-3">
           <p className="text-xs font-semibold text-slate-800">
-            Didn't receive a code?
+            Don't have a code?
           </p>
           
-          <button
-            type="button"
-            onClick={onResend}
-            className="w-full flex items-center gap-3 p-3 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-purple-50/40 transition-colors text-left group"
-          >
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-100 text-purple-700 group-hover:bg-purple-200 transition-colors shrink-0">
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-            </span>
-            <span className="text-xs sm:text-sm font-semibold text-purple-700 truncate">
-              Resend Code
-            </span>
-          </button>
-
           <button
             type="button"
             onClick={onChangeLearnerId}

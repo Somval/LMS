@@ -1,4 +1,6 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { api } from "../lib/api";
 import {
   BookOpen,
   CheckCircle2,
@@ -8,29 +10,27 @@ import {
 import SubjectBreakdown from "../StudentPortal/subjectbreakdown";
 
 export default function LearningDashboard() {
-  const courses = [
-    {
-      id: 1,
-      title: "Mathematics",
-      topic: "Linear Equations & Algebra",
-      progress: 72,
-      lessons: "24 / 32",
-    },
-    {
-      id: 2,
-      title: "English Language",
-      topic: "Reading & Creative Writing",
-      progress: 85,
-      lessons: "22 / 26",
-    },
-    {
-      id: 3,
-      title: "Science",
-      topic: "Biology & Physical Science",
-      progress: 70,
-      lessons: "14 / 20",
-    },
-  ];
+  const navigate = useNavigate();
+  const [data, setData] = useState(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    api.get("/dashboard/student").then(setData).catch((err) => setError(err.message || "Could not load your progress."));
+  }, []);
+
+  const subjects = data?.subjects ?? [];
+  const overall = data?.progress?.lessonProgress ?? 0;
+  const lessonsDone = subjects.reduce((n, s) => n + s.lessonsCompleted, 0);
+  const avgScore = data?.progress?.averageScore;
+  const headline = overall >= 75 ? "great progress." : overall >= 40 ? "steady progress." : "a good start.";
+
+  const courses = subjects.map((s) => ({
+    id: s.subjectId,
+    title: s.subject,
+    topic: s.tutors?.length ? `Tutor: ${s.tutors[0]}` : "Tutor to be assigned",
+    progress: s.lessonProgress,
+    lessons: `${s.lessonsCompleted} / ${s.lessonsTotal}`,
+  }));
 
   return (
     <div className="w-full font-sans text-slate-800">
@@ -72,14 +72,14 @@ export default function LearningDashboard() {
                     strokeWidth="9"
                     strokeLinecap="round"
                     strokeDasharray={301.59}
-                    strokeDashoffset={301.59 - (301.59 * 68) / 100}
+                    strokeDashoffset={301.59 - (301.59 * overall) / 100}
                     className="text-indigo-900 transition-all duration-700"
                   />
                 </svg>
 
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
                   <span className="text-[25px] font-bold leading-none text-indigo-900">
-                    68%
+                    {overall}%
                   </span>
 
                   <span className="mt-1 max-w-[70px] text-[8px] font-medium leading-tight text-slate-400">
@@ -94,7 +94,7 @@ export default function LearningDashboard() {
                 </p>
 
                 <p className="text-[14px] font-bold leading-5 text-indigo-900">
-                  steady progress.
+                  {headline}
                 </p>
 
                 <p className="mt-2 text-[11px] text-slate-500">
@@ -120,7 +120,7 @@ export default function LearningDashboard() {
                     </p>
 
                     <p className="mt-1 text-2xl font-bold text-slate-900">
-                      3
+                      {subjects.length}
                     </p>
                   </div>
                 </div>
@@ -138,7 +138,7 @@ export default function LearningDashboard() {
                     </p>
 
                     <p className="mt-1 text-2xl font-bold text-slate-900">
-                      57
+                      {lessonsDone}
                     </p>
                   </div>
                 </div>
@@ -156,7 +156,7 @@ export default function LearningDashboard() {
                     </p>
 
                     <p className="mt-1 text-2xl font-bold text-slate-900">
-                      82%
+                      {avgScore == null ? "–" : `${avgScore}%`}
                     </p>
                   </div>
                 </div>
@@ -183,7 +183,7 @@ export default function LearningDashboard() {
             </div>
 
             <span className="w-fit rounded-full bg-indigo-50 px-3 py-1.5 text-[9px] font-semibold text-indigo-700">
-              3 Active Courses
+              {subjects.length} Active Course{subjects.length === 1 ? "" : "s"}
             </span>
           </div>
 
@@ -244,6 +244,7 @@ export default function LearningDashboard() {
                 <div className="w-full md:text-right">
                   <button
                     type="button"
+                    onClick={() => navigate(`/student/learning/${course.id}`)}
                     className="
                       inline-flex w-full items-center justify-center
                       gap-2 rounded-lg border border-indigo-100
@@ -267,7 +268,10 @@ export default function LearningDashboard() {
         {/* =====================================================
             SUBJECT BREAKDOWN
         ====================================================== */}
-        <SubjectBreakdown />
+        {error && (
+          <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-xs text-red-600">{error}</p>
+        )}
+        <SubjectBreakdown subjects={subjects} />
 
       </div>
     </div>

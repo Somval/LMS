@@ -1,4 +1,5 @@
 
+import { tokenStore } from "../../lib/api";
 import React, { useRef, useState } from "react";
 import {
   ArrowLeft,
@@ -501,13 +502,16 @@ export default function AddTopicLesson({
     formData.append("lessonId", String(lessonId));
     formData.append("resourceType", attachment.resourceType);
 
+    const token = tokenStore.get();
     const response = await fetch(uploadEndpoint, {
       method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
       body: formData,
     });
 
     if (!response.ok) {
-      throw new Error(`Upload failed for ${attachment.name}.`);
+      const detail = await response.json().catch(() => ({}));
+      throw new Error(detail.message || `Upload failed for ${attachment.name}.`);
     }
 
     const result = await response.json();

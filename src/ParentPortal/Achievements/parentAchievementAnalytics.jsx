@@ -1,35 +1,16 @@
 import React from 'react';
 import { Trophy, Calendar, Star } from 'lucide-react';
+import { earnedThisMonth, formatDate, monthLabel } from './achievementsData';
 
-// Default mock data structured cleanly for API / JSON integration
-const defaultAnalyticsData = {
-  achievementsEarned: {
-    count: 12,
-    subtitle: 'All time'
-  },
-  thisMonth: {
-    count: 3,
-    period: 'August 2026'
-  },
-  latestAchievement: {
-    date: 'Aug 8, 2026',
-    milestone: 'Mathematics Milestone'
-  }
-};
-
-export default function ReportAnalytics({ data = defaultAnalyticsData }) {
-  // Fallback safely if props data is partially provided
-  const analytics = {
-    achievementsEarned: { ...defaultAnalyticsData.achievementsEarned, ...data?.achievementsEarned },
-    thisMonth: { ...defaultAnalyticsData.thisMonth, ...data?.thisMonth },
-    latestAchievement: { ...defaultAnalyticsData.latestAchievement, ...data?.latestAchievement }
-  };
+// earned: everything the child has earned (newest first), from GET /rewards/earned.
+export default function ReportAnalytics({ earned = [] }) {
+  const latest = earned[0]; // the endpoint returns newest first
 
   return (
     <div className="w-full font-sans text-slate-800">
       {/* Main Container Card with 3 Columns */}
       <div className="bg-white rounded-2xl shadow-xs border border-slate-200/80 grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-100 overflow-hidden">
-        
+
         {/* Card 1: Achievements Earned */}
         <div className="p-6 md:p-8 flex items-center gap-5">
           {/* Purple Circular Icon Container */}
@@ -42,10 +23,10 @@ export default function ReportAnalytics({ data = defaultAnalyticsData }) {
               Achievements Earned
             </p>
             <h3 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight mt-0.5">
-              {analytics.achievementsEarned.count}
+              {earned.length}
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              {analytics.achievementsEarned.subtitle}
+              All time
             </p>
           </div>
         </div>
@@ -62,10 +43,10 @@ export default function ReportAnalytics({ data = defaultAnalyticsData }) {
               This Month
             </p>
             <h3 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight mt-0.5">
-              {analytics.thisMonth.count}
+              {earnedThisMonth(earned)}
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              {analytics.thisMonth.period}
+              {monthLabel(new Date())}
             </p>
           </div>
         </div>
@@ -77,15 +58,15 @@ export default function ReportAnalytics({ data = defaultAnalyticsData }) {
             <Star className="w-8 h-8 text-[#F59E0B]" />
           </div>
           {/* Text Info */}
-          <div>
+          <div className="min-w-0">
             <p className="text-xs md:text-sm font-semibold text-slate-900">
               Latest Achievement
             </p>
             <h3 className="text-xl md:text-2xl font-extrabold text-slate-900 tracking-tight mt-0.5">
-              {analytics.latestAchievement.date}
+              {latest ? formatDate(latest.awardedAt) : '—'}
             </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
-              {analytics.latestAchievement.milestone}
+            <p className="text-xs text-slate-500 mt-0.5 truncate">
+              {latest ? latest.title : 'Nothing earned yet'}
             </p>
           </div>
         </div>

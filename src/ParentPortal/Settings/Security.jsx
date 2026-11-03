@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
+import { api } from '../../lib/api';
 import { Shield, Lock, ShieldCheck, Globe, ChevronRight, X, Save, Check } from 'lucide-react';
 
 export default function SecurityAndPreferences() {
   // State for Security & 2FA
-  const [is2FAEnabled, setIs2FAEnabled] = useState(true);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
-  const [is2FAModalOpen, setIs2FAModalOpen] = useState(false);
 
   // State for Password Form
   const [passwordData, setPasswordData] = useState({
@@ -18,19 +17,38 @@ export default function SecurityAndPreferences() {
   // State for Language Preference
   const [language, setLanguage] = useState('English');
 
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordSaving, setPasswordSaving] = useState(false);
+
   // Handle password change submit
-  const handlePasswordSubmit = (e) => {
+  const handlePasswordSubmit = async (e) => {
     e.preventDefault();
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      alert('New passwords do not match!');
+    setPasswordError('');
+
+    const { currentPassword, newPassword, confirmPassword } = passwordData;
+    if (newPassword !== confirmPassword) {
+      setPasswordError('New passwords do not match.');
       return;
     }
-    setPasswordSuccess(true);
-    setTimeout(() => {
-      setPasswordSuccess(false);
-      setIsPasswordModalOpen(false);
-      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-    }, 1500);
+    if (newPassword.length < 8 || !/[A-Za-z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
+      setPasswordError('Your new password needs at least 8 characters, with a letter and a number.');
+      return;
+    }
+
+    setPasswordSaving(true);
+    try {
+      await api.post('/account/change-password', { currentPassword, newPassword });
+      setPasswordSuccess(true);
+      setTimeout(() => {
+        setPasswordSuccess(false);
+        setIsPasswordModalOpen(false);
+        setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      }, 1500);
+    } catch (err) {
+      setPasswordError(err.message || 'Could not change your password. Please try again.');
+    } finally {
+      setPasswordSaving(false);
+    }
   };
 
   return (
@@ -66,8 +84,7 @@ export default function SecurityAndPreferences() {
 
           {/* Two-Factor Authentication Row */}
           <div
-            onClick={() => setIs2FAModalOpen(true)}
-            className="flex items-center justify-between py-4 cursor-pointer group hover:bg-gray-50/50 px-2 rounded-xl transition"
+            className="flex items-center justify-between py-4 px-2 rounded-xl opacity-70"
           >
             <div className="flex items-center gap-3">
               <ShieldCheck className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition" />
@@ -78,10 +95,10 @@ export default function SecurityAndPreferences() {
             <div className="flex items-center gap-3">
               <span
                 className={`px-3 py-1 text-xs font-medium rounded-full ${
-                  is2FAEnabled ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-100 text-gray-500'
+                  'bg-gray-100 text-gray-500'
                 }`}
               >
-                {is2FAEnabled ? 'Enabled' : 'Disabled'}
+                Coming soon
               </span>
               <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-blue-600 transition" />
             </div>
@@ -108,12 +125,11 @@ export default function SecurityAndPreferences() {
           <select
             value={language}
             onChange={(e) => setLanguage(e.target.value)}
+            disabled
+            title="More languages are coming soon"
             className="w-48 px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition shadow-sm cursor-pointer"
           >
             <option value="English">English</option>
-            <option value="French">French (Français)</option>
-            <option value="Spanish">Spanish (Español)</option>
-            <option value="German">German (Deutsch)</option>
           </select>
         </div>
       </div>
@@ -184,6 +200,10 @@ export default function SecurityAndPreferences() {
                   />
                 </div>
 
+                {passwordError && (
+                  <p role="alert" className="text-sm font-medium text-red-600">{passwordError}</p>
+                )}
+
                 <div className="flex items-center justify-end gap-2 pt-4 border-t border-gray-100 mt-6">
                   <button
                     type="button"
@@ -194,69 +214,14 @@ export default function SecurityAndPreferences() {
                   </button>
                   <button
                     type="submit"
-                    className="flex items-center gap-1.5 px-5 py-2 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 shadow-sm transition"
+                    disabled={passwordSaving}
+                    className="flex items-center gap-1.5 px-5 py-2 disabled:opacity-60 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 shadow-sm transition"
                   >
-                    <Save className="w-4 h-4" /> Update Password
+                    <Save className="w-4 h-4" /> {passwordSaving ? 'Updating…' : 'Update Password'}
                   </button>
                 </div>
               </form>
             )}
-          </div>
-        </div>
-      )}
-
-      {/* --- MODAL: Two-Factor Authentication Toggle --- */}
-      {is2FAModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl animate-in fade-in zoom-in duration-200">
-            <div className="flex items-center justify-between pb-4 border-b border-gray-100">
-              <h3 className="font-semibold text-gray-900">Two-Factor Authentication (2FA)</h3>
-              <button
-                onClick={() => setIs2FAModalOpen(false)}
-                className="p-1 text-gray-400 hover:text-gray-600 rounded-lg"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="py-6 space-y-4">
-              <p className="text-sm text-gray-600">
-                Protect your account with an extra layer of security. When 2FA is enabled, you will need to enter a security code during login.
-              </p>
-
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
-                <span className="text-sm font-medium text-gray-900">Status</span>
-                <span
-                  className={`px-3 py-1 text-xs font-medium rounded-full ${
-                    is2FAEnabled ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-200 text-gray-600'
-                  }`}
-                >
-                  {is2FAEnabled ? 'Enabled' : 'Disabled'}
-                </span>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-              <button
-                type="button"
-                onClick={() => setIs2FAModalOpen(false)}
-                className="px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 transition"
-              >
-                Close
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setIs2FAEnabled(!is2FAEnabled);
-                  setIs2FAModalOpen(false);
-                }}
-                className={`px-5 py-2 text-white text-sm font-medium rounded-xl shadow-sm transition ${
-                  is2FAEnabled ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'
-                }`}
-              >
-                {is2FAEnabled ? 'Disable 2FA' : 'Enable 2FA'}
-              </button>
-            </div>
           </div>
         </div>
       )}

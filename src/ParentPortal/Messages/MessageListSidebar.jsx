@@ -1,56 +1,23 @@
 import React, { useState } from 'react';
 import { Search } from 'lucide-react';
+import { initials } from './messagesData';
 
-// Default mock JSON data structured for API integration
-const defaultMessages = [
-  {
-    id: 1,
-    name: 'Sarah Johnson',
-    role: 'Tutor • Mathematics',
-    preview: 'Olivia has been doing really well with...',
-    time: '2:30 PM',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'
-  },
-  {
-    id: 2,
-    name: 'Sarah Johnson',
-    role: 'Tutor • Mathematics',
-    preview: 'Olivia has been doing really well with...',
-    time: '2:35 PM',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80'
-  },
-  {
-    id: 3,
-    name: 'Sarah Johnson',
-    role: 'Tutor • Mathematics',
-    preview: 'Olivia has been doing really well with...',
-    time: '2:35 PM',
-    avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=150&q=80'
-  },
-  {
-    id: 4,
-    name: 'Sarah Johnson',
-    role: 'Tutor • Mathematics',
-    preview: 'Olivia has been doing really well with...',
-    time: '2:35 PM',
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80'
-  }
-];
-
-export default function MessageListSidebar({ messages = defaultMessages, onSelectMessage }) {
-  const [selectedId, setSelectedId] = useState(messages[0]?.id || null);
+// items: people you can talk to (see buildItems). selectedId is the open conversation's user id.
+export default function MessageListSidebar({ items = [], selectedId, onSelectMessage, loading, error, onRetry }) {
   const [searchQuery, setSearchQuery] = useState('');
 
   // Filter messages based on search input
-  const filteredMessages = messages.filter((msg) =>
-    msg.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    msg.preview.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    msg.role.toLowerCase().includes(searchQuery.toLowerCase())
+  const query = searchQuery.toLowerCase();
+  const filteredMessages = items.filter(
+    (msg) =>
+      msg.name.toLowerCase().includes(query) ||
+      msg.preview.toLowerCase().includes(query) ||
+      msg.role.toLowerCase().includes(query)
   );
 
   return (
     <div className="w-full max-w-sm bg-white rounded-2xl shadow-xs border border-slate-200/80 overflow-hidden font-sans flex flex-col h-[600px]">
-      
+
       {/* Top Search Bar Container */}
       <div className="p-4 border-b border-slate-100 bg-white sticky top-0 z-10">
         <div className="relative flex items-center">
@@ -67,30 +34,43 @@ export default function MessageListSidebar({ messages = defaultMessages, onSelec
 
       {/* Message Items List */}
       <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
-        {filteredMessages.length > 0 ? (
+        {error ? (
+          <div className="p-6 text-center text-xs text-red-600">
+            <p>{error}</p>
+            <button
+              type="button"
+              onClick={onRetry}
+              className="mt-3 rounded-lg border border-red-300 px-3 py-1.5 font-semibold hover:bg-red-50"
+            >
+              Try again
+            </button>
+          </div>
+        ) : loading ? (
+          <div className="p-8 text-center text-xs text-slate-400">Loading messages…</div>
+        ) : filteredMessages.length > 0 ? (
           filteredMessages.map((item) => {
-            const isSelected = selectedId === item.id;
+            const isSelected = selectedId === item.userId;
 
             return (
-              <div
-                key={item.id}
-                onClick={() => {
-                  setSelectedId(item.id);
-                  if (onSelectMessage) onSelectMessage(item);
-                }}
-                className={`p-4 flex items-start gap-3.5 cursor-pointer transition-colors ${
-                  isSelected 
-                    ? 'bg-blue-50/70 border-l-4 border-blue-600' 
+              <button
+                type="button"
+                key={item.userId}
+                onClick={() => onSelectMessage?.(item)}
+                aria-current={isSelected}
+                className={`w-full text-left p-4 flex items-start gap-3.5 cursor-pointer transition-colors ${
+                  isSelected
+                    ? 'bg-blue-50/70 border-l-4 border-blue-600'
                     : 'bg-white hover:bg-slate-50/60 border-l-4 border-transparent'
                 }`}
               >
-                {/* Avatar Image */}
+                {/* Avatar */}
                 <div className="relative shrink-0">
-                  <img
-                    src={item.avatar}
-                    alt={item.name}
-                    className="w-11 h-11 rounded-full object-cover border border-slate-200 shadow-2xs"
-                  />
+                  <span
+                    aria-hidden="true"
+                    className="flex w-11 h-11 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700 border border-slate-200 shadow-2xs"
+                  >
+                    {initials(item.name)}
+                  </span>
                 </div>
 
                 {/* Message Content */}
@@ -108,16 +88,28 @@ export default function MessageListSidebar({ messages = defaultMessages, onSelec
                     {item.role}
                   </p>
 
-                  <p className="text-[11px] text-slate-400 truncate mt-1">
-                    {item.preview}
-                  </p>
+                  <div className="flex items-center justify-between gap-2 mt-1">
+                    <p className={`text-[11px] truncate ${item.unread ? 'font-semibold text-slate-700' : 'text-slate-400'}`}>
+                      {item.preview}
+                    </p>
+                    {item.unread > 0 && (
+                      <span
+                        aria-label={`${item.unread} unread`}
+                        className="shrink-0 min-w-[18px] rounded-full bg-blue-600 px-1.5 py-0.5 text-center text-[10px] font-bold text-white"
+                      >
+                        {item.unread}
+                      </span>
+                    )}
+                  </div>
                 </div>
-              </div>
+              </button>
             );
           })
         ) : (
           <div className="p-8 text-center text-xs text-slate-400">
-            No messages found.
+            {items.length === 0
+              ? "There's nobody to message yet. Tutors appear here once your child has one."
+              : 'No messages found.'}
           </div>
         )}
       </div>

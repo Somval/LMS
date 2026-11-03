@@ -1,63 +1,27 @@
 import React from "react";
 import { BookOpen, Trophy, FileText } from "lucide-react";
 
-export default function RecentActivity() {
-  const activities = [
-    {
-      id: 1,
-      title: "Olivia completed Mathematics homework",
-      time: "Today, 10:30 AM",
-      type: "homework",
-      icon: BookOpen,
-      iconBg: "bg-blue-100",
-      iconColor: "text-blue-600",
-    },
-    {
-      id: 2,
-      title: "Liam earned a Science Badge",
-      time: "Yesterday, 6:15 PM",
-      type: "badge",
-      icon: Trophy,
-      iconBg: "bg-orange-100",
-      iconColor: "text-orange-500",
-    },
-    {
-      id: 3,
-      title: "Weekly progress report for Olivia and Liam generated",
-      time: "Yesterday, 5:00 PM",
-      type: "report",
-      icon: FileText,
-      iconBg: "bg-sky-100",
-      iconColor: "text-sky-500",
-    },
-    {
-      id: 4,
-      title: "Olivia completed Mathematics homework",
-      time: "Today, 10:30 AM",
-      type: "homework",
-      icon: BookOpen,
-      iconBg: "bg-blue-100",
-      iconColor: "text-blue-600",
-    },
-    {
-      id: 5,
-      title: "Olivia completed Mathematics homework",
-      time: "Today, 10:30 AM",
-      type: "homework",
-      icon: BookOpen,
-      iconBg: "bg-blue-100",
-      iconColor: "text-blue-600",
-    },
-    {
-      id: 6,
-      title: "Olivia completed Mathematics homework",
-      time: "Today, 10:30 AM",
-      type: "homework",
-      icon: BookOpen,
-      iconBg: "bg-blue-100",
-      iconColor: "text-blue-600",
-    },
-  ];
+import { firstName, formatActivityTime } from "./childrenData";
+
+const KINDS = {
+  HOMEWORK: { icon: FileText, iconBg: "bg-sky-100", iconColor: "text-sky-500", text: (who, title) => `${who} submitted ${title}` },
+  LESSON: { icon: BookOpen, iconBg: "bg-blue-100", iconColor: "text-blue-600", text: (who, title) => `${who} completed the lesson ${title}` },
+  BADGE: { icon: Trophy, iconBg: "bg-orange-100", iconColor: "text-orange-500", text: (who, title) => `${who} earned the ${title} badge` },
+  REWARD: { icon: Trophy, iconBg: "bg-orange-100", iconColor: "text-orange-500", text: (who, title) => `${who} earned the ${title} reward` },
+};
+
+export default function RecentActivity({ items = [] }) {
+  const activities = items.map((item, index) => {
+    const kind = KINDS[item.type] ?? KINDS.LESSON;
+    return {
+      id: `${item.type}-${index}`,
+      title: kind.text(firstName(item.childName), item.title),
+      time: formatActivityTime(item.at),
+      icon: kind.icon,
+      iconBg: kind.iconBg,
+      iconColor: kind.iconColor,
+    };
+  });
 
   return (
     <div
@@ -69,6 +33,13 @@ export default function RecentActivity() {
         <h2 className="text-lg sm:text-xl font-bold text-black mb-4 sm:mb-5">
           Recent Activity
         </h2>
+
+        {activities.length === 0 && (
+          <p className="text-sm text-black/50">
+            Nothing yet. Homework, lessons and badges will show up here as your
+            children learn.
+          </p>
+        )}
 
         {/* Activity List */}
         <div className="flex flex-col gap-3 sm:gap-3.5">

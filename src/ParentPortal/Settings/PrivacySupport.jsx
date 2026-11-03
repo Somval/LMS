@@ -1,28 +1,52 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { api } from '../../lib/api';
 import { Headphones, ChevronDown, ExternalLink, Send, CheckCircle2 } from 'lucide-react';
 
 export default function PrivacyAndSupport() {
+  const navigate = useNavigate();
   // Accordion State Management ('privacy' | 'help' | 'report' | null)
   const [openSection, setOpenSection] = useState(null);
 
   // Report Issue Form State
   const [issueForm, setIssueForm] = useState({ subject: '', description: '' });
   const [reportSubmitted, setReportSubmitted] = useState(false);
+  const [reporting, setReporting] = useState(false);
+  const [reportError, setReportError] = useState('');
 
   // Toggle Accordion section
   const toggleSection = (section) => {
     setOpenSection(openSection === section ? null : section);
   };
 
-  // Handle Report Form Submit
-  const handleReportSubmit = (e) => {
+  // The report is sent as a message to the support team (the admins), so it shows up in their inbox.
+  const handleReportSubmit = async (e) => {
     e.preventDefault();
-    setReportSubmitted(true);
-    setTimeout(() => {
-      setReportSubmitted(false);
-      setIssueForm({ subject: '', description: '' });
-      setOpenSection(null);
-    }, 2000);
+    setReportError('');
+    setReporting(true);
+    try {
+      const people = await api.get('/messages/contacts');
+      const support = people.find((person) => person.role === 'ADMIN');
+      if (!support) throw new Error("The support team isn't available right now. Please try again later.");
+
+      await api.post('/messages', {
+        recipientId: support.id,
+        body: `Issue report: ${issueForm.subject.trim()}
+
+${issueForm.description.trim()}`,
+      });
+
+      setReportSubmitted(true);
+      setTimeout(() => {
+        setReportSubmitted(false);
+        setIssueForm({ subject: '', description: '' });
+        setOpenSection(null);
+      }, 2000);
+    } catch (err) {
+      setReportError(err.message || 'Could not send your report. Please try again.');
+    } finally {
+      setReporting(false);
+    }
   };
 
   return (
@@ -105,18 +129,18 @@ export default function PrivacyAndSupport() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <a
                   href="#faq"
-                  onClick={(e) => { e.preventDefault(); alert('Redirecting to FAQ Center...'); }}
+                  onClick={(e) => { e.preventDefault(); navigate('/parent/messages'); }}
                   className="flex items-center justify-between p-3 border border-gray-200 rounded-xl text-sm font-medium text-gray-800 hover:bg-blue-50 hover:border-blue-200 transition"
                 >
-                  <span>Frequently Asked Questions (FAQ)</span>
+                  <span>Ask a Question</span>
                   <ExternalLink className="w-4 h-4 text-gray-400 flex-shrink-0" />
                 </a>
                 <a
                   href="#contact"
-                  onClick={(e) => { e.preventDefault(); alert('Connecting to support chat...'); }}
+                  onClick={(e) => { e.preventDefault(); navigate('/parent/messages'); }}
                   className="flex items-center justify-between p-3 border border-gray-200 rounded-xl text-sm font-medium text-gray-800 hover:bg-blue-50 hover:border-blue-200 transition"
                 >
-                  <span>Live Support Chat</span>
+                  <span>Message the Support Team</span>
                   <ExternalLink className="w-4 h-4 text-gray-400 flex-shrink-0" />
                 </a>
               </div>
@@ -161,6 +185,9 @@ export default function PrivacyAndSupport() {
                 </div>
               ) : (
                 <form onSubmit={handleReportSubmit} className="space-y-4 max-w-2xl">
+                  {reportError && (
+                    <p role="alert" className="text-sm font-medium text-red-600">{reportError}</p>
+                  )}
                   <div>
                     <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
                       Issue Subject
@@ -197,9 +224,10 @@ export default function PrivacyAndSupport() {
                     </button>
                     <button
                       type="submit"
-                      className="flex items-center gap-1.5 px-5 py-2 bg-blue-600 text-white text-xs font-medium rounded-xl hover:bg-blue-700 shadow-sm transition"
+                      disabled={reporting}
+                      className="flex items-center gap-1.5 px-5 py-2 disabled:opacity-60 bg-blue-600 text-white text-xs font-medium rounded-xl hover:bg-blue-700 shadow-sm transition"
                     >
-                      <Send className="w-3.5 h-3.5" /> Submit Report
+                      <Send className="w-3.5 h-3.5" /> {reporting ? 'Sending…' : 'Submit Report'}
                     </button>
                   </div>
                 </form>

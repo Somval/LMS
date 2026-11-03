@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 
 import PerformerBadge from "../assets/images/9e5a4b2c87331bcf72199059358d48f58dec2882 (1).png";
@@ -6,29 +7,14 @@ import AttendanceBadge from "../assets/images/5da99efc0c83e704d8cbeddcaab04f1402
 import LearnerBadge from "../assets/images/134a082cca973150969aa91355d8ac63a4934a6a.png";
 import LearnerBadgeTwo from "../assets/images/134a082cca973150969aa91355d8ac63a4934a6a.png";
 
-export default function RecentAchievements() {
-  const achievements = [
-    {
-      id: 1,
-      title: "Top Performer in Mathematics",
-      image: PerformerBadge,
-    },
-    {
-      id: 2,
-      title: "Perfect Attendance",
-      image: AttendanceBadge,
-    },
-    {
-      id: 3,
-      title: "Consistent Learner",
-      image: LearnerBadge,
-    },
-    {
-      id: 4,
-      title: "Consistent Learner",
-      image: LearnerBadgeTwo,
-    },
-  ];
+export default function RecentAchievements({ achievements: earned = [], loading = false }) {
+  const navigate = useNavigate();
+  // Badge artwork is optional on the server; fall back to the default badge image.
+  const achievements = earned.map((a) => ({
+    id: a.id,
+    title: a.title,
+    image: a.icon || LearnerBadge,
+  }));
 
   return (
     <section
@@ -92,6 +78,11 @@ export default function RecentAchievements() {
           max-[639px]:gap-[12px]
         "
       >
+        {!loading && achievements.length === 0 && (
+          <p className="col-span-full py-6 text-center text-sm text-slate-400">
+            No achievements yet. Your tutor will award badges as you progress.
+          </p>
+        )}
         {achievements.map((item) => (
           <div
             key={item.id}
@@ -176,6 +167,7 @@ export default function RecentAchievements() {
       >
         <button
           type="button"
+          onClick={() => navigate("/student/achievements")}
           className="
             group
             flex

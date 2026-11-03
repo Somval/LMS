@@ -2,33 +2,16 @@ import React from "react";
 import { Calendar } from "lucide-react";
 import ImagePath from "../assets/images/134a082cca973150969aa91355d8ac63a4934a6a (1).png";
 
-export default function RecentAchievements() {
-  const achievements = [
-    {
-      id: 1,
-      title: "Mathematics Milestone",
-      description:
-        "Completed a major Mathematics learning milestone.",
-      date: "Aug 8, 2026",
-      imagePath: ImagePath,
-    },
-    {
-      id: 2,
-      title: "Mathematics Milestone",
-      description:
-        "Completed a major Mathematics learning milestone.",
-      date: "Aug 8, 2026",
-      imagePath: ImagePath,
-    },
-    {
-      id: 3,
-      title: "Mathematics Milestone",
-      description:
-        "Completed a major Mathematics learning milestone.",
-      date: "Aug 8, 2026",
-      imagePath: ImagePath,
-    },
-  ];
+import { shortDate } from "./useRewards";
+
+export default function RecentAchievements({ achievements: earned = [], loading = false, error = "" }) {
+  const achievements = earned.slice(0, 6).map((a) => ({
+    id: a.id,
+    title: a.title,
+    description: a.description || "Awarded by your tutor.",
+    date: shortDate(a.awardedAt),
+    imagePath: a.icon || ImagePath,
+  }));
 
   return (
     <section className="mx-auto w-full max-w-7xl px-3 py-5 sm:px-4 sm:py-6 lg:px-6">
@@ -77,6 +60,12 @@ export default function RecentAchievements() {
             lg:gap-6
           "
         >
+          {error && <p role="alert" className="col-span-full text-sm text-red-600">{error}</p>}
+          {!loading && !error && achievements.length === 0 && (
+            <p className="col-span-full py-6 text-center text-sm text-slate-500">
+              No achievements yet. Your tutor will award badges as you progress.
+            </p>
+          )}
           {achievements.map((item) => (
             <div
               key={item.id}

@@ -1,9 +1,45 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Bell, Menu } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import { api } from "../../lib/api";
 
 export default function LMSHeader({ onMenuClick }) {
+  const { user } = useAuth();
+
+  const fullName = user?.fullName?.trim() || "";
+  const firstName = fullName.split(/\s+/)[0] || "Parent";
+
+  // The greeting names the parent's linked children, e.g. "Chidi's Parent".
+  const [childNames, setChildNames] = useState(null); // null until loaded
+
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .get("/parent/children")
+      .then((children) => {
+        if (!cancelled) {
+          setChildNames(children.map((child) => child.fullName.trim().split(/\s+/)[0]));
+        }
+      })
+      .catch(() => !cancelled && setChildNames([]));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  let greetingName = firstName;
+  if (childNames === null) greetingName = "";
+  else if (childNames.length === 1) greetingName = `${childNames[0]}'s Parent`;
+  else if (childNames.length === 2) greetingName = `${childNames[0]} & ${childNames[1]}'s Parent`;
+  const initials = fullName
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0].toUpperCase())
+    .join("") || "P";
+
   return (
     <header className="w-full h-full min-w-0 bg-white border-b border-slate-100 select-none font-sans">
       <div className="w-full h-full min-w-0 px-2.5 sm:px-4 lg:px-8 flex items-center justify-between gap-1.5 sm:gap-3">
@@ -28,7 +64,7 @@ export default function LMSHeader({ onMenuClick }) {
           <div className="min-w-0 flex-1">
             <h1 className="text-[12px] min-[360px]:text-[13px] sm:text-lg lg:text-xl font-bold font-[Inter] text-slate-900 tracking-tight flex items-center gap-1 sm:gap-2 leading-tight min-w-0">
               <span className="min-w-0">
-                Welcome back, Olivia's Parent!
+                Welcome back{greetingName ? `, ${greetingName}` : ""}!
               </span>
 
               <span className="inline-block shrink-0 animate-wave text-[12px] sm:text-lg">
@@ -64,15 +100,16 @@ export default function LMSHeader({ onMenuClick }) {
           {/* PROFILE */}
           <button
             type="button"
-            aria-label="Open profile"
+            aria-label={`Open profile for ${fullName || "your account"}`}
             className="relative w-8 h-8 sm:w-10 sm:h-10 shrink-0 rounded-full overflow-hidden border border-slate-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all duration-200 hover:shadow-md"
           >
             
-            <img
-              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"
-              alt="Olivia's Parent Profile"
-              className="w-full h-full object-cover block"
-            />
+            <span
+              aria-hidden="true"
+              className="flex h-full w-full items-center justify-center bg-indigo-100 text-xs font-bold text-indigo-700 sm:text-sm"
+            >
+              {initials}
+            </span>
           </button>
           </Link>
         </div>

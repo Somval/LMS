@@ -1,9 +1,12 @@
-import React from "react";
-import { Bell } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Bell, LogOut } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { api } from "../../lib/api";
+import { useAuth } from "../../context/AuthContext";
+import Avatar from "../Avatar";
 
 const pageInfo = {
-  "/student/home": {
+  "/student/dashboard": {
     title: (
       <>
         Good morning, Olivia{" "}
@@ -74,11 +77,52 @@ const defaultPage = {
     "Continue your learning journey and explore your courses.",
 };
 
+const greeting = () => {
+  const h = new Date().getHours();
+  return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
+};
+
 export default function Header() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const [unread, setUnread] = useState(0);
 
+  const firstName = user?.fullName?.split(" ")[0] ?? "";
+  const initials =
+    (user?.fullName ?? "")
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((w) => w[0].toUpperCase())
+      .join("") || "S";
+
+  // Refresh the unread count whenever the student moves between pages.
+  useEffect(() => {
+    api
+      .get("/notifications", { unread: "true" })
+      .then((res) => setUnread(res.unread))
+      .catch(() => {});
+  }, [location.pathname]);
+
+  const basePage = pageInfo[location.pathname] || defaultPage;
   const currentPage =
-    pageInfo[location.pathname] || defaultPage;
+    location.pathname === "/student/dashboard"
+      ? {
+          ...basePage,
+          title: (
+            <>
+              {greeting()}, {firstName}{" "}
+              <span className="inline-block animate-wave">👋</span>
+            </>
+          ),
+        }
+      : basePage;
+
+  const handleLogout = () => {
+    logout();
+    navigate("/student-auth/login", { replace: true });
+  };
 
   return (
     <header
@@ -174,6 +218,7 @@ export default function Header() {
         {/* NOTIFICATION */}
         <button
           type="button"
+          onClick={() => navigate("/student/notifications")}
           aria-label="View notifications"
           className="
             relative
@@ -210,9 +255,10 @@ export default function Header() {
             strokeWidth={1.8}
           />
 
-          {/* RED NOTIFICATION DOT */}
-          <span
-            className="
+          {unread > 0 && (
+            <span
+              title={`${unread} unread`}
+              className="
               absolute
               right-[6px]
               top-[6px]
@@ -226,7 +272,8 @@ export default function Header() {
               ring-2
               ring-white
             "
-          />
+            />
+          )}
         </button>
 
         {/* DIVIDER */}
@@ -272,23 +319,20 @@ export default function Header() {
             focus-visible:ring-offset-2
           "
         >
-          <img
-            src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80"
-            alt="Olivia's profile avatar"
-            className="
-              block
-              h-full
-              w-full
-
-              object-cover
-              object-center
-            "
-            onError={(e) => {
-              e.currentTarget.style.display = "none";
-            }}
-          />
+          <Avatar name={user?.fullName} avatarUrl={user?.avatarUrl} className="h-full w-full" textClassName="text-sm" />
         </button>
         </Link>
+
+        {/* LOG OUT */}
+        <button
+          type="button"
+          onClick={handleLogout}
+          aria-label="Log out"
+          title="Log out"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-slate-500 transition-all duration-200 hover:bg-slate-100 hover:text-slate-800 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+        >
+          <LogOut className="h-5 w-5" strokeWidth={1.8} />
+        </button>
       </div>
     </header>
   );

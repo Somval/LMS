@@ -22,7 +22,7 @@ import AddSubject from "../../components/Admincomponent/AddSubject";
 
 import CurriculumContent  from "../../AdminDashboard/pages/subejectSection/CurriculumContent"
 
-import AddTopicLesson from "../../components/Admincomponent/AddTopicLesson"
+import AddTopicLesson from "../pages/subejectSection/AddTopicPage"
 import Classesandschedulehome  from "../../AdminDashboard/pages/ClassesAndSchedule/classesandschedulehome"
 
 import ScheduleClass  from "../../AdminDashboard/pages/ClassesAndSchedule/ScheduleClass"
@@ -31,6 +31,16 @@ import AssignmentsTableComponent  from "../../AdminDashboard/pages/AssignmentsQu
 import AssignmentDetailsPage  from "../../AdminDashboard/pages/AssignmentsQuizzes/AssignmentDetailsPage"
 import Attendance  from "../pages/Attendance/AttendanceHome"
 import StudentProfilePage from "../pages/Attendance/StudentProfilePage"
+import TutorApplications from "../pages/TutorApplications/TutorApplications"
+import Report from "../pages/ProgressReports/ProgressReports"
+import StudentDetailsReport from "../../components/Admincomponent/StudentDetailsReport"
+import Achievement from "../Achievements/Achievement"
+import StudentAchievementDetails from "../Achievements/studentAchievementDetails"
+import AdminComplaints from "../Complaints/AdminComplaints"
+import ComplaintDetails from "../Complaints/ComplaintDetails"
+import RevenuePayment from "../Revenue/RenueAndPayment"
+import AuditLogs from "../AuditLogs/AuditLogs"
+import Settings from "../Settings/settingsPage"
 export default function AdminRoute() {
   return (
     <Routes>
@@ -58,6 +68,9 @@ export default function AdminRoute() {
           path="/users/students/:studentId"
           element={<StudentDetails />}
         />
+
+        <Route path="/users/applications" element={<TutorApplications />} />
+        <Route path="/revenue-payments" element={<RevenuePayment />} />
 
         {/* Tutors home */}
         <Route
@@ -158,6 +171,16 @@ export default function AdminRoute() {
 
 
 
+
+        {/* Pages added from the completed design */}
+        <Route path="/reports" element={<Report />} />
+        <Route path="/students/:id/details" element={<StudentDetailsReport />} />
+        <Route path="/achievements" element={<Achievement />} />
+        <Route path="/achievements/:id" element={<StudentAchievementDetails />} />
+        <Route path="/complaints" element={<AdminComplaints />} />
+        <Route path="/complaints/:id" element={<ComplaintDetails />} />
+        <Route path="/audit-logs" element={<AuditLogs />} />
+        <Route path="/settings" element={<Settings />} />
       </Route>
     </Routes>
   );

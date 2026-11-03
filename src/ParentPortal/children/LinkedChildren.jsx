@@ -8,41 +8,38 @@ import {
   Plus,
 } from "lucide-react";
 
-import ImageChild from "../../assets/images/0f8e1d9734e359a5f167b12e36f573ba6133942a.jpg";
-import ImageTwo from "../../assets/images/ff2c1ec6db577f2e345c44c9bf9e3999ff815caa.jpg";
-
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { formatNextSession, initials, tutorsOf } from "./childrenData";
 
 export default function ChildrenProfilesGrid({
-  onViewProfile = () => {},
+  kids = [],
   onAddChild = () => {},
 }) {
-  const children = [
-    {
-      id: 1,
-      name: "Olivia Johnson",
-      avatar: ImageChild,
-      progress: 85,
+  const navigate = useNavigate();
+
+  const children = kids.map((kid) => {
+    const tutors = tutorsOf(kid);
+    const next = kid.upcomingClasses[0];
+
+    return {
+      id: kid.studentId,
+      name: kid.fullName,
+      initials: initials(kid.fullName),
+      progress: kid.overall.lessonProgress,
       status: "Active",
-      activeSubjects: 4,
-      tutor: "Sarah Johnson",
-      nextSession: "Today, 4:00 PM",
-    },
-    {
-      id: 2,
-      name: "Liam Johnson",
-      avatar: ImageTwo,
-      progress: 85,
-      status: "Active",
-      activeSubjects: 4,
-      tutor: "Sarah Johnson",
-      nextSession: "Today, 4:00 PM",
-    },
-  ];
+      activeSubjects: kid.subjectsEnrolled,
+      tutor: tutors.length
+        ? tutors.length > 1
+          ? `${tutors[0]} +${tutors.length - 1}`
+          : tutors[0]
+        : "Not assigned yet",
+      nextSession: next ? formatNextSession(next.startsAt) : "No upcoming class",
+    };
+  });
 
   return (
     <div className="mx-auto w-full max-w-7xl p-4 sm:p-6 lg:p-8">
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
         {/* Child Profile Cards */}
         {children.map((child) => {
           const progress = Math.min(
@@ -53,18 +50,19 @@ export default function ChildrenProfilesGrid({
           return (
             <div
               key={child.id}
-              style={{ width: "354px", height: "274px", borderRadius: "16px" }}
-              className="relative flex flex-col justify-between border border-purple-100/80 bg-[#7C0CE417] p-5 shadow-sm transition-all duration-300 hover:shadow-md dark:border-purple-900/40 dark:bg-purple-950/20 box-border mx-auto"
+              style={{ minHeight: "274px", borderRadius: "16px" }}
+              className="relative flex w-full max-w-[354px] flex-col justify-between border border-purple-100/80 bg-[#7C0CE417] p-5 shadow-sm transition-all duration-300 hover:shadow-md dark:border-purple-900/40 dark:bg-purple-950/20 box-border mx-auto"
             >
               <div>
                 {/* Top Row: Avatar, Name & Options */}
                 <div className="mb-3 flex items-start justify-between gap-3">
                   <div className="flex min-w-0 items-center gap-3">
-                    <img
-                      src={child.avatar}
-                      alt={child.name}
-                      className="h-12 w-12 shrink-0 rounded-full object-cover shadow-sm ring-2 ring-white dark:ring-slate-800"
-                    />
+                    <span
+                      aria-hidden="true"
+                      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-purple-100 text-sm font-bold text-purple-700 shadow-sm ring-2 ring-white dark:ring-slate-800"
+                    >
+                      {child.initials}
+                    </span>
 
                     <div className="min-w-0">
                       <h3 className="text-base font-semibold tracking-tight text-slate-900 dark:text-slate-100 truncate">
@@ -120,7 +118,9 @@ export default function ChildrenProfilesGrid({
                 <div className="space-y-2 border-t border-purple-100/60 pt-3 dark:border-purple-900/30 text-xs">
                   <div className="flex items-center gap-2.5 text-slate-600 dark:text-slate-400">
                     <BookOpen className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-                    <span>{child.activeSubjects} Active Subjects</span>
+                    <span>
+                      {child.activeSubjects} Active Subject{child.activeSubjects === 1 ? "" : "s"}
+                    </span>
                   </div>
 
                   <div className="flex items-center gap-2.5 text-slate-600 dark:text-slate-400">
@@ -148,7 +148,7 @@ export default function ChildrenProfilesGrid({
               {/* View Profile Action Button */}
               <button
                 type="button"
-                onClick={() => onViewProfile(child.name)}
+                onClick={() => navigate("/parent/dashboard", { state: { childId: child.id } })}
                 className="group flex w-full items-center justify-center gap-2 rounded-xl border border-purple-300/70 bg-transparent px-4 py-2 text-xs font-medium text-purple-700 transition-all duration-200 hover:bg-purple-100/60 dark:border-purple-800/60 dark:text-purple-300 dark:hover:bg-purple-900/30"
               >
                 <span>View Profile</span>
@@ -162,8 +162,8 @@ export default function ChildrenProfilesGrid({
         <Link
           to="/parent/link-children"
           onClick={onAddChild}
-          style={{ width: "299px", height: "274px", borderRadius: "16px", backgroundColor: "#0ED7530F" }}
-          className="group flex cursor-pointer flex-col items-center justify-center border-2 border-dashed border-emerald-200 p-6 text-center transition-all duration-300 hover:opacity-90 dark:border-emerald-900/40 dark:bg-emerald-950/10 dark:hover:bg-emerald-950/20 box-border mx-auto"
+          style={{ minHeight: "274px", borderRadius: "16px", backgroundColor: "#0ED7530F" }}
+          className="group flex w-full max-w-[354px] cursor-pointer flex-col items-center justify-center border-2 border-dashed border-emerald-200 p-6 text-center transition-all duration-300 hover:opacity-90 dark:border-emerald-900/40 dark:bg-emerald-950/10 dark:hover:bg-emerald-950/20 box-border mx-auto"
         >
           <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full border border-emerald-300 bg-white/50 text-emerald-600 shadow-sm transition-transform duration-300 group-hover:scale-105 dark:border-emerald-700/50 dark:bg-slate-900/50 dark:text-emerald-400">
             <Plus className="h-6 w-6 stroke-[2]" />

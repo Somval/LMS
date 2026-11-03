@@ -7,7 +7,7 @@ export default function VerifyOtp({
   onNext,
   onResend,
   onChangeLearnerId,
-  studentEmail,
+  learnerId,
   error,
   setError,
   onSupportClick
@@ -28,7 +28,7 @@ export default function VerifyOtp({
             onNext={onNext}
             onResend={onResend}
             onChangeLearnerId={onChangeLearnerId}
-            studentEmail={studentEmail}
+            learnerId={learnerId}
             error={error}
             setError={setError}
           />

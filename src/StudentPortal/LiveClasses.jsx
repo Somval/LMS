@@ -1,4 +1,6 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { api } from "../lib/api";
+import { countdown, fullDate, timeRange, openLink } from "./classFormat";
 import {
   CalendarDays,
   Clock3,
@@ -11,8 +13,40 @@ import PastClasses from "./PastClasses";
 import ImageOne from "../assets/images/a28f032b0be13a6fa79d1e9bde6116adb70cef77.png";
 
 export default function NextLiveClass() {
+  const [upcoming, setUpcoming] = useState([]);
+  const [past, setPast] = useState([]);
+  const [attendance, setAttendance] = useState({});
+  const [error, setError] = useState("");
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    Promise.all([
+      api.get("/classes", { upcoming: "true" }),
+      api.get("/classes", { to: new Date().toISOString() }),
+      api.get("/attendance"),
+    ])
+      .then(([next, before, att]) => {
+        setUpcoming(next);
+        setPast(before.filter((c) => new Date(c.startsAt) < new Date()));
+        setAttendance(Object.fromEntries(att.records.map((r) => [r.class.id, r.status])));
+      })
+      .catch((err) => setError(err.message || "Could not load your classes."));
+  }, []);
+
+  // Keep the "starts in" countdown fresh.
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(t);
+  }, []);
+
+  const next = upcoming[0] ?? null;
+  const timer = countdown(next, now);
+
   return (
     <section className="w-full font-sans">
+      {error && (
+        <p role="alert" className="mb-3 rounded-md bg-red-50 px-3 py-2 text-xs text-red-600">{error}</p>
+      )}
       {/* =====================================================
           NEXT LIVE CLASS
       ====================================================== */}
@@ -84,7 +118,7 @@ export default function NextLiveClass() {
                 sm:text-[14px]
               "
             >
-              Mathematics
+              {next ? next.subject.name : "No upcoming class"}
             </h2>
 
             {/* Topic */}
@@ -98,7 +132,7 @@ export default function NextLiveClass() {
                 sm:text-[9px]
               "
             >
-              Linear Equations and Inequalities
+              {next ? next.title : "Your tutor will schedule your next class soon."}
             </p>
 
             {/* Date */}
@@ -117,7 +151,7 @@ export default function NextLiveClass() {
                   sm:text-[9px]
                 "
               >
-                Today, 14 May 2025
+                {next ? fullDate(next.startsAt) : "—"}
               </span>
             </div>
 
@@ -137,7 +171,7 @@ export default function NextLiveClass() {
                   sm:text-[9px]
                 "
               >
-                5:00 PM – 6:00 PM
+                {next ? timeRange(next.startsAt, next.endsAt) : "—"}
               </span>
             </div>
 
@@ -174,7 +208,7 @@ export default function NextLiveClass() {
                     text-[#20242c]
                   "
                 >
-                  Sarah Johnson
+                  {next ? next.tutor.user.fullName : "—"}
                 </p>
               </div>
             </div>
@@ -229,7 +263,7 @@ export default function NextLiveClass() {
                 text-[#697386]
               "
             >
-              Starts in
+              {timer.label}
             </p>
 
             {/* Countdown */}
@@ -242,7 +276,7 @@ export default function NextLiveClass() {
                 text-[#286cf0]
               "
             >
-              45
+              {timer.value}
             </span>
 
             <p
@@ -252,12 +286,14 @@ export default function NextLiveClass() {
                 text-[#697386]
               "
             >
-              minutes
+              {timer.unit}
             </p>
 
             {/* Join Class */}
             <button
               type="button"
+            onClick={() => openLink(next?.meetingUrl)}
+            disabled={!next?.meetingUrl}
               className="
                 mt-[5px]
                 flex
@@ -282,7 +318,7 @@ export default function NextLiveClass() {
                 strokeWidth={1.7}
               />
 
-              <span>Join Class</span>
+              <span>{next && !next.meetingUrl ? "Link coming soon" : "Join Class"}</span>
             </button>
           </div>
         </div>
@@ -292,14 +328,14 @@ export default function NextLiveClass() {
           UPCOMING CLASSES
       ====================================================== */}
       <div className="mt-6 w-full">
-        <UpcomingClasses />
+        <UpcomingClasses classes={upcoming} />
       </div>
 
       {/* =====================================================
           PAST CLASSES
       ====================================================== */}
       <div className="mt-6 w-full">
-        <PastClasses />
+        <PastClasses classes={past} attendance={attendance} />
       </div>
     </section>
   );

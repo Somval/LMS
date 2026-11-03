@@ -11,19 +11,23 @@ import {
 } from "lucide-react";
 
 export default function ReviewApplication({
+  formData = {},
+  extras = {},
   onEdit = () => {},
   onContinue = () => {},
 }) {
+  const subjectName = (extras.subjectOptions || []).find((s) => String(s.id) === String(formData.subjects))?.name;
+  const experiences = (extras.experiences || []).filter((e) => e.institution || e.role);
+  const docs = extras.documents || {};
+  const orDash = (v) => v || '—';
+
   const sections = [
     {
       id: "01",
       title: "Account Information",
       description: "Personal details and contact information",
       icon: UserRound,
-      details: [
-        "Amara Johnson",
-        "amara@example.com | +234 801 234 5678",
-      ],
+      details: [orDash(formData.fullName), `${orDash(formData.email)} | ${orDash(formData.phoneNumber)}`],
     },
     {
       id: "02",
@@ -31,9 +35,9 @@ export default function ReviewApplication({
       description: "Teaching subjects, availability and experience",
       icon: BriefcaseBusiness,
       details: [
-        "Mathematics, English | Year 3–5",
-        "3–5 Years Experience | 9:00 AM – 5:00 PM",
-        "Monday, Tuesday",
+        `${orDash(subjectName)} | ${orDash(formData.yearLevels)}`,
+        `${orDash(formData.experience)} | ${orDash(formData.timeFrom)} – ${orDash(formData.timeTo)}`,
+        (extras.days || []).join(', ') || '—',
       ],
     },
     {
@@ -42,8 +46,9 @@ export default function ReviewApplication({
       description: "Academic and professional certifications",
       icon: GraduationCap,
       details: [
-        "B.Sc. Education, University of Lagos (2020)",
-        "TEFL Certification (2022)",
+        `${orDash(formData.highestQualification)}${formData.fieldOfStudy ? `, ${formData.fieldOfStudy}` : ''}`,
+        `${orDash(formData.institutionName)}${formData.graduationYear ? ` (${formData.graduationYear})` : ''}`,
+        ...(extras.certificate ? [`Certificate: ${extras.certificate.name}`] : []),
       ],
     },
     {
@@ -51,10 +56,9 @@ export default function ReviewApplication({
       title: "Teaching Experience",
       description: "Employment history and teaching background",
       icon: BookOpen,
-      details: [
-        "Bright Minds Academy | Primary School Tutor",
-        "January 2021 – December 2023",
-      ],
+      details: experiences.length
+        ? experiences.map((e) => `${orDash(e.institution)} | ${orDash(e.role)}`)
+        : ['No experience added'],
     },
     {
       id: "05",
@@ -62,9 +66,9 @@ export default function ReviewApplication({
       description: "Supporting documents submitted with your application",
       icon: Files,
       details: [
-        "Qualification Certificate",
-        "Government ID",
-        "Resume / CV",
+        docs.qualification ? `Qualification Certificate: ${docs.qualification.name}` : 'Qualification Certificate: missing',
+        docs.governmentId ? `Government ID: ${docs.governmentId.name}` : 'Government ID: missing',
+        ...(docs.supportingDoc ? [`Resume / CV: ${docs.supportingDoc.name}`] : []),
       ],
     },
   ];

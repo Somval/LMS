@@ -1,15 +1,27 @@
 import React, { useState } from 'react';
 import { Bell, Check, Save } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 export default function NotificationPreferences() {
-  // Initial preferences state matching the screenshot items
-  const [preferences, setPreferences] = useState({
+  const { user } = useAuth();
+  const storageKey = `parent-notification-preferences:${user?.id}`;
+
+  const defaults = {
     homeworkUpdates: true,
     attendanceAlerts: true,
     newProgressReports: true,
     newAchievements: true,
     tutorMessages: true,
     platformAnnouncements: true,
+  };
+
+  // Preferences are remembered on this device (the browser's storage).
+  const [preferences, setPreferences] = useState(() => {
+    try {
+      return { ...defaults, ...JSON.parse(localStorage.getItem(storageKey) || '{}') };
+    } catch {
+      return defaults;
+    }
   });
 
   const [savedMessage, setSavedMessage] = useState(false);
@@ -25,6 +37,11 @@ export default function NotificationPreferences() {
 
   // Save changes handler
   const handleSave = () => {
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(preferences));
+    } catch {
+      // storage unavailable (private mode): the choices just won't be remembered
+    }
     setSavedMessage(true);
     setTimeout(() => setSavedMessage(false), 3000); // Hide success after 3s
   };
@@ -87,10 +104,10 @@ export default function NotificationPreferences() {
       <div className="mt-6 pt-4 border-t border-gray-100 flex items-center justify-between">
         {savedMessage ? (
           <div className="flex items-center gap-1.5 text-emerald-600 text-sm font-medium animate-in fade-in">
-            <Check className="w-4 h-4" /> Preferences saved successfully!
+            <Check className="w-4 h-4" /> Preferences saved on this device!
           </div>
         ) : (
-          <span className="text-xs text-gray-400">Changes apply to your email inbox</span>
+          <span className="text-xs text-gray-400">Saved on this device. Email alerts aren't switched on yet.</span>
         )}
 
         <button

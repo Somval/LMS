@@ -1,59 +1,20 @@
 import React from 'react';
 import { Play } from 'lucide-react';
 
-const RecordedLessons = () => {
-  const lessons = [
-    {
-      id: 1,
-      date: 'Today',
-      subDate: 'Aug 17',
-      className: 'Mathematics',
-      topic: 'Linear Equations & Inequalities',
-      duration: '58min',
-      tutor: 'Miss. Sarah Adeyemi',
-      thumbnail: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=100&auto=format&fit=crop&q=80',
-    },
-    {
-      id: 2,
-      date: 'Today',
-      subDate: 'Aug 17',
-      className: 'Mathematics',
-      topic: 'Linear Equations & Inequalities',
-      duration: '58min',
-      tutor: 'Miss. Sarah Adeyemi',
-      thumbnail: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=100&auto=format&fit=crop&q=80',
-    },
-    {
-      id: 3,
-      date: 'Today',
-      subDate: 'Aug 17',
-      className: 'Mathematics',
-      topic: 'Linear Equations & Inequalities',
-      duration: '58min',
-      tutor: 'Miss. Sarah Adeyemi',
-      thumbnail: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=100&auto=format&fit=crop&q=80',
-    },
-    {
-      id: 4,
-      date: 'Today',
-      subDate: 'Aug 17',
-      className: 'Mathematics',
-      topic: 'Linear Equations & Inequalities',
-      duration: '58min',
-      tutor: 'Miss. Sarah Adeyemi',
-      thumbnail: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=100&auto=format&fit=crop&q=80',
-    },
-    {
-      id: 5,
-      date: 'Today',
-      subDate: 'Aug 17',
-      className: 'Mathematics',
-      topic: 'Linear Equations & Inequalities',
-      duration: '58min',
-      tutor: 'Miss. Sarah Adeyemi',
-      thumbnail: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=100&auto=format&fit=crop&q=80',
-    },
-  ];
+const RecordedLessons = ({ lessons: source = [] }) => {
+  const lessons = source.map((l) => ({
+    id: l.id,
+    date: l.shortDate,
+    subDate: l.subDate,
+    className: l.subject,
+    topic: l.title,
+    duration: l.duration,
+    tutor: l.instructor,
+    thumbnail: l.image,
+    recordingUrl: l.recordingUrl,
+  }));
+
+  if (lessons.length === 0) return null;
 
   return (
     <div className="min-h-screen bg-slate-50 p-6 font-sans">
@@ -120,7 +81,7 @@ const RecordedLessons = () => {
 
                     {/* Action */}
                     <td className="py-4 px-6 text-right">
-                      <button className="inline-flex items-center gap-1.5 px-3.5 py-1.5 border border-blue-400 text-blue-500 hover:bg-blue-50 rounded-lg text-xs font-medium transition-colors">
+                      <button type="button" onClick={() => window.open(lesson.recordingUrl, "_blank", "noopener,noreferrer")} className="inline-flex items-center gap-1.5 px-3.5 py-1.5 border border-blue-400 text-blue-500 hover:bg-blue-50 rounded-lg text-xs font-medium transition-colors">
                         <Play className="w-3.5 h-3.5 fill-current" />
                         Watch Recording
                       </button>
