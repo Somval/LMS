@@ -3,12 +3,19 @@ import React, { useState } from "react";
 // Import tab components
 // import AcademicPerformance from "./AcademicPerformance";
 import CoursesAndTutors from "./CoursesAndTutors";
-import StudentClasses from "./StudentClasses";
 import StudentAttendance from "./StudentAttendance";
 import StudentAssignments from "./StudentAssignments";
 import StudentAchievements from "./StudentAchievements";
 import StudentRewards from "./StudentRewards";
 import StudentLearningActivity from "./StudentLearningActivity";
+
+function NotConnected() {
+  return (
+    <p className="rounded-lg bg-white px-4 py-10 text-center text-sm text-[#667085]">
+      This section isn't connected to live data yet.
+    </p>
+  );
+}
 
 const tabs = [
   "Academic Performance",
@@ -24,7 +31,7 @@ const tabs = [
 const tabComponents = {
   // "Academic Performance": AcademicPerformance,
   "Courses & Tutors": CoursesAndTutors,
-  Classes: StudentClasses,
+  Classes: NotConnected,
   Attendance: StudentAttendance,
   "Assignments & Quizzes": StudentAssignments,
   Achievements: StudentAchievements,
@@ -35,6 +42,8 @@ const tabComponents = {
 export default function StudentDetailsTabs({
   activeTab: controlledActiveTab,
   onTabChange,
+  student = null,
+  onChanged = () => {},
 }) {
   const [internalActiveTab, setInternalActiveTab] =
     useState("Courses & Tutors");
@@ -80,7 +89,7 @@ export default function StudentDetailsTabs({
       {/* Active Tab Content */}
       <div className="w-full mt-5 min-w-0">
         {ActiveComponent ? (
-          <ActiveComponent />
+          <ActiveComponent student={student} onChanged={onChanged} />
         ) : activeTab === "Academic Performance" ? null : null}
       </div>
     </section>

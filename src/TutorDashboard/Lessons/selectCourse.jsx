@@ -1,44 +1,21 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { ChevronDown } from "lucide-react";
 
-const courses = [
-  "Mathematics",
-  "English",
-  "Basic Science",
-  "Social Studies",
-  "Computer Studies",
-];
-
-const classes = [
-  "Year 1",
-  "Year 2",
-  "Year 3",
-  "Year 4",
-  "Year 5",
-  "Year 6",
-];
-
-export default function CourseClassSelector({
-  initialCourse = "Mathematics",
-  initialClass = "Year 4",
-  onCourseChange,
-  onClassChange,
-}) {
-  const [selectedCourse, setSelectedCourse] = useState(initialCourse);
-  const [selectedClass, setSelectedClass] = useState(initialClass);
+// "subjects" are the tutor's courses from GET /tutors/subjects (one entry per subject and year level).
+export default function CourseClassSelector({ subjects = [], subjectId, year, onChange }) {
+  const courses = [...new Map(subjects.map((s) => [s.subjectId, s.name])).entries()];
+  const classes = subjects
+    .filter((s) => s.subjectId === subjectId && s.yearLevel)
+    .map((s) => s.yearLevel);
 
   const handleCourseChange = (event) => {
-    const value = event.target.value;
-    setSelectedCourse(value);
-    onCourseChange?.(value);
+    const next = Number(event.target.value);
+    const first = subjects.find((s) => s.subjectId === next && s.yearLevel);
+    onChange?.(next, first?.yearLevel ?? null);
   };
 
-  const handleClassChange = (event) => {
-    const value = event.target.value;
-    setSelectedClass(value);
-    onClassChange?.(value);
-  };
+  const handleClassChange = (event) => onChange?.(subjectId, event.target.value || null);
 
   const selectClass =
     "h-[34px] w-full appearance-none rounded-[5px] border border-[#E2E2E2] bg-white pl-2 pr-9 text-[12px] font-semibold text-[#171717] outline-none transition-colors hover:border-[#C8C8C8] focus:border-[#326BFF] focus:ring-2 focus:ring-[#326BFF]/10";
@@ -60,13 +37,15 @@ export default function CourseClassSelector({
               <select
                 id="course"
                 name="course"
-                value={selectedCourse}
+                value={subjectId ?? ""}
+                disabled={courses.length === 0}
                 onChange={handleCourseChange}
                 className={selectClass}
               >
-                {courses.map((course) => (
-                  <option key={course} value={course}>
-                    {course}
+                {courses.length === 0 && <option value="">No courses yet</option>}
+                {courses.map(([id, name]) => (
+                  <option key={id} value={id}>
+                    {name}
                   </option>
                 ))}
               </select>
@@ -92,10 +71,12 @@ export default function CourseClassSelector({
               <select
                 id="class"
                 name="class"
-                value={selectedClass}
+                value={year ?? ""}
+                disabled={classes.length === 0}
                 onChange={handleClassChange}
                 className={selectClass}
               >
+                {classes.length === 0 && <option value="">All years</option>}
                 {classes.map((className) => (
                   <option key={className} value={className}>
                     {className}

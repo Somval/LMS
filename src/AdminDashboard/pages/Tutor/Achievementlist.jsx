@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { api } from "../../../lib/api";
 import {
   Plus,
   Search,
@@ -16,55 +17,10 @@ import {
 
 import ImageBatch from "../../../assets/images/134a082cca973150969aa91355d8ac63a4934a6a.png";
 
-// Import the separate create-achievement modal
-import CreateAchievementModal from "../../../components/Admincomponent/CreateAchievementModal";
 
-const initialAchievements = [
-  {
-    id: 1,
-    name: "Perfect Attendance",
-    subject: "Mathematics",
-    description: "Awarded for consistent improvement in quiz scores.",
-    studentsEarned: 8,
-    dateCreated: "May 20, 2025",
-    status: "Active",
-  },
-  {
-    id: 2,
-    name: "Perfect Attendance",
-    subject: "Mathematics",
-    description: "Awarded for consistent improvement in quiz scores.",
-    studentsEarned: 8,
-    dateCreated: "May 20, 2025",
-    status: "Active",
-  },
-  {
-    id: 3,
-    name: "Perfect Attendance",
-    subject: "Mathematics",
-    description: "Awarded for consistent improvement in quiz scores.",
-    studentsEarned: 8,
-    dateCreated: "May 20, 2025",
-    status: "Active",
-  },
-  {
-    id: 4,
-    name: "Perfect Attendance",
-    subject: "Mathematics",
-    description: "Awarded for consistent improvement in quiz scores.",
-    studentsEarned: 8,
-    dateCreated: "May 20, 2025",
-    status: "Active",
-  },
-];
 
-const subjects = ["All Subjects", "Mathematics", "English", "Science"];
 
-const emptyAchievement = {
-  name: "",
-  subject: "Mathematics",
-  description: "",
-};
+const subjects = ["All Types", "Badge", "Reward"];
 
 function AchievementBadge({ size = "default" }) {
   return (
@@ -84,6 +40,7 @@ function AchievementBadge({ size = "default" }) {
 }
 
 function StatusBadge({ status }) {
+  if (!status) return null;
   const isActive = status === "Active";
 
   return (
@@ -109,7 +66,6 @@ function AchievementActions({
   openMenu,
   setOpenMenu,
   onView,
-  onTemplate,
   onDelete,
 }) {
   const isOpen = openMenu === achievement.id;
@@ -151,15 +107,6 @@ function AchievementActions({
             >
               <Eye size={16} />
               View details
-            </button>
-
-            <button
-              type="button"
-              onClick={() => onTemplate(achievement)}
-              className="flex min-h-10 w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm text-slate-700 transition hover:bg-slate-50"
-            >
-              <Pencil size={16} />
-              Use as template
             </button>
 
             <button
@@ -215,15 +162,28 @@ function ModalShell({ title, onClose, children }) {
   );
 }
 
-export default function Achievements() {
-  const [achievements, setAchievements] = useState(initialAchievements);
+const fmtKind = (k) => (k === "REWARD" ? "Reward" : "Badge");
+
+export default function Achievements({ items = [], loading = false, error = "", onChanged }) {
+  // Real badges and rewards, in the shape the table draws.
+  const achievements = useMemo(
+    () =>
+      items.map((a) => ({
+        id: a.id,
+        name: a.title,
+        subject: fmtKind(a.kind),
+        description: a.description || "No description.",
+        studentsEarned: a.studentsEarned,
+        dateCreated: `${a.points} ${a.points === 1 ? "point" : "points"}`,
+        status: "",
+      })),
+    [items]
+  );
+  const [actionError, setActionError] = useState("");
   const [search, setSearch] = useState("");
-  const [subject, setSubject] = useState("All Subjects");
+  const [subject, setSubject] = useState("All Types");
   const [openMenu, setOpenMenu] = useState(null);
   const [selectedAchievement, setSelectedAchievement] = useState(null);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-
-  const [newAchievement, setNewAchievement] = useState(emptyAchievement);
 
   const filteredAchievements = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -235,78 +195,29 @@ export default function Achievements() {
         achievement.description.toLowerCase().includes(query);
 
       const matchesSubject =
-        subject === "All Subjects" || achievement.subject === subject;
+        subject === "All Types" || achievement.subject === subject;
 
       return matchesSearch && matchesSubject;
     });
   }, [achievements, search, subject]);
 
-  // Create a new achievement from the separate modal form.
-  const handleCreate = (formData) => {
-    const name = formData.name?.trim();
-
-    if (!name) return;
-
-    const achievement = {
-      id: Date.now(),
-      name,
-      subject: formData.subject || "Mathematics",
-      description:
-        formData.description?.trim() ||
-        "Achievement awarded for outstanding student performance.",
-      studentsEarned: 0,
-      dateCreated: new Date().toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      }),
-      status: "Active",
-    };
-
-    setAchievements((previous) => [achievement, ...previous]);
-    setNewAchievement(emptyAchievement);
-    setShowCreateModal(false);
+  // DELETE /rewards/:id (admins may delete any badge or reward)
+  const handleDelete = async (id) => {
     setOpenMenu(null);
-  };
-
-  const handleDelete = (id) => {
-    setAchievements((previous) =>
-      previous.filter((achievement) => achievement.id !== id)
-    );
-
-    setOpenMenu(null);
-
-    if (selectedAchievement?.id === id) {
-      setSelectedAchievement(null);
+    if (!window.confirm("Delete this achievement? Students who earned it will lose it.")) return;
+    try {
+      await api.delete(`/rewards/${id}`);
+      if (selectedAchievement?.id === id) setSelectedAchievement(null);
+      setActionError("");
+      onChanged?.();
+    } catch (err) {
+      setActionError(err.message || "Could not delete this achievement.");
     }
   };
 
   const handleView = (achievement) => {
     setSelectedAchievement(achievement);
     setOpenMenu(null);
-  };
-
-  const handleTemplate = (achievement) => {
-    setNewAchievement({
-      name: achievement.name,
-      subject: achievement.subject,
-      description: achievement.description,
-    });
-
-    setSelectedAchievement(null);
-    setOpenMenu(null);
-    setShowCreateModal(true);
-  };
-
-  const handleOpenCreateModal = () => {
-    setNewAchievement(emptyAchievement);
-    setOpenMenu(null);
-    setShowCreateModal(true);
-  };
-
-  const handleCloseCreateModal = () => {
-    setShowCreateModal(false);
-    setNewAchievement(emptyAchievement);
   };
 
   return (
@@ -322,18 +233,12 @@ export default function Achievements() {
             </div>
 
             <p className="mt-2 text-sm leading-5 text-[#64748B]">
-              Manage and track student achievements.
+              Badges and rewards this tutor created for students.
             </p>
+            {(error || actionError) && (
+              <p role="alert" className="mt-2 rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">{error || actionError}</p>
+            )}
           </div>
-
-          <button
-            type="button"
-            onClick={handleOpenCreateModal}
-            className="inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 rounded-lg border border-[#86EFB2] bg-white px-4 py-2.5 text-sm font-semibold text-[#0BCB69] transition hover:bg-[#F0FFF6] focus:outline-none focus:ring-2 focus:ring-[#86EFB2] sm:min-h-10 sm:w-auto"
-          >
-            <Plus size={18} strokeWidth={2} />
-            Create Achievement
-          </button>
         </div>
 
         {/* Search and filter */}
@@ -405,11 +310,10 @@ export default function Achievements() {
               <thead>
                 <tr className="h-12 bg-[#EEF3F9] text-xs text-[#334155]">
                   <th className="px-3 font-semibold">Achievement Name</th>
-                  <th className="px-3 font-semibold">Subject</th>
+                  <th className="px-3 font-semibold">Type</th>
                   <th className="px-3 font-semibold">Description</th>
                   <th className="px-3 font-semibold">Students Earned</th>
-                  <th className="px-3 font-semibold">Date Created</th>
-                  <th className="px-3 font-semibold">Status</th>
+                  <th className="px-3 font-semibold">Points</th>
                   <th className="px-3 text-right font-semibold">Actions</th>
                 </tr>
               </thead>
@@ -449,16 +353,11 @@ export default function Achievements() {
                     </td>
 
                     <td className="px-3 py-4">
-                      <StatusBadge status={achievement.status} />
-                    </td>
-
-                    <td className="px-3 py-4">
                       <AchievementActions
                         achievement={achievement}
                         openMenu={openMenu}
                         setOpenMenu={setOpenMenu}
                         onView={handleView}
-                        onTemplate={handleTemplate}
                         onDelete={handleDelete}
                       />
                     </td>
@@ -468,13 +367,13 @@ export default function Achievements() {
                 {filteredAchievements.length === 0 && (
                   <tr>
                     <td
-                      colSpan={7}
+                      colSpan={6}
                       className="px-4 py-14 text-center text-sm text-[#64748B]"
                     >
                       <div className="mx-auto flex max-w-sm flex-col items-center">
                         <Search size={28} className="mb-3 text-slate-300" />
                         <p className="font-semibold text-slate-700">
-                          No achievements found
+                          {loading ? "Loading achievements…" : error ? "Something went wrong" : items.length === 0 ? "No achievements yet" : "No achievements found"}
                         </p>
                         <p className="mt-1 leading-5">
                           Try another search term or select a different
@@ -546,15 +445,6 @@ export default function Achievements() {
 
                         <button
                           type="button"
-                          onClick={() => handleTemplate(achievement)}
-                          className="flex min-h-10 w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
-                        >
-                          <Pencil size={16} />
-                          Use as template
-                        </button>
-
-                        <button
-                          type="button"
                           onClick={() => handleDelete(achievement.id)}
                           className="flex min-h-10 w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"
                         >
@@ -615,24 +505,16 @@ export default function Achievements() {
               <Search size={28} className="mx-auto mb-3 text-slate-300" />
 
               <p className="text-sm font-semibold text-slate-700">
-                No achievements found
+                {loading ? "Loading achievements…" : error ? "Something went wrong" : items.length === 0 ? "No achievements yet" : "No achievements found"}
               </p>
 
               <p className="mx-auto mt-1 max-w-xs text-xs leading-5 text-slate-500">
-                Try another search term or select a different subject.
+                {error || (items.length === 0 ? "This tutor has not created any badges or rewards yet." : "Try another search term or select a different type.")}
               </p>
             </div>
           )}
         </div>
       </div>
-
-      {/* Separate Create Achievement Modal */}
-      <CreateAchievementModal
-        isOpen={showCreateModal}
-        onClose={handleCloseCreateModal}
-        onCreate={handleCreate}
-        initialValues={newAchievement}
-      />
 
       {/* Achievement details modal */}
       {selectedAchievement && (
@@ -678,22 +560,13 @@ export default function Achievements() {
 
             <div className="min-w-0 rounded-xl border border-slate-100 bg-[#F8FAFC] p-3.5 sm:p-4">
               <p className="flex items-center gap-2 text-xs leading-5 text-[#64748B]">
-                <CalendarDays size={15} />
-                Date Created
+                <CalendarDays size={15} /> Points
               </p>
 
               <p className="mt-2 break-words text-sm font-semibold leading-5 text-[#111827]">
                 {selectedAchievement.dateCreated}
               </p>
             </div>
-          </div>
-
-          <div className="mt-5">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#94A3B8]">
-              Status
-            </p>
-
-            <StatusBadge status={selectedAchievement.status} />
           </div>
 
           <button

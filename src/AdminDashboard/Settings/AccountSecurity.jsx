@@ -66,13 +66,13 @@ function ChangePasswordModal({ onClose }) {
 }
 
 
-export default function AccountSecurity({ onChangePassword }) {
+export default function AccountSecurity({ onChangePassword, value, onChange }) {
   const { user } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
 
-  // 2FA / login alerts have no backend yet, so they stay as local toggles.
-  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
-  const [loginAlertsEnabled, setLoginAlertsEnabled] = useState(false);
+  // Login alerts are saved per admin. 2FA needs an authenticator flow that isn't built yet, so it stays off.
+  const loginAlertsEnabled = !!value?.loginAlerts;
+  const setLoginAlertsEnabled = (v) => onChange({ loginAlerts: v });
 
   const inputClass =
     "h-[35px] w-full min-w-0 rounded-[6px] border border-[#DCDCDC] bg-white px-3 text-[11px] font-normal text-[#171717] outline-none transition focus:border-[#A5B4C8]";
@@ -81,16 +81,17 @@ export default function AccountSecurity({ onChangePassword }) {
     "mb-[7px] block text-[11px] font-normal leading-[15px] text-[#788391]";
 
   // REUSABLE SECURITY SWITCH
-  const ToggleSwitch = ({ enabled, onToggle, label }) => (
+  const ToggleSwitch = ({ enabled, onToggle, label, disabled = false }) => (
     <button
       type="button"
+      disabled={disabled}
       role="switch"
       aria-checked={enabled}
       aria-label={label}
       onClick={() => onToggle(!enabled)}
       className={`relative flex h-[17px] w-[28px] shrink-0 items-center rounded-full transition-colors duration-200 ${
         enabled ? "bg-[#087333]" : "bg-[#C8CDD5]"
-      }`}
+      } ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
     >
       <span
         className={`absolute h-[11px] w-[11px] rounded-full bg-white shadow-sm transition-all duration-200 ${
@@ -198,15 +199,16 @@ export default function AccountSecurity({ onChangePassword }) {
                 </h3>
 
                 <ToggleSwitch
-                  enabled={twoFactorEnabled}
-                  onToggle={setTwoFactorEnabled}
+                  enabled={false}
+                  onToggle={() => {}}
                   label="Two-factor authentication"
+                  disabled
                 />
 
               </div>
 
               <p className="max-w-[180px] text-[10px] font-normal leading-[15px] text-[#788391]">
-                Add an extra layer of security to your account.
+                Add an extra layer of security to your account. Coming soon.
               </p>
 
             </div>

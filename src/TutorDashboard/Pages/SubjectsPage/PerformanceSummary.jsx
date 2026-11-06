@@ -1,7 +1,15 @@
 import React from "react";
 import { ArrowRight } from "lucide-react";
 
-export default function Performance() {
+const CIRC = 2 * Math.PI * 36; // circle radius used by the donut
+
+export default function Performance({ performance }) {
+  const stats = performance ?? { average: null, below60: 0, between60and80: 0, above80: 0 };
+  const total = stats.below60 + stats.between60and80 + stats.above80;
+  const seg = (n) => (total ? (n / total) * CIRC : 0);
+  const lenBelow = seg(stats.below60);
+  const lenMid = seg(stats.between60and80);
+  const lenAbove = seg(stats.above80);
   return (
     <section className="w-full bg-[#F5F7FC] p-2 sm:p-3">
       {/* =====================================================
@@ -79,8 +87,11 @@ export default function Performance() {
             <svg
               viewBox="0 0 100 100"
               className="h-full w-full -rotate-90"
-              aria-label="Average score 82 percent"
+              aria-label={stats.average == null ? "No scores yet" : `Average score ${stats.average} percent`}
             >
+              {total === 0 && (
+                <circle cx="50" cy="50" r="36" fill="none" stroke="#EEF0F6" strokeWidth="13" />
+              )}
               {/* BELOW 60% */}
               <circle
                 cx="50"
@@ -89,7 +100,7 @@ export default function Performance() {
                 fill="none"
                 stroke="#86F59A"
                 strokeWidth="13"
-                strokeDasharray="135.72 90.48"
+                strokeDasharray={`${lenBelow} ${CIRC - lenBelow}`}
                 strokeDashoffset="0"
               />
 
@@ -101,8 +112,8 @@ export default function Performance() {
                 fill="none"
                 stroke="#FFC62A"
                 strokeWidth="13"
-                strokeDasharray="56.55 169.65"
-                strokeDashoffset="-135.72"
+                strokeDasharray={`${lenMid} ${CIRC - lenMid}`}
+                strokeDashoffset={-lenBelow}
               />
 
               {/* ABOVE 80% */}
@@ -113,8 +124,8 @@ export default function Performance() {
                 fill="none"
                 stroke="#D9DCE5"
                 strokeWidth="13"
-                strokeDasharray="33.93 192.27"
-                strokeDashoffset="-192.27"
+                strokeDasharray={`${lenAbove} ${CIRC - lenAbove}`}
+                strokeDashoffset={-(lenBelow + lenMid)}
               />
             </svg>
 
@@ -143,7 +154,7 @@ export default function Performance() {
                   sm:text-[26px]
                 "
               >
-                82%
+                {stats.average == null ? "—" : `${stats.average}%`}
               </span>
 
               <span
@@ -234,7 +245,7 @@ export default function Performance() {
                   "
                 >
                   <strong className="font-bold text-[#111111]">
-                    11
+                    {stats.below60}
                   </strong>{" "}
                   students
                 </span>
@@ -289,7 +300,7 @@ export default function Performance() {
                   "
                 >
                   <strong className="font-bold text-[#111111]">
-                    8
+                    {stats.between60and80}
                   </strong>{" "}
                   students
                 </span>
@@ -344,7 +355,7 @@ export default function Performance() {
                   "
                 >
                   <strong className="font-bold text-[#111111]">
-                    5
+                    {stats.above80}
                   </strong>{" "}
                   students
                 </span>

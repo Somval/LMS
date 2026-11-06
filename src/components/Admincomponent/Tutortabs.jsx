@@ -3,10 +3,10 @@ import React, { useState } from "react";
 
 import Overview from "../../AdminDashboard/pages/Tutor/TutorOverview";
 import TutorInformation from "../../AdminDashboard/pages/Tutor/TutorInformation";
+import Reviews from "../../AdminDashboard/TutorTabs/Reviews";
 import Students from "../../AdminDashboard/TutorTabs/Students";
 import Classes from "../../AdminDashboard/TutorTabs/Classes";
 import Achievements from "../../AdminDashboard/TutorTabs/Achievements";
-import Reviews from   "../../AdminDashboard/TutorTabs/Reviews";
 
 const tabs = [
   { id: "overview", label: "Overview" },
@@ -26,7 +26,15 @@ const tabPages = {
   reviews: Reviews,
 };
 
-export default function NavigationTabs() {
+function NotConnected() {
+  return (
+    <p className="rounded-lg bg-white px-4 py-10 text-center text-sm text-[#667085]">
+      This section isn't connected to live data yet.
+    </p>
+  );
+}
+
+export default function NavigationTabs({ tutor, onChanged = () => {} }) {
   const [activeTab, setActiveTab] = useState("overview");
 
   const ActivePage = tabPages[activeTab] || Overview;
@@ -74,7 +82,7 @@ export default function NavigationTabs() {
         className="w-full p-4 sm:p-6 lg:p-8"
       >
         <div className="mx-auto w-full max-w-[1400px]">
-          <ActivePage />
+          <ActivePage tutor={tutor} onChanged={onChanged} />
         </div>
       </div>
     </div>

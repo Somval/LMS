@@ -7,206 +7,7 @@ import {
   Star,
 } from "lucide-react";
 
-const reviews = [
-  {
-    id: 1,
-    parent: "Mrs. Tunde",
-    student: "Olivia Parent",
-    rating: 4,
-    course: "Mathematics - Year 1",
-    feedback:
-      "My child has improved so much in Maths. Very patient and explains things clearly.",
-    date: "Sep 13, 2026",
-  },
-  {
-    id: 2,
-    parent: "Mrs. Tunde",
-    student: "Olivia Parent",
-    rating: 5,
-    course: "Mathematics - Year 1",
-    feedback:
-      "My child has improved so much in Maths. Very patient and explains things clearly.",
-    date: "Sep 12, 2026",
-  },
-  {
-    id: 3,
-    parent: "Mrs. Tunde",
-    student: "Olivia Parent",
-    rating: 4,
-    course: "Mathematics - Year 1",
-    feedback:
-      "My child has improved so much in Maths. Very patient and explains things clearly.",
-    date: "Sep 12, 2026",
-  },
-  {
-    id: 4,
-    parent: "Mrs. Tunde",
-    student: "Olivia Parent",
-    rating: 4,
-    course: "Mathematics - Year 1",
-    feedback:
-      "My child has improved so much in Maths. Very patient and explains things clearly.",
-    date: "Sep 12, 2026",
-  },
-  {
-    id: 5,
-    parent: "Mrs. Tunde",
-    student: "Olivia Parent",
-    rating: 4,
-    course: "Mathematics - Year 1",
-    feedback:
-      "My child has improved so much in Maths. Very patient and explains things clearly.",
-    date: "Sep 12, 2026",
-  },
-  {
-    id: 6,
-    parent: "Mrs. Tunde",
-    student: "Olivia Parent",
-    rating: 5,
-    course: "Mathematics - Year 1",
-    feedback:
-      "Excellent teaching approach. My child enjoys learning and feels more confident.",
-    date: "Sep 11, 2026",
-  },
-  {
-    id: 7,
-    parent: "Mr. Adewale",
-    student: "Daniel Parent",
-    rating: 3,
-    course: "English - Year 1",
-    feedback:
-      "The lessons are helpful, and I appreciate the regular progress updates.",
-    date: "Sep 10, 2026",
-  },
-  {
-    id: 8,
-    parent: "Mrs. Okafor",
-    student: "Chika Parent",
-    rating: 5,
-    course: "Science - Year 2",
-    feedback:
-      "Wonderful explanations and engaging lessons. We have noticed real progress.",
-    date: "Sep 9, 2026",
-  },
-  {
-    id: 9,
-    parent: "Mr. Bello",
-    student: "Amira Parent",
-    rating: 4,
-    course: "Mathematics - Year 1",
-    feedback:
-      "Very patient with difficult topics and always willing to explain again.",
-    date: "Sep 8, 2026",
-  },
-  {
-    id: 10,
-    parent: "Mrs. James",
-    student: "David Parent",
-    rating: 2,
-    course: "English - Year 1",
-    feedback:
-      "The lessons could benefit from more practice exercises and revision.",
-    date: "Sep 7, 2026",
-  },
-  {
-    id: 11,
-    parent: "Mrs. Musa",
-    student: "Zara Parent",
-    rating: 5,
-    course: "Science - Year 2",
-    feedback:
-      "Great teaching and clear explanations. My child looks forward to every class.",
-    date: "Sep 6, 2026",
-  },
-  {
-    id: 12,
-    parent: "Mr. Yusuf",
-    student: "Ibrahim Parent",
-    rating: 4,
-    course: "Mathematics - Year 1",
-    feedback:
-      "A good learning experience with clear examples and useful feedback.",
-    date: "Sep 5, 2026",
-  },
-  {
-    id: 13,
-    parent: "Mrs. Obi",
-    student: "Grace Parent",
-    rating: 3,
-    course: "English - Year 1",
-    feedback:
-      "Helpful lessons overall. More homework feedback would be appreciated.",
-    date: "Aug 28, 2026",
-  },
-  {
-    id: 14,
-    parent: "Mr. Daniel",
-    student: "Samuel Parent",
-    rating: 5,
-    course: "Science - Year 2",
-    feedback:
-      "Excellent explanations and a very supportive approach to learning.",
-    date: "Aug 20, 2026",
-  },
-  {
-    id: 15,
-    parent: "Mrs. Bello",
-    student: "Faith Parent",
-    rating: 4,
-    course: "Mathematics - Year 1",
-    feedback:
-      "My child is more confident with numbers and problem-solving now.",
-    date: "Aug 12, 2026",
-  },
-  {
-    id: 16,
-    parent: "Mr. Okoro",
-    student: "Peter Parent",
-    rating: 5,
-    course: "English - Year 1",
-    feedback:
-      "Very engaging lessons. We have seen a positive improvement in reading.",
-    date: "Jul 25, 2026",
-  },
-  {
-    id: 17,
-    parent: "Mrs. Adeyemi",
-    student: "Tomi Parent",
-    rating: 4,
-    course: "Science - Year 2",
-    feedback:
-      "Clear explanations and good lesson preparation every week.",
-    date: "Jul 18, 2026",
-  },
-  {
-    id: 18,
-    parent: "Mr. Eze",
-    student: "Michael Parent",
-    rating: 1,
-    course: "Mathematics - Year 1",
-    feedback:
-      "I would appreciate more communication about lesson progress.",
-    date: "Jun 20, 2026",
-  },
-];
-
 const PAGE_SIZE = 8;
-
-const courseOptions = [
-  { value: "all", label: "All Courses" },
-  {
-    value: "Mathematics - Year 1",
-    label: "Mathematics - Year 1",
-  },
-  {
-    value: "English - Year 1",
-    label: "English - Year 1",
-  },
-  {
-    value: "Science - Year 2",
-    label: "Science - Year 2",
-  },
-];
 
 const ratingOptions = [
   { value: "all", label: "All Ratings" },
@@ -363,29 +164,54 @@ function Pagination({ currentPage, totalPages, onPageChange }) {
   );
 }
 
-export default function ParentReviews() {
+const formatDate = (iso) =>
+  new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+
+export default function ParentReviews({ reviews: apiReviews = [], loading = false, error = "" }) {
   const [course, setCourse] = useState("all");
   const [rating, setRating] = useState("all");
   const [time, setTime] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Update this date when connecting the component to live review data.
-  const referenceDate = useMemo(
-    () => new Date("2026-09-16T12:00:00"),
-    []
+  // One row per review. A review belongs to the parent, so the student and course columns
+  // show the children (and courses) of theirs that this tutor teaches.
+  const reviews = useMemo(
+    () =>
+      apiReviews.map((r) => ({
+        id: r.id,
+        parent: r.parentName,
+        student: r.children.length ? r.children.join(", ") : "—",
+        rating: r.rating,
+        courses: r.courses,
+        course: r.courses.length ? r.courses.join(", ") : "—",
+        feedback: r.comment?.trim() || "No written feedback.",
+        date: formatDate(r.createdAt),
+        createdAt: r.createdAt,
+      })),
+    [apiReviews]
   );
+
+  const courseOptions = useMemo(
+    () => [
+      { value: "all", label: "All Courses" },
+      ...[...new Set(reviews.flatMap((r) => r.courses))]
+        .sort()
+        .map((c) => ({ value: c, label: c })),
+    ],
+    [reviews]
+  );
+
 
   const filteredReviews = useMemo(() => {
     return reviews.filter((review) => {
       const matchesCourse =
-        course === "all" || review.course === course;
+        course === "all" || review.courses.includes(course);
 
       const matchesRating =
         rating === "all" || review.rating === Number(rating);
 
-      const reviewDate = new Date(review.date);
       const daysOld = Math.floor(
-        (referenceDate.getTime() - reviewDate.getTime()) /
+        (Date.now() - new Date(review.createdAt).getTime()) /
           (1000 * 60 * 60 * 24)
       );
 
@@ -397,7 +223,7 @@ export default function ParentReviews() {
 
       return matchesCourse && matchesRating && matchesTime;
     });
-  }, [course, rating, time, referenceDate]);
+  }, [course, rating, time, reviews]);
 
   const totalPages = Math.max(
     1,
@@ -552,7 +378,17 @@ export default function ParentReviews() {
             </table>
           </div>
 
-          {pageReviews.length === 0 && (
+          {loading && (
+            <p className="py-12 text-center text-sm text-[#8792A1]">Loading reviews…</p>
+          )}
+
+          {!loading && error && (
+            <p role="alert" className="py-12 text-center text-sm font-medium text-red-600">
+              {error}
+            </p>
+          )}
+
+          {!loading && !error && pageReviews.length === 0 && (
             <div className="flex min-h-[180px] flex-col items-center justify-center px-5 text-center">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#EEF3FB]">
                 <Star size={21} className="text-[#8B9AB1]" />
@@ -563,7 +399,9 @@ export default function ParentReviews() {
               </p>
 
               <p className="mt-1 text-xs leading-5 text-[#8792A1]">
-                Try changing your filters to see more reviews.
+                {reviews.length === 0
+                  ? "Parents of your students can review you, and their reviews will show up here."
+                  : "Try changing your filters to see more reviews."}
               </p>
             </div>
           )}

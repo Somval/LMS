@@ -37,9 +37,17 @@ const ATTENDANCE_STATS = [
 export default function AttendanceHeaderComponent({
   title = "Attendance",
   description = "View students attendance history for classes.",
-  stats = ATTENDANCE_STATS,
-  attendanceRate = 80,
+  summary = null,
+  rangeLabel = "This week",
 }) {
+  const counts = {
+    "classes-attended": summary?.attended,
+    "classes-missed": summary?.missed,
+    "late-arrivals": summary?.late,
+  };
+  const stats = ATTENDANCE_STATS.map((s) => ({ ...s, count: counts[s.id] ?? "—", subtitle: rangeLabel }));
+  const attendanceRate = summary?.rate ?? 0;
+
   // SVG Donut calculation for Attendance Rate card
   const radius = 18;
   const circumference = 2 * Math.PI * radius;

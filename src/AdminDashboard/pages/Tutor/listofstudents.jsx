@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { tutorData } from "./tutorData";
+import Avatar from "../../../components/Avatar";
 
-export default function TutorTable({ onViewDetails }) {
+export default function TutorTable({ tutors = [], loading = false, error = "", onViewDetails }) {
   const navigate = useNavigate();
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -20,16 +20,15 @@ export default function TutorTable({ onViewDetails }) {
   };
 
   const filteredTutors = useMemo(() => {
-    return tutorData.filter((tutor) => {
+    return tutors.filter((tutor) => {
       const search = searchTerm.toLowerCase();
 
       const matchesSearch =
         (tutor.name && tutor.name.toLowerCase().includes(search)) ||
-        (tutor.id && tutor.id.toLowerCase().includes(search)) ||
-        (tutor.emailOrId && tutor.emailOrId.toLowerCase().includes(search));
+        (tutor.email && tutor.email.toLowerCase().includes(search));
 
       const matchesLevel = selectedLevel
-        ? tutor.level?.toLowerCase() === selectedLevel.toLowerCase()
+        ? tutor.levels?.some((l) => l.toLowerCase() === selectedLevel.toLowerCase())
         : true;
 
       const matchesStatus = selectedStatus
@@ -49,11 +48,17 @@ export default function TutorTable({ onViewDetails }) {
         matchesSubject
       );
     });
-  }, [searchTerm, selectedLevel, selectedStatus, selectedSubject]);
+  }, [tutors, searchTerm, selectedLevel, selectedStatus, selectedSubject]);
+
+  const levelOptions = useMemo(() => [...new Set(tutors.flatMap((t) => t.levels))].sort(), [tutors]);
+  const statusOptions = useMemo(() => [...new Set(tutors.map((t) => t.status))].sort(), [tutors]);
+  const subjectOptions = useMemo(() => [...new Set(tutors.flatMap((t) => t.subjects))].sort(), [tutors]);
 
   const statusClasses = (status) =>
     status === "Active"
       ? "bg-[#E2F5D8] text-[#1E7212]"
+      : status === "Pending"
+      ? "bg-[#FFF0D9] text-[#B96A08]"
       : "bg-[#FDE2E2] text-[#E53E3E]";
 
   return (
@@ -79,7 +84,7 @@ export default function TutorTable({ onViewDetails }) {
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search tutor name or ID..."
+            placeholder="Search tutor name or email..."
             aria-label="Search tutors"
             className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-sm text-gray-700 transition-all placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
           />
@@ -89,23 +94,29 @@ export default function TutorTable({ onViewDetails }) {
           label="Level"
           value={selectedLevel}
           onChange={setSelectedLevel}
-          options={["Year 4", "Year 5"]}
+          options={levelOptions}
         />
 
         <FilterSelect
           label="Status"
           value={selectedStatus}
           onChange={setSelectedStatus}
-          options={["Active", "Pending"]}
+          options={statusOptions}
         />
 
         <FilterSelect
           label="Subjects"
           value={selectedSubject}
           onChange={setSelectedSubject}
-          options={["Mathematics", "English"]}
+          options={subjectOptions}
         />
       </div>
+
+      {error && (
+        <p role="alert" className="mb-4 rounded-md bg-[#FDE2E2] px-3 py-2 text-sm text-[#E53E3E]">
+          {error}
+        </p>
+      )}
 
       {/* Desktop table */}
       <div className="hidden overflow-x-auto md:block">
@@ -132,14 +143,14 @@ export default function TutorTable({ onViewDetails }) {
                 >
                   <td className="px-4 py-4">
                     <div className="flex items-center gap-3">
-                      <TutorAvatar name={row.name} />
+                      <Avatar name={row.name} avatarUrl={row.avatarUrl} className="h-10 w-10 rounded-full" textClassName="text-sm" />
 
                       <div className="min-w-0">
                         <p className="text-sm font-semibold text-slate-900">
                           {row.name}
                         </p>
                         <p className="mt-0.5 text-xs text-gray-400">
-                          {row.emailOrId}
+                          {row.email}
                         </p>
                       </div>
                     </div>
@@ -150,7 +161,7 @@ export default function TutorTable({ onViewDetails }) {
                   </td>
 
                   <td className="px-4 py-4 font-medium text-slate-700">
-                    {row.level}
+                    {row.levels.length ? row.levels.join(", ") : "—"}
                   </td>
 
                   <td className="px-4 py-4 font-medium text-slate-700">
@@ -194,7 +205,7 @@ export default function TutorTable({ onViewDetails }) {
                   colSpan={6}
                   className="py-8 text-center text-sm text-gray-400"
                 >
-                  No tutors found matching your search or filters.
+                  {loading ? "Loading tutors…" : "No tutors found matching your search or filters."}
                 </td>
               </tr>
             )}
@@ -212,14 +223,14 @@ export default function TutorTable({ onViewDetails }) {
             >
               <div className="flex items-center justify-between gap-3 border-b border-gray-100 pb-3">
                 <div className="flex min-w-0 items-center gap-3">
-                  <TutorAvatar name={row.name} />
+                  <Avatar name={row.name} avatarUrl={row.avatarUrl} className="h-10 w-10 rounded-full" textClassName="text-sm" />
 
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold text-slate-900">
                       {row.name}
                     </p>
                     <p className="mt-1 truncate text-xs text-gray-400">
-                      {row.emailOrId}
+                      {row.email}
                     </p>
                   </div>
                 </div>
@@ -248,7 +259,7 @@ export default function TutorTable({ onViewDetails }) {
                     Level
                   </span>
                   <span className="text-xs font-medium text-slate-800">
-                    {row.level}
+                    {row.levels.length ? row.levels.join(", ") : "—"}
                   </span>
                 </div>
 
@@ -283,7 +294,7 @@ export default function TutorTable({ onViewDetails }) {
           ))
         ) : (
           <div className="rounded-xl border border-dashed border-gray-200 py-8 text-center text-sm text-gray-400">
-            No tutors found matching your search or filters.
+            {loading ? "Loading tutors…" : "No tutors found matching your search or filters."}
           </div>
         )}
       </div>
@@ -295,7 +306,7 @@ export default function TutorTable({ onViewDetails }) {
           {filteredTutors.length} of {filteredTutors.length} filtered entries
           <span className="text-gray-400">
             {" "}
-            ({tutorData.length} total tutors)
+            ({tutors.length} total tutors)
           </span>
         </p>
 
@@ -350,22 +361,6 @@ function FilterSelect({ label, value, onChange, options }) {
       </select>
 
       <ChevronDownIcon />
-    </div>
-  );
-}
-
-function TutorAvatar({ name }) {
-  const initials = name
-    ? name
-        .split(" ")
-        .map((part) => part[0])
-        .slice(0, 2)
-        .join("")
-    : "T";
-
-  return (
-    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#E8EEFF] text-sm font-semibold text-[#3456A5]">
-      {initials}
     </div>
   );
 }

@@ -2,12 +2,13 @@
 import React from 'react';
 import { Star, MessageSquare } from 'lucide-react';
 
-const stats = [
+// Cards built from the tutor's real review stats.
+const buildStats = (stats, loading) => [
   {
     id: 'rating',
     label: 'Average Rating',
-    value: '4.8',
-    suffix: '/ 5',
+    value: loading ? '…' : stats?.average != null ? stats.average.toFixed(1) : '–',
+    suffix: stats?.average != null ? '/ 5' : '',
     icon: Star,
     iconColor: 'text-[#FACC15]',
     iconBg: 'bg-[#FFFBEB]',
@@ -16,7 +17,7 @@ const stats = [
   {
     id: 'reviews',
     label: 'Total Reviews',
-    value: '24',
+    value: loading ? '…' : String(stats?.count ?? 0),
     suffix: '',
     icon: MessageSquare,
     iconColor: 'text-[#10B981]',
@@ -80,7 +81,8 @@ function StatCard({ stat }) {
   );
 }
 
-export default function ReviewStatsCards() {
+export default function ReviewStatsCards({ stats: reviewStats, loading = false }) {
+  const stats = buildStats(reviewStats, loading);
   return (
     <section
       aria-label="Review statistics"

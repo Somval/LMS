@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { api } from '../../lib/api';
 import { Headphones, ChevronDown, ExternalLink, Send, CheckCircle2 } from 'lucide-react';
 
@@ -7,6 +7,16 @@ export default function PrivacyAndSupport() {
   const navigate = useNavigate();
   // Accordion State Management ('privacy' | 'help' | 'report' | null)
   const [openSection, setOpenSection] = useState(null);
+  const location = useLocation();
+  const rootRef = useRef(null);
+
+  // "Contact Support" in the sidebar lands here with the report form open.
+  useEffect(() => {
+    if (location.state?.openSupport) {
+      setOpenSection('report');
+      setTimeout(() => rootRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+    }
+  }, [location.state]);
 
   // Report Issue Form State
   const [issueForm, setIssueForm] = useState({ subject: '', description: '' });
@@ -50,7 +60,7 @@ ${issueForm.description.trim()}`,
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto mt-10 p-4 sm:p-6 bg-white border border-gray-100 rounded-2xl shadow-sm">
+    <div ref={rootRef} className="w-full max-w-5xl mx-auto mt-10 p-4 sm:p-6 bg-white border border-gray-100 rounded-2xl shadow-sm">
       {/* Header */}
       <div className="flex items-start gap-4 pb-6 border-b border-gray-100">
         <div className="p-3 bg-blue-50 text-blue-600 rounded-xl flex-shrink-0">

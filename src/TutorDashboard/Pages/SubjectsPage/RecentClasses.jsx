@@ -1,33 +1,10 @@
 import React from "react";
 import { ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { formatDuration, formatTime, percent, splitDate } from "./subjectFormat";
 
-const RecentClasses = () => {
-  const classesData = [
-    {
-      id: 1,
-      date: "May 28, 2025",
-      time: "5:00 PM",
-      topic: "Quadratic Equations",
-      duration: "1 Hour",
-      attendance: "96%",
-    },
-    {
-      id: 2,
-      date: "May 28, 2025",
-      time: "5:00 PM",
-      topic: "Quadratic Equations",
-      duration: "1 Hour",
-      attendance: "96%",
-    },
-    {
-      id: 3,
-      date: "May 28, 2025",
-      time: "5:00 PM",
-      topic: "Quadratic Equations",
-      duration: "1 Hour",
-      attendance: "96%",
-    },
-  ];
+const RecentClasses = ({ classes = [] }) => {
+  const navigate = useNavigate();
 
   return (
     <section className="w-full bg-[#F5F7FC] p-2 sm:p-3">
@@ -181,7 +158,14 @@ const RecentClasses = () => {
                 TABLE BODY
             ================================================== */}
             <tbody>
-              {classesData.map((item) => (
+              {classes.length === 0 && (
+                <tr>
+                  <td colSpan="5" className="px-4 py-8 text-center text-[12px] font-medium text-[#858B94]">
+                    No classes held for this subject yet.
+                  </td>
+                </tr>
+              )}
+              {classes.map((item) => (
                 <tr
                   key={item.id}
                   className="
@@ -211,13 +195,8 @@ const RecentClasses = () => {
                       sm:leading-[15px]
                     "
                   >
-                    <span className="block">
-                      May 28,
-                    </span>
-
-                    <span className="block">
-                      2025
-                    </span>
+                    <span className="block">{splitDate(item.startsAt)[0]}</span>
+                    <span className="block">{splitDate(item.startsAt)[1]}</span>
                   </td>
 
                   {/* =================================================
@@ -238,7 +217,7 @@ const RecentClasses = () => {
                       sm:text-[11px]
                     "
                   >
-                    {item.time}
+                    {formatTime(item.startsAt)}
                   </td>
 
                   {/* =================================================
@@ -259,13 +238,7 @@ const RecentClasses = () => {
                       sm:leading-[15px]
                     "
                   >
-                    <span className="block">
-                      Quadratic
-                    </span>
-
-                    <span className="block">
-                      Equations
-                    </span>
+                    <span className="block">{item.title}</span>
                   </td>
 
                   {/* =================================================
@@ -286,7 +259,7 @@ const RecentClasses = () => {
                       sm:text-[11px]
                     "
                   >
-                    {item.duration}
+                    {formatDuration(item.startsAt, item.endsAt)}
                   </td>
 
                   {/* =================================================
@@ -306,7 +279,7 @@ const RecentClasses = () => {
                       sm:text-[12px]
                     "
                   >
-                    {item.attendance}
+                    {percent(item.attendanceRate)}
                   </td>
                 </tr>
               ))}
@@ -331,6 +304,7 @@ const RecentClasses = () => {
         >
           <button
             type="button"
+            onClick={() => navigate("/tutor/past-classes")}
             className="
               group
               inline-flex

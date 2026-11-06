@@ -1,5 +1,6 @@
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
+import { api } from "../../lib/api";
 import {
   CalendarDays,
   ChevronDown,
@@ -11,90 +12,69 @@ import {
   Activity,
 } from "lucide-react";
 
-const auditLogs = [
-  {
-    id: 1,
-    date: "Oct 16, 2026",
-    time: "10:24 AM",
-    user: "John Doe",
-    role: "Parent",
-    action: "Logged In",
-    module: "Authentication",
-    description: "User logged in successfully.",
-    ipAddress: "107.210.20.15",
-    device: "Web (Chrome)",
-  },
-  {
-    id: 2,
-    date: "Oct 16, 2026",
-    time: "10:24 AM",
-    user: "John Doe",
-    role: "Student",
-    action: "Submitted",
-    module: "Assignments",
-    description: "Submitted assignment",
-    ipAddress: "107.210.20.15",
-    device: "Web (Chrome)",
-  },
-  {
-    id: 3,
-    date: "Oct 16, 2026",
-    time: "10:24 AM",
-    user: "John Doe",
-    role: "Tutor",
-    action: "Created",
-    module: "Classes",
-    description: "Created a new class",
-    ipAddress: "107.210.20.15",
-    device: "Web (Chrome)",
-  },
-  ...Array.from({ length: 7 }, (_, index) => ({
-    id: index + 4,
-    date: "Oct 16, 2026",
-    time: "10:24 AM",
-    user: "John Doe",
-    role: "Parent",
-    action: "Logged In",
-    module: "Authentication",
-    description: "User logged in successfully.",
-    ipAddress: "107.210.20.15",
-    device: "Web (Chrome)",
-  })),
-];
+const fmtDate = (d) =>
+  new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+const fmtTime = (d) => new Date(d).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+const dayInput = (d) => {
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+};
+const daysAgo = (n) => {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return d;
+};
 
 export default function AuditLogs() {
   const [search, setSearch] = useState("");
   const [selectedRole, setSelectedRole] = useState("All Roles");
-  const [startDate, setStartDate] = useState("2026-10-01");
-  const [endDate, setEndDate] = useState("2026-10-31");
+  const [startDate, setStartDate] = useState(() => dayInput(daysAgo(30)));
+  const [endDate, setEndDate] = useState(() => dayInput(new Date()));
+  const [filteredLogs, setFilteredLogs] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const filteredLogs = useMemo(() => {
-    return auditLogs.filter((log) => {
-      const matchesRole =
-        selectedRole === "All Roles" || log.role === selectedRole;
-
-      const matchesSearch = Object.values(log)
-        .join(" ")
-        .toLowerCase()
-        .includes(search.toLowerCase());
-
-      const logDate = new Date(`${log.date} ${log.time}`);
-
-      const fromDate = startDate
-        ? new Date(`${startDate}T00:00:00`)
-        : null;
-
-      const toDate = endDate
-        ? new Date(`${endDate}T23:59:59`)
-        : null;
-
-      const matchesDate =
-        (!fromDate || logDate >= fromDate) &&
-        (!toDate || logDate <= toDate);
-
-      return matchesRole && matchesSearch && matchesDate;
-    });
+  // Filtering happens on the server; the search box waits briefly after typing.
+  useEffect(() => {
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      setLoading(true);
+      api
+        .get("/admin/audit-logs", {
+          search: search.trim() || undefined,
+          role: selectedRole === "All Roles" ? undefined : selectedRole,
+          from: startDate || undefined,
+          to: endDate || undefined,
+        })
+        .then((res) => {
+          if (cancelled) return;
+          setTotal(res.total);
+          setFilteredLogs(
+            res.logs.map((l) => ({
+              id: l.id,
+              date: fmtDate(l.at),
+              time: fmtTime(l.at),
+              user: l.user,
+              role: l.role,
+              action: l.action,
+              module: l.module,
+              description: l.description,
+              ipAddress: l.ipAddress,
+              device: l.device,
+            }))
+          );
+          setError("");
+        })
+        .catch((err) => !cancelled && setError(err.message || "Could not load audit logs."))
+        .finally(() => !cancelled && setLoading(false));
+    }, 300);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, [search, selectedRole, startDate, endDate]);
+
 
   return (
     <section className="min-h-screen w-full overflow-x-hidden bg-[#F5F7FC] px-3 py-5 sm:px-5 sm:py-6 lg:px-6">
@@ -185,6 +165,10 @@ export default function AuditLogs() {
           </div>
         </div>
 
+        {error && (
+          <p role="alert" className="mb-3 rounded-md bg-red-50 px-4 py-3 text-sm text-red-600">{error}</p>
+        )}
+
         {/* RESULTS COUNT */}
         <div className="mb-3 flex items-center justify-between">
           <p className="text-[11px] text-[#8993A3] sm:text-[12px]">
@@ -192,7 +176,7 @@ export default function AuditLogs() {
             <span className="font-semibold text-[#344054]">
               {filteredLogs.length}
             </span>{" "}
-            audit logs
+            {total > filteredLogs.length ? `of ${total} audit logs (latest ${filteredLogs.length} shown)` : "audit logs"}
           </p>
         </div>
 
@@ -304,7 +288,7 @@ export default function AuditLogs() {
                   <tr>
                     <td colSpan={8} className="h-[180px] text-center">
                       <p className="text-[13px] font-medium text-[#475467]">
-                        No audit logs found
+                        {loading ? "Loading audit logs…" : "No audit logs found"}
                       </p>
                       <p className="mt-1 text-[11px] text-[#98A2B3]">
                         Try adjusting your search or filters.
@@ -447,7 +431,7 @@ export default function AuditLogs() {
               />
 
               <p className="text-[13px] font-medium text-[#475467]">
-                No audit logs found
+                {loading ? "Loading audit logs…" : "No audit logs found"}
               </p>
 
               <p className="mt-1 text-[11px] text-[#98A2B3]">

@@ -13,8 +13,14 @@ import { Avatar } from "../../components/Tutor/ConversationSidebar";
 export default function ChatPanel({
   conversation,
   messages = [],
+  me,
+  loading = false,
+  error = "",
+  hasMore = false,
+  onLoadEarlier,
   onSendMessage,
 }) {
+  const [sendError, setSendError] = useState("");
   const [draft, setDraft] = useState("");
   const [attachments, setAttachments] = useState([]);
   const [sending, setSending] = useState(false);
@@ -43,6 +49,7 @@ export default function ChatPanel({
   useEffect(() => {
     setDraft("");
     setAttachments([]);
+    setSendError("");
   }, [conversation?.id]);
 
   if (!conversation) {
@@ -112,32 +119,19 @@ export default function ChatPanel({
       return;
     }
 
-    const outgoingAttachments = attachments.map(
-      ({ id, file, name, size, type, preview }) => ({
-        id,
-        file,
-        name,
-        size,
-        type,
-        preview,
-      })
-    );
+    // Messages are text only for now, so files are not sent silently.
+    if (attachments.length > 0) {
+      setSendError("File attachments are not available yet. Remove them to send your message.");
+      return;
+    }
 
     try {
       setSending(true);
-
-      // The third argument contains the selected File objects.
-      // Update MessagesPage to accept and store this argument.
-      await onSendMessage(
-        conversation.id,
-        text,
-        outgoingAttachments
-      );
-
+      setSendError("");
+      await onSendMessage(conversation.id, text);
       setDraft("");
-      setAttachments([]);
-    } catch (error) {
-      console.error("Unable to send message:", error);
+    } catch (err) {
+      setSendError(err?.message || "Your message could not be sent. Please try again.");
     } finally {
       setSending(false);
     }
@@ -163,13 +157,6 @@ export default function ChatPanel({
               ? ` · ${conversation.course}`
               : ""}
           </p>
-
-          <div className="mt-[2px] flex items-center gap-[4px]">
-            <span className="h-[5px] w-[5px] rounded-full bg-[#28C76F]" />
-            <span className="text-[7px] text-[#718096]">
-              Available
-            </span>
-          </div>
         </div>
       </header>
 
@@ -179,11 +166,29 @@ export default function ChatPanel({
         aria-label="Message history"
         aria-live="polite"
       >
+        {hasMore && (
+          <button
+            type="button"
+            onClick={onLoadEarlier}
+            className="mx-auto rounded-full border border-[#E5E9F0] bg-white px-[10px] py-[3px] text-[8px] font-medium text-[#475467] hover:bg-[#F7F9FC]"
+          >
+            Load earlier messages
+          </button>
+        )}
+
         <div className="pb-[2px] text-center text-[7px] text-[#A0A7B2]">
-          {messages.length > 0
+          {loading
+            ? "LOADING MESSAGES…"
+            : messages.length > 0
             ? "MESSAGES"
             : "START OF CONVERSATION"}
         </div>
+
+        {error && (
+          <p role="alert" className="text-center text-[9px] text-red-600">
+            {error}
+          </p>
+        )}
 
         {messages.map((message) => {
           const isMine = message.sender === "me";
@@ -290,8 +295,8 @@ export default function ChatPanel({
 
               {isMine && (
                 <Avatar
-                  name="Tutor"
-                  imageUrl={conversation.tutorAvatarUrl}
+                  name={me?.fullName || "You"}
+                  imageUrl={me?.avatarUrl}
                   size="h-[21px] w-[21px]"
                 />
               )}
@@ -354,9 +359,18 @@ export default function ChatPanel({
             </div>
           )}
 
+          {sendError && (
+            <p role="alert" className="mb-[5px] text-[9px] text-red-600">
+              {sendError}
+            </p>
+          )}
+
           <textarea
             value={draft}
-            onChange={(event) => setDraft(event.target.value)}
+            onChange={(event) => {
+              setDraft(event.target.value);
+              if (sendError) setSendError("");
+            }}
             onKeyDown={(event) => {
               if (
                 event.key === "Enter" &&

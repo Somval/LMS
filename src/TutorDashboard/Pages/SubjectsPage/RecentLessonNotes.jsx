@@ -1,13 +1,14 @@
 import React from "react";
 import { Award, BadgeCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { subjectQuery } from "./subjectFormat";
 
-export default function AchievementsRecognition() {
+export default function AchievementsRecognition({ subjectId, year }) {
   const navigate = useNavigate();
+  const query = subjectQuery(subjectId, year);
 
-  const handleCardClick = () => {
-    navigate("/Tutor/achievements");
-  };
+  const openAchievements = () => navigate(`/tutor/achievements${query}`);
+  const openRewards = () => navigate(`/tutor/rewardsBadges${query}`);
 
   return (
     <section className="w-full bg-[#F5F7FC] p-2 sm:p-3">
@@ -98,7 +99,7 @@ export default function AchievementsRecognition() {
             ================================================== */}
             <button
               type="button"
-              onClick={handleCardClick}
+              onClick={openAchievements}
               className="
                 flex
                 min-w-0
@@ -216,7 +217,7 @@ export default function AchievementsRecognition() {
             ================================================== */}
             <button
               type="button"
-              onClick={handleCardClick}
+              onClick={openRewards}
               className="
                 flex
                 min-w-0

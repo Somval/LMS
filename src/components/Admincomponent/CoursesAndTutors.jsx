@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Plus,
   MoreVertical,
@@ -8,45 +8,7 @@ import {
   Clock3,
 } from "lucide-react";
 import AssignTutorModal from "./AssignTutorModal";
-
-const initialCourses = [
-  {
-    id: 1,
-    course: "Mathematics",
-    level: "Year 4",
-    studentName: "Olivia Johnson",
-    tutor: "Sarah Johnson",
-    email: "sarah@email.com",
-    schedule: null,
-    time: null,
-    status: "Active",
-    assigned: true,
-  },
-  {
-    id: 2,
-    course: "Mathematics",
-    level: "Year 4",
-    studentName: "Olivia Johnson",
-    tutor: null,
-    email: null,
-    schedule: null,
-    time: null,
-    status: "Active",
-    assigned: false,
-  },
-  {
-    id: 3,
-    course: "Mathematics",
-    level: "Year 4",
-    studentName: "Olivia Johnson",
-    tutor: "Sarah Johnson",
-    email: "sarah@email.com",
-    schedule: "Mon & Wed",
-    time: "4:00 PM – 5:00 PM",
-    status: "Active",
-    assigned: true,
-  },
-];
+import { api } from "../../lib/api";
 
 const buttonClass =
   "inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-[#D9DDE5] bg-white px-3 py-2 text-sm font-medium text-[#465164] transition-colors hover:border-[#159A42] hover:text-[#159A42] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#159A42] focus-visible:ring-offset-2";
@@ -117,29 +79,37 @@ function CourseActions({ course, onTutorAction }) {
   );
 }
 
-export default function CoursesTutors() {
-  const [courses, setCourses] = useState(initialCourses);
+export default function CoursesTutors({ student = null, onChanged = async () => {} }) {
   const [selectedCourse, setSelectedCourse] = useState(null);
+
+  const courses = useMemo(
+    () =>
+      (student?.courses ?? []).map((c) => ({
+        id: c.subjectId,
+        subjectId: c.subjectId,
+        course: c.course,
+        level: c.level || "—",
+        studentName: student.name,
+        tutorId: c.tutor?.id ?? null,
+        tutor: c.tutor?.name ?? null,
+        email: c.tutor?.email ?? null,
+        // The tutor's available days/hours, not a booked slot.
+        schedule: c.tutor && c.tutor.days !== "Not set" ? c.tutor.days : null,
+        time: c.tutor && c.tutor.time !== "Not set" ? c.tutor.time : null,
+        status: "Active",
+        assigned: Boolean(c.tutor),
+      })),
+    [student]
+  );
 
   const handleTutorAction = (course) => {
     setSelectedCourse(course);
   };
 
-  const handleAssignTutor = (course, tutor) => {
-    setCourses((previousCourses) =>
-      previousCourses.map((item) =>
-        item.id === course.id
-          ? {
-              ...item,
-              tutor: tutor.name,
-              email: tutor.email,
-              assigned: true,
-              action: "Change Tutor",
-            }
-          : item
-      )
-    );
-
+  // Throws on failure so the modal can show the error and stay open.
+  const handleAssignTutor = async (course, tutor) => {
+    await api.put(`/admin/students/${student.id}/subjects/${course.subjectId}/tutor`, { tutorId: tutor.id });
+    await onChanged();
     setSelectedCourse(null);
   };
 
@@ -312,6 +282,12 @@ export default function CoursesTutors() {
             </tbody>
           </table>
         </div>
+
+        {courses.length === 0 && (
+          <p className="px-4 py-10 text-center text-sm text-[#667085]">
+            This student isn't enrolled in any courses yet.
+          </p>
+        )}
 
         {/* Footer */}
         <div className="border-t border-[#EDF0F3] px-4 py-4 sm:px-6">

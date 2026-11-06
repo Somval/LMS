@@ -1,8 +1,12 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import Avatar from "../Avatar";
 
-export default function StudentDetails() {
+const fmtDate = (d) =>
+  d ? new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—";
+
+export default function StudentDetails({ student = null }) {
   const navigate = useNavigate();
 
   return (
@@ -23,27 +27,17 @@ export default function StudentDetails() {
       <div className="px-4 py-5 sm:px-6 sm:py-6">
         <div className="flex min-w-0 items-start gap-3 sm:gap-4">
           {/* Student Avatar */}
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#D9D9D9] sm:h-[50px] sm:w-[50px]">
-            <svg
-              width="25"
-              height="25"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              aria-hidden="true"
-            >
-              <circle cx="12" cy="8" r="4" fill="#D9D9D9" />
-              <path
-                d="M4 21C4 16.5817 7.58172 13 12 13C16.4183 13 20 16.5817 20 21"
-                fill="#D9D9D9"
-              />
-            </svg>
-          </div>
+          <Avatar
+            name={student?.name}
+            avatarUrl={student?.avatarUrl}
+            textClassName="text-[16px]"
+            className="h-12 w-12 rounded-full sm:h-[50px] sm:w-[50px]"
+          />
 
           {/* Student Information */}
           <div className="min-w-0 flex-1">
             <h1 className="break-words text-[24px] font-semibold leading-tight tracking-[-0.5px] text-[#111111] sm:text-[28px]">
-              Olivia Johnson
+              {student?.name ?? "Student"}
             </h1>
 
             <div className="mt-2.5 flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2.5 text-[10px] font-normal leading-4 text-[#69737D] sm:gap-x-5 sm:text-[11px]">
@@ -64,7 +58,7 @@ export default function StudentDetails() {
                   />
                 </svg>
 
-                <span className="break-all">olivia@gmail.com</span>
+                <span className="break-all">{student?.email ?? "—"}</span>
               </div>
 
               {/* Joined Date */}
@@ -100,7 +94,7 @@ export default function StudentDetails() {
                   />
                 </svg>
 
-                <span>Joined 12 Mar 2024</span>
+                <span>Joined {fmtDate(student?.joinedAt)}</span>
               </div>
 
               {/* Student ID */}
@@ -127,7 +121,7 @@ export default function StudentDetails() {
                   </defs>
                 </svg>
 
-                <span>Student ID: STU00128</span>
+                <span>Student ID: {student?.learnerId ?? "—"}</span>
               </div>
             </div>
           </div>

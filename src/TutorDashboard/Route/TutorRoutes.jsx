@@ -41,7 +41,6 @@ import Onboarding from "../../Authentication/Tutor/RegistrationFlow"
 
 
 
-import Curriculum from "../Lessons/Curriculum";
 
 import TopicDetails from "../Lessons/topicDetails"
 import PrepareLesson from "../Lessons/PrepareLesson"
@@ -162,12 +161,17 @@ export default function TutorRoutes() {
 
 
         {/* Curriculum */}
-<Route path="/curriculum" element={<Curriculum />} />
+<Route path="/curriculum" element={<LessonsPage />} />
 
 {/* Individual Topic Details */}
 <Route
-
   path="/curriculum/topics/:topicId"
+  element={<TopicDetails />}
+/>
+
+{/* Prepare a lesson from a topic */}
+<Route
+  path="/curriculum/topics/:topicId/prepare-lesson"
   element={<PrepareLesson />}
 />
 

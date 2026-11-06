@@ -1,5 +1,6 @@
 
-import React from "react";
+import React, { useState } from "react";
+import CreateAwardModal from "./CreateAwardModal";
 import {
   Plus,
   Award,
@@ -8,46 +9,27 @@ import {
   HandCoins,
 } from "lucide-react";
 
-const achievementStats = [
-  {
-    id: 1,
-    title: "Total Achievements",
-    value: "258",
-    icon: ShieldCheck,
-    iconColor: "#399B52",
-    iconBackground: "#E5F4E8",
-  },
-  {
-    id: 2,
-    title: "Total Rewards",
-    value: "120",
-    icon: Award,
-    iconColor: "#44418F",
-    iconBackground: "#E9E8F7",
-  },
-  {
-    id: 3,
-    title: "Total Badges",
-    value: "90",
-    icon: Trophy,
-    iconColor: "#CB39E8",
-    iconBackground: "#F9E5FF",
-  },
-  {
-    id: 4,
-    title: "Students Awarded",
-    value: "120",
-    subtitle: "95% of total students",
-    icon: HandCoins,
-    iconColor: "#43D86C",
-    iconBackground: "#E5FFE9",
-  },
+// Card styles; the numbers come from GET /admin/achievements/overview.
+const cardStyles = [
+  { id: 1, key: "total", title: "Total Achievements", icon: ShieldCheck, iconColor: "#399B52", iconBackground: "#E5F4E8" },
+  { id: 2, key: "rewards", title: "Total Rewards", icon: Award, iconColor: "#44418F", iconBackground: "#E9E8F7" },
+  { id: 3, key: "badges", title: "Total Badges", icon: Trophy, iconColor: "#CB39E8", iconBackground: "#F9E5FF" },
+  { id: 4, key: "studentsAwarded", title: "Students Awarded", icon: HandCoins, iconColor: "#43D86C", iconBackground: "#E5FFE9" },
 ];
 
-export default function AchievementsRewards() {
-  const handleCreateAward = () => {
-    // Connect this button to your Create Award form or modal.
-  };
+export default function AchievementsRewards({ stats, loading = false, onCreated }) {
+  const [showCreate, setShowCreate] = useState(false);
+  const handleCreateAward = () => setShowCreate(true);
+
+  const achievementStats = cardStyles.map((card) => ({
+    ...card,
+    value: loading || !stats ? "…" : String(stats[card.key] ?? 0),
+    subtitle:
+      card.key === "studentsAwarded" && stats && stats.totalStudents
+        ? `${Math.round((stats.studentsAwarded / stats.totalStudents) * 100)}% of total students`
+        : undefined,
+  }));
+
 
   return (
     <section className="w-full min-w-0 bg-[#F4F7FD] p-3 sm:p-4">
@@ -116,6 +98,15 @@ export default function AchievementsRewards() {
           );
         })}
       </div>
+      {showCreate && (
+        <CreateAwardModal
+          onClose={() => setShowCreate(false)}
+          onCreated={() => {
+            setShowCreate(false);
+            onCreated?.();
+          }}
+        />
+      )}
     </section>
   );
 }

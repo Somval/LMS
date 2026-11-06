@@ -1,6 +1,8 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import Avatar from "../Avatar";
 import {
   House,
   UsersRound,
@@ -127,12 +129,22 @@ const isPathActive = (currentPath, targetPath) =>
   currentPath === targetPath ||
   currentPath.startsWith(`${targetPath}/`);
 
+// "Platform Admin" -> "PA"
+const initialsOf = (name = "") =>
+  name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0].toUpperCase())
+    .join("");
+
 export default function LMSSidebar({
   isOpen = false,
   onClose = () => {},
 }) {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth(); // the signed-in admin, shown in the footer
   const currentPath = location.pathname;
 
   const previousPath = useRef(currentPath);
@@ -437,17 +449,26 @@ export default function LMSSidebar({
         {/* Profile Footer */}
         <div className="shrink-0 border-t border-[#E9E9EF] bg-white px-3 py-3">
           <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#E8F7ED] text-[10px] font-semibold text-[#159A42]">
-              OS
-            </div>
+            {user?.avatarUrl ? (
+              <Avatar
+                name={user.fullName}
+                avatarUrl={user.avatarUrl}
+                className="h-7 w-7 rounded-full"
+                textClassName="text-[10px]"
+              />
+            ) : (
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#E8F7ED] text-[10px] font-semibold text-[#159A42]">
+                {initialsOf(user?.fullName) || "A"}
+              </div>
+            )}
 
             <div className="min-w-0 flex-1">
               <p className="truncate text-[10px] font-medium text-[#2B3674]">
-                Ogungbe Samuel
+                {user?.fullName || "Administrator"}
               </p>
 
               <p className="truncate text-[9px] text-[#8181A5]">
-                admin@edumanage.com
+                {user?.email || ""}
               </p>
             </div>
 

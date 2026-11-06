@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { api } from "../../../lib/api";
+import { joinDescription } from "./rewardFormat";
 import {
   ArrowLeft,
   ChevronDown,
@@ -250,22 +252,17 @@ export default function CreateAchievement() {
     });
 
     try {
-      // =================================================
-      // API READY PAYLOAD
-      // Replace this section with your actual API request.
-      // =================================================
-      const payload = {
-        achievementName: achievementName.trim(),
-        description: description.trim(),
-        earningFrequency,
-        achievementType: selectedType,
-        criteriaDescription: criteriaDescription.trim(),
-      };
-
-      console.log("Achievement payload:", payload);
-
-      // Temporary API simulation
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      // Achievements are saved as badges. The rule and how often it is earned are kept
+      // together in the "How to earn" part of the description (shown in the achievements table).
+      await api.post("/rewards", {
+        title: achievementName.trim(),
+        description: joinDescription(
+          description,
+          `${criteriaDescription.trim()} (${earningFrequency})`
+        ),
+        kind: "BADGE",
+        points: 0,
+      });
 
       setAlert({
         show: true,
@@ -284,12 +281,11 @@ export default function CreateAchievement() {
         criteriaDescription: "",
       });
     } catch (error) {
-      console.error("Create achievement error:", error);
-
       setAlert({
         show: true,
         type: "error",
         message:
+          error?.message ||
           "Something went wrong while creating the achievement. Please try again.",
       });
     } finally {

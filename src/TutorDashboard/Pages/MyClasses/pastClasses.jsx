@@ -1,57 +1,36 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { api } from "../../../lib/api";
+import Avatar from "../../../components/Avatar";
+import { fullDate, timeRange } from "../../../StudentPortal/classFormat";
 
-const pastClasses = [
-  {
-    id: 1,
-    studentName: "Olivia Johnson",
-    studentAvatar: "",
-    topic: "Functions and Graphs",
-    subject: "Mathematics",
-    level: "Year 1",
-    date: "Mon, May 26, 2025",
-    time: "5:00 PM – 6:00 PM",
-    attendance: "Present",
-  },
-  {
-    id: 2,
-    studentName: "Olivia Johnson",
-    studentAvatar: "",
-    topic: "Functions and Graphs",
-    subject: "Mathematics",
-    level: "Year 1",
-    date: "Mon, May 26, 2025",
-    time: "5:00 PM – 6:00 PM",
-    attendance: "Present",
-  },
-  {
-    id: 3,
-    studentName: "Olivia Johnson",
-    studentAvatar: "",
-    topic: "Functions and Graphs",
-    subject: "Mathematics",
-    level: "Year 1",
-    date: "Mon, May 26, 2025",
-    time: "5:00 PM – 6:00 PM",
-    attendance: "Present",
-  },
-  {
-    id: 4,
-    studentName: "Olivia Johnson",
-    studentAvatar: "",
-    topic: "Functions and Graphs",
-    subject: "Mathematics",
-    level: "Year 1",
-    date: "Mon, May 26, 2025",
-    time: "5:00 PM – 6:00 PM",
-    attendance: "Present",
-  },
-];
+// How the roll call went: green when everyone came, amber when some were absent, red when none came.
+const attendanceSummary = ({ marked, present, late, absent }) => {
+  if (!marked) return { text: "Not marked", color: "text-[#94A3B8]" };
+  const came = present + late;
+  const color = absent === 0 ? "text-[#16A34A]" : came === 0 ? "text-[#DC2626]" : "text-[#D97706]";
+  return { text: `${came} of ${marked} attended`, color };
+};
 
 export default function PastClassesTable() {
   const navigate = useNavigate();
+  const [pastClasses, setPastClasses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .get("/classes/past")
+      .then((list) => !cancelled && setPastClasses(list))
+      .catch((err) => !cancelled && setError(err.message || "Could not load your past classes."))
+      .finally(() => !cancelled && setLoading(false));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <div className="min-h-screen w-full bg-[#F5F7FC] px-6 py-[14px] text-[#111827]">
@@ -79,6 +58,17 @@ export default function PastClassesTable() {
             </thead>
 
             <tbody className="divide-y divide-[#E1E4EB] text-[13px] text-[#1E293B]">
+              {(loading || error || pastClasses.length === 0) && (
+                <tr>
+                  <td
+                    colSpan="5"
+                    role={error ? "alert" : undefined}
+                    className={`px-6 py-10 text-center text-[13px] ${error ? "font-medium text-red-600" : "text-[#64748B]"}`}
+                  >
+                    {loading ? "Loading past classes…" : error || "No past classes yet."}
+                  </td>
+                </tr>
+              )}
               {pastClasses.map((item) => (
                 <tr
                   key={item.id}
@@ -86,30 +76,32 @@ export default function PastClassesTable() {
                 >
                   <td className="whitespace-nowrap py-4 pl-6 pr-4">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#E2E8F0] font-medium text-[#64748B]">
-                        {item.studentAvatar ? (
-                          <img
-                            src={item.studentAvatar}
-                            alt={item.studentName}
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          item.studentName.charAt(0)
-                        )}
-                      </div>
+                      {item.students[0] ? (
+                        <Avatar
+                          name={item.students[0].fullName}
+                          avatarUrl={item.students[0].avatarUrl}
+                          className="h-10 w-10 rounded-full"
+                          textClassName="text-sm"
+                        />
+                      ) : (
+                        <div className="h-10 w-10 shrink-0 rounded-full bg-[#E2E8F0]" />
+                      )}
 
                       <span className="font-semibold text-[#101828]">
-                        {item.studentName}
+                        {item.students[0]?.fullName ?? "No students"}
+                        {item.studentCount > 1 && (
+                          <span className="font-normal text-[#64748B]"> +{item.studentCount - 1} more</span>
+                        )}
                       </span>
                     </div>
                   </td>
 
                   <td className="whitespace-nowrap px-4 py-4">
                     <div className="font-semibold text-[#101828]">
-                      {item.topic}
+                      {item.title}
                     </div>
                     <div className="text-[11px] text-[#64748B]">
-                      {item.subject} · {item.level}
+                      {item.subject.name}
                     </div>
                   </td>
 
@@ -121,17 +113,17 @@ export default function PastClassesTable() {
                         className="text-[#64748B]"
                       />
                       <div>
-                        <div className="font-medium">{item.date}</div>
+                        <div className="font-medium">{fullDate(item.startsAt)}</div>
                         <div className="text-[11px] text-[#64748B]">
-                          {item.time}
+                          {timeRange(item.startsAt, item.endsAt)}
                         </div>
                       </div>
                     </div>
                   </td>
 
                   <td className="whitespace-nowrap px-4 py-4">
-                    <span className="text-[13px] font-semibold text-[#16A34A]">
-                      {item.attendance}
+                    <span className={`text-[13px] font-semibold ${attendanceSummary(item.attendance).color}`}>
+                      {attendanceSummary(item.attendance).text}
                     </span>
                   </td>
 
@@ -139,7 +131,7 @@ export default function PastClassesTable() {
                     <button
                       type="button"
                       onClick={() =>
-                        navigate(`/Tutor/past-classes/${item.id}`)
+                        navigate(`/tutor/past-classes/${item.id}`)
                       }
                       className="inline-flex h-8 items-center justify-center rounded-md border border-[#2563EB] bg-white px-4 text-[12px] font-medium text-[#2563EB] shadow-sm transition hover:bg-[#EFF6FF] active:scale-[0.98]"
                     >

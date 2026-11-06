@@ -1,25 +1,24 @@
 import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, BookOpen, CheckCircle, X, Clock } from "lucide-react";
+import Avatar from "../Avatar";
 
-export default function StudentProfilePage() {
+export default function StudentProfilePage({ data = null }) {
   const { studentId } = useParams();
   const navigate = useNavigate();
 
   // Student profile mock data matching the screenshot
+  const summary = data?.summary ?? { total: 0, attended: 0, missed: 0, late: 0, rate: 0 };
   const student = {
-    name: "John Doe",
-    studentId: studentId || "STU001",
-    subjects: ["Mathematics - Year 1", "English - Year 1"],
-    attendanceRate: "80%",
-    classesAttended: {
-      count: 24,
-      total: 25,
-    },
-    classesMissed: 1,
+    name: data?.student.name ?? "Student",
+    studentId: data?.student.learnerId ?? studentId,
+    subjects: data?.student.subjects?.length ? data.student.subjects : ["No subjects"],
+    attendanceRate: `${summary.rate}%`,
+    classesAttended: { count: summary.attended, total: summary.total },
+    classesMissed: summary.missed,
     lateArrivals: {
-      count: 2,
-      percentage: "8% of total classes",
+      count: summary.late,
+      percentage: `${summary.total ? Math.round((summary.late / summary.total) * 100) : 0}% of total classes`,
     },
   };
 
@@ -41,7 +40,12 @@ export default function StudentProfilePage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 py-2">
           <div className="flex items-center gap-5">
             {/* Avatar Circle */}
-            <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-full bg-[#d1d5db] shrink-0" />
+            <Avatar
+              name={student.name}
+              avatarUrl={data?.student.avatarUrl}
+              textClassName="text-2xl"
+              className="h-20 w-20 sm:h-24 sm:w-24 rounded-full shrink-0"
+            />
 
             {/* Name, Subjects, ID & Rate Meta */}
             <div className="space-y-1.5">

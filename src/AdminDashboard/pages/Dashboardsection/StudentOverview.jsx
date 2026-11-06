@@ -1,43 +1,62 @@
 
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { api } from "../../../lib/api";
 import { ChevronDown } from "lucide-react";
 
-const chartData = {
-  "This Week": [
-    { day: "Mon", value: 120 },
-    { day: "Tue", value: 200 },
-    { day: "Wed", value: 150 },
-    { day: "Thu", value: 80 },
-    { day: "Fri", value: 70 },
-    { day: "Sat", value: 110 },
-    { day: "Sun", value: 130 },
-  ],
-  "Last Week": [
-    { day: "Mon", value: 100 },
-    { day: "Tue", value: 160 },
-    { day: "Wed", value: 130 },
-    { day: "Thu", value: 90 },
-    { day: "Fri", value: 110 },
-    { day: "Sat", value: 80 },
-    { day: "Sun", value: 140 },
-  ],
-  "This Month": [
-    { day: "Mon", value: 140 },
-    { day: "Tue", value: 180 },
-    { day: "Wed", value: 120 },
-    { day: "Thu", value: 100 },
-    { day: "Fri", value: 160 },
-    { day: "Sat", value: 130 },
-    { day: "Sun", value: 190 },
-  ],
-};
+const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const dayIndex = (date) => (new Date(date).getDay() + 6) % 7; // Monday = 0
 
-const yAxisLabels = [200, 150, 100, 50, 0];
+// New student sign-ups per weekday for each period.
+const buildChartData = (students) => {
+  const now = new Date();
+  const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayIndex(now));
+  const lastMonday = new Date(monday);
+  lastMonday.setDate(lastMonday.getDate() - 7);
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  const count = (from, to) => {
+    const totals = DAYS.map((day) => ({ day, value: 0 }));
+    students.forEach((s) => {
+      const created = new Date(s.createdAt);
+      if (created >= from && (!to || created < to)) totals[dayIndex(created)].value += 1;
+    });
+    return totals;
+  };
+
+  return {
+    "This Week": count(monday),
+    "Last Week": count(lastMonday, monday),
+    "This Month": count(monthStart),
+  };
+};
 
 export default function StudentOverview() {
   const [period, setPeriod] = useState("This Week");
+  const [students, setStudents] = useState([]);
+  const [state, setState] = useState("loading"); // loading | ready | error
 
+  // GET /admin/users?role=STUDENT (the 100 newest students)
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .get("/admin/users", { role: "STUDENT", pageSize: 100 })
+      .then((res) => {
+        if (cancelled) return;
+        setStudents(res.users);
+        setState("ready");
+      })
+      .catch(() => !cancelled && setState("error"));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const chartData = useMemo(() => buildChartData(students), [students]);
   const data = chartData[period];
+
+  // Round the top of the scale up to a multiple of 4 so the 5 grid lines are whole numbers.
+  const top = Math.max(4, Math.ceil(Math.max(...data.map((d) => d.value)) / 4) * 4);
+  const yAxisLabels = [top, (top * 3) / 4, top / 2, top / 4, 0];
 
   // Fixed SVG coordinates preserve the chart's proportions.
   const chartWidth = 520;
@@ -50,7 +69,7 @@ export default function StudentOverview() {
 
   const plotHeight = plotBottom - plotTop;
   const plotWidth = plotRight - plotLeft;
-  const maxValue = 200;
+  const maxValue = top;
 
   const slotWidth = plotWidth / data.length;
   const barWidth = Math.min(30, slotWidth * 0.55);

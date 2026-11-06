@@ -1,170 +1,138 @@
-
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ConversationSidebar from "../../components/Tutor/ConversationSidebar";
 import ChatPanel from "./ChatPanel";
+import { api } from "../../lib/api";
+import { useAuth } from "../../context/AuthContext";
+import { buildItems, clock, mergeMessages, stamp } from "./messagesData";
 
-const initialConversations = [
-  {
-    id: 1,
-    name: "Sarah Johnson",
-    student: "Olivia Parent",
-    course: "Mathematics Year 1",
-    preview: "Hi, I'm trying to work out about Olivia's progress in Mathematics.",
-    time: "2:23 PM",
-    avatarColor: "bg-[#D8E4F4]",
-    unread: 0,
-  },
-  {
-    id: 2,
-    name: "Sarah Johnson",
-    student: "Olivia Parent",
-    course: "English Year 1",
-    preview: "Could you share the latest update?",
-    time: "2:15 PM",
-    avatarColor: "bg-[#F3D8C8]",
-    unread: 1,
-  },
-  {
-    id: 3,
-    name: "Sarah Johnson",
-    student: "Olivia Parent",
-    course: "Science Year 1",
-    preview: "Thank you for the explanation.",
-    time: "1:45 PM",
-    avatarColor: "bg-[#D8E9DF]",
-    unread: 0,
-  },
-  {
-    id: 4,
-    name: "Sarah Johnson",
-    student: "Olivia Parent",
-    course: "Mathematics Year 1",
-    preview: "Olivia has been enjoying the recent lessons.",
-    time: "Yesterday",
-    avatarColor: "bg-[#E7DDF6]",
-    unread: 0,
-  },
-];
-
-const initialMessages = {
-  1: [
-    {
-      id: 101,
-      sender: "parent",
-      text: "Hi Ms. Johnson, I wanted to ask about Olivia's progress in Mathematics.",
-      time: "2:20 PM",
-    },
-    {
-      id: 102,
-      sender: "me",
-      text: "Mary Johnson: Hi Sarah, Olivia has been improving. We are working on building her confidence with the recent topics.",
-      time: "2:25 PM",
-    },
-  ],
-  2: [
-    {
-      id: 201,
-      sender: "parent",
-      text: "Could you share the latest update on Olivia's English lessons?",
-      time: "2:15 PM",
-    },
-  ],
-  3: [
-    {
-      id: 301,
-      sender: "parent",
-      text: "Thank you for the explanation. That was very helpful.",
-      time: "1:45 PM",
-    },
-  ],
-  4: [
-    {
-      id: 401,
-      sender: "parent",
-      text: "Olivia has been enjoying the recent lessons. Thank you!",
-      time: "Yesterday",
-    },
-  ],
-};
+const PAGE = 50; // the server returns the latest 50 messages at a time
+const LIST_REFRESH_MS = 20000;
+const CHAT_REFRESH_MS = 10000;
 
 export default function MessagesPage() {
-  const [conversations, setConversations] = useState(
-    initialConversations
+  const { user } = useAuth();
+
+  const [conversations, setConversations] = useState([]);
+  const [contacts, setContacts] = useState([]);
+  const [listLoading, setListLoading] = useState(true);
+  const [listError, setListError] = useState("");
+
+  const [selectedId, setSelectedId] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatError, setChatError] = useState("");
+  const [hasMore, setHasMore] = useState(false);
+
+  // Everyone the tutor has talked to, plus everyone they may message.
+  const loadList = useCallback(async (silent) => {
+    try {
+      const [convos, people] = await Promise.all([
+        api.get("/messages/conversations"),
+        api.get("/messages/contacts"),
+      ]);
+      setConversations(convos);
+      setContacts(people);
+      setListError("");
+    } catch (err) {
+      if (!silent) setListError(err.message || "Could not load your messages.");
+    } finally {
+      setListLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadList(false);
+    const timer = setInterval(() => loadList(true), LIST_REFRESH_MS);
+    return () => clearInterval(timer);
+  }, [loadList]);
+
+  // The chat reports back after reading or sending, so previews and unread counts stay current.
+  const refreshList = useRef(loadList);
+  refreshList.current = loadList;
+
+  const loadChat = useCallback(async (contactId, silent) => {
+    try {
+      const fresh = await api.get(`/messages/with/${contactId}`);
+      setMessages((current) => mergeMessages(silent ? current : [], fresh));
+      if (!silent) setHasMore(fresh.length >= PAGE);
+      setChatError("");
+      refreshList.current(true);
+    } catch (err) {
+      if (!silent) setChatError(err.message || "Could not load this conversation.");
+    } finally {
+      if (!silent) setChatLoading(false);
+    }
+  }, []);
+
+  // Open a conversation, then check for new messages every few seconds.
+  useEffect(() => {
+    setMessages([]);
+    setHasMore(false);
+    setChatError("");
+    if (!selectedId) return undefined;
+
+    setChatLoading(true);
+    loadChat(selectedId, false);
+    const timer = setInterval(() => loadChat(selectedId, true), CHAT_REFRESH_MS);
+    return () => clearInterval(timer);
+  }, [selectedId, loadChat]);
+
+  const items = useMemo(() => buildItems(conversations, contacts), [conversations, contacts]);
+  const selectedConversation = items.find((item) => item.id === selectedId) ?? null;
+
+  // The chat panel works with { id, sender, text, time }.
+  const selectedMessages = useMemo(
+    () =>
+      messages.map((m) => ({
+        id: m.id,
+        sender: m.senderId === user?.id ? "me" : "other",
+        text: m.body,
+        time: stamp(m.createdAt),
+      })),
+    [messages, user?.id]
   );
 
-  const [selectedId, setSelectedId] = useState(1);
+  const handleLoadEarlier = async () => {
+    const oldest = messages[0];
+    if (!oldest || !selectedId) return;
+    try {
+      const older = await api.get(`/messages/with/${selectedId}`, { before: oldest.createdAt });
+      setMessages((current) => mergeMessages(current, older));
+      setHasMore(older.length >= PAGE);
+    } catch (err) {
+      setChatError(err.message || "Could not load earlier messages.");
+    }
+  };
 
-  const [messagesByConversation, setMessagesByConversation] =
-    useState(initialMessages);
-
-  const selectedConversation = conversations.find(
-    (conversation) => conversation.id === selectedId
-  );
-
-  const selectedMessages = messagesByConversation[selectedId] || [];
-
-  function handleSelectConversation(id) {
-    setSelectedId(id);
-
-    setConversations((previous) =>
-      previous.map((conversation) =>
-        conversation.id === id
-          ? { ...conversation, unread: 0 }
-          : conversation
-      )
-    );
-  }
-
-  function handleSendMessage(conversationId, text) {
-    const now = new Date();
-
-    const time = now.toLocaleTimeString([], {
-      hour: "numeric",
-      minute: "2-digit",
-    });
-
-    const newMessage = {
-      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      sender: "me",
-      text,
-      time,
-    };
-
-    setMessagesByConversation((previous) => ({
-      ...previous,
-      [conversationId]: [
-        ...(previous[conversationId] || []),
-        newMessage,
-      ],
-    }));
-
-    setConversations((previous) =>
-      previous.map((conversation) =>
-        conversation.id === conversationId
-          ? {
-              ...conversation,
-              preview: text,
-              time,
-            }
-          : conversation
-      )
-    );
-  }
+  // Throws when the message could not be sent; the chat panel shows the reason.
+  const handleSendMessage = async (recipientId, text) => {
+    const created = await api.post("/messages", { recipientId, body: text });
+    setMessages((current) => mergeMessages(current, [created]));
+    refreshList.current(true);
+  };
 
   return (
     <main className="h-[calc(100dvh-64px)] min-h-[420px] w-full bg-[#F4F7FD] p-[9px] sm:p-[12px]">
       <div className="mx-auto grid h-full min-h-0 w-full max-w-[1200px] grid-cols-1 gap-[5px] md:grid-cols-[125px_minmax(0,1fr)] lg:grid-cols-[350px_minmax(0,1fr)]">
         {/* Left side */}
         <ConversationSidebar
-          conversations={conversations}
+          conversations={items}
           selectedId={selectedId}
-          onSelect={handleSelectConversation}
+          onSelect={setSelectedId}
+          loading={listLoading}
+          error={listError}
+          onRetry={() => loadList(false)}
         />
 
         {/* Right side */}
         <ChatPanel
           conversation={selectedConversation}
           messages={selectedMessages}
+          me={user}
+          loading={chatLoading}
+          error={chatError}
+          hasMore={hasMore}
+          onLoadEarlier={handleLoadEarlier}
           onSendMessage={handleSendMessage}
         />
       </div>

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Search,
   Calculator,
@@ -8,61 +8,44 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
-const subjectsData = [
-  {
-    id: 1,
-    title: "Mathematics",
-    year: "Year 1",
-    description: "Numbers, algebra, geometry and more.",
-    students: 24,
-    classes: 36,
-    lessonNotes: 18,
-  },
-  {
-    id: 2,
-    title: "Mathematics",
-    year: "Year 1",
-    description: "Numbers, algebra, geometry and more.",
-    students: 24,
-    classes: 36,
-    lessonNotes: 18,
-  },
-  {
-    id: 3,
-    title: "Mathematics",
-    year: "Year 1",
-    description: "Numbers, algebra, geometry and more.",
-    students: 24,
-    classes: 36,
-    lessonNotes: 18,
-  },
-];
+import { api } from "../../../lib/api";
+import { subjectQuery } from "./subjectFormat";
 
 export default function SubjectDashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
+  const [subjects, setSubjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .get("/tutors/subjects")
+      .then((data) => !cancelled && setSubjects(data))
+      .catch((err) => !cancelled && setError(err.message || "Could not load your subjects."))
+      .finally(() => !cancelled && setLoading(false));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const filteredSubjects = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
 
     if (!query) {
-      return subjectsData;
+      return subjects;
     }
 
-    return subjectsData.filter((subject) =>
-      `${subject.title} ${subject.year} ${subject.description}`
+    return subjects.filter((subject) =>
+      `${subject.name} ${subject.yearLevel ?? ""} ${subject.description ?? ""}`
         .toLowerCase()
         .includes(query)
     );
-  }, [searchTerm]);
+  }, [searchTerm, subjects]);
 
   const handleViewSubject = (subject) => {
-    navigate("/Tutor/subjects-details", {
-      state: {
-        subject,
-      },
-    });
+    navigate(`/tutor/subjects-details${subjectQuery(subject.subjectId, subject.yearLevel)}`);
   };
 
   return (
@@ -90,11 +73,15 @@ export default function SubjectDashboard() {
 
           {/* Subject List */}
           <div className="w-full min-w-0">
-            {filteredSubjects.length > 0 ? (
+            {loading ? (
+              <p className="py-14 text-center text-sm font-medium text-slate-500">Loading your subjects…</p>
+            ) : error ? (
+              <p role="alert" className="py-14 text-center text-sm font-medium text-red-600">{error}</p>
+            ) : filteredSubjects.length > 0 ? (
               <div className="w-full space-y-4">
                 {filteredSubjects.map((subject) => (
                   <article
-                    key={subject.id}
+                    key={subject.key}
                     className="w-full min-w-0 overflow-hidden rounded-xl border border-slate-200/80 bg-white p-5 shadow-[0_1px_4px_rgba(15,23,42,0.05)] transition-all duration-200 hover:border-slate-300 hover:shadow-[0_4px_14px_rgba(15,23,42,0.07)] sm:p-6 lg:p-7"
                   >
                     {/* Subject Header */}
@@ -116,17 +103,19 @@ export default function SubjectDashboard() {
 
                           {/* Subject Title */}
                           <h2 className="m-0 truncate text-lg font-bold tracking-[-0.2px] text-slate-900 sm:text-xl">
-                            {subject.title}
+                            {subject.name}
                           </h2>
 
                           {/* Year - Now Under Mathematics */}
+                          {subject.yearLevel && (
                           <span className="mt-1 inline-flex items-center rounded-full bg-[#E3E7FB] px-3 py-1 text-xs font-semibold text-[#303487] sm:text-sm">
-                            {subject.year}
+                            {subject.yearLevel}
                           </span>
+                          )}
 
                           {/* Description */}
                           <p className="mt-1.5 line-clamp-2 text-sm font-medium leading-relaxed text-slate-500 sm:text-[15px]">
-                            {subject.description}
+                            {subject.description || "No description yet."}
                           </p>
                         </div>
                       </div>
@@ -223,11 +212,13 @@ export default function SubjectDashboard() {
                 </div>
 
                 <h3 className="mt-4 text-base font-bold text-slate-900">
-                  No subjects found
+                  {subjects.length === 0 ? "No subjects yet" : "No subjects found"}
                 </h3>
 
                 <p className="mt-1.5 max-w-sm text-sm font-medium leading-relaxed text-slate-500">
-                  Try searching for a different subject, year, or description.
+                  {subjects.length === 0
+                    ? "Subjects you teach will show up here once they are assigned to you."
+                    : "Try searching for a different subject, year, or description."}
                 </p>
               </div>
             )}

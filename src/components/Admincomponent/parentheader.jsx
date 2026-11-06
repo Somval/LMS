@@ -9,16 +9,19 @@ import {
   Phone,
 } from "lucide-react";
 
-export default function ParentDetails() {
+const fmtDate = (d) =>
+  d ? new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—";
+
+export default function ParentDetails({ parent: data = null }) {
   const navigate = useNavigate();
 
   // Parent details
   const parent = {
-    name: "Daniel Smith",
-    email: "daniel.smith@email.com",
-    joinedDate: "12 Mar 2024",
-    parentId: "TID1010111",
-    phone: "+44 7700 123456",
+    name: data?.name ?? "—",
+    email: data?.email ?? "—",
+    joinedDate: fmtDate(data?.joinedAt),
+    parentId: data?.parentId ?? "—",
+    phone: data?.phoneNumber || "—",
   };
 
   const information = [

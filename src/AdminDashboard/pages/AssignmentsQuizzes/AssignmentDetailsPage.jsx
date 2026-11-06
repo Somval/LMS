@@ -1,36 +1,40 @@
-
-import React from "react";
-
-import AssignmentDetailsHeader from "../../../components/Admincomponent/Assignmentheader";
-import AvailabilityDeadlineCard from "../../../components/Admincomponent/AvailabilityandDeadline";
-import AssignmentQuestions from "../../../components/Admincomponent/AssignmentQuestions";
-import StudentSubmissionsCard from "../../../components/Admincomponent/StudentSubmissions";
+import React, { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import { api } from "../../../lib/api";
+import AssignmentDetailsView from "../../../components/Admincomponent/AssignmentDetailsView";
 
 export default function AssignmentDetails() {
-  return (
-    <main className="min-h-screen w-full min-w-0 bg-[#F4F7FD] px-4 py-5 font-sans text-[#252B35] sm:px-6 sm:py-6 lg:px-8 lg:py-8">
-      <div className="mx-auto flex w-full max-w-[1600px] min-w-0 flex-col gap-6">
-        {/* Assignment header */}
-        <section className="w-full min-w-0">
-          <AssignmentDetailsHeader />
-        </section>
+  const { id } = useParams();
+  const [assignment, setAssignment] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-        {/* Availability and deadline */}
-        <section className="w-full min-w-0">
-          <AvailabilityDeadlineCard />
-        </section>
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    api
+      .get(`/admin/assignments/${id}`)
+      .then((res) => {
+        if (cancelled) return;
+        setAssignment(res);
+        setError("");
+      })
+      .catch((err) =>
+        !cancelled && setError(err.status === 404 ? "This assignment could not be found." : err.message || "Could not load the assignment.")
+      )
+      .finally(() => !cancelled && setLoading(false));
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
 
-        {/* Questions and submissions */}
-        <div className="grid w-full min-w-0 grid-cols-1 items-start gap-6">
-          <section className="min-w-0 w-full">
-            <AssignmentQuestions />
-          </section>
-
-          <section className="min-w-0 w-full">
-            <StudentSubmissionsCard />
-          </section>
-        </div>
-      </div>
-    </main>
-  );
+  if (loading) return <p className="p-6 text-sm text-[#667085]">Loading assignment…</p>;
+  if (error || !assignment) {
+    return (
+      <p role="alert" className="m-6 rounded-md bg-[#FDE7E7] px-4 py-3 text-sm text-[#D14343]">
+        {error || "This assignment could not be found."}
+      </p>
+    );
+  }
+  return <AssignmentDetailsView assignment={assignment} />;
 }

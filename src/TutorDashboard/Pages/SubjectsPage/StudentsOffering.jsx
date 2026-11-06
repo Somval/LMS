@@ -1,56 +1,26 @@
 import React from "react";
+import Avatar from "../../../components/Avatar";
+import { percent, scoreColor } from "./subjectFormat";
 
-const StudentsOfferingSubject = () => {
-  const studentsData = [
-    {
-      id: 1,
-      name: "Olivia Johnson",
-      avatar: "https://i.pravatar.cc/150?img=47",
-      performance: "85%",
-      attendance: "94%",
-      pendingWork: 2,
-      status: "Active",
-      statusColor: "text-emerald-500",
-      perfColor: "text-emerald-500",
-      attColor: "text-emerald-500",
-    },
-    {
-      id: 2,
-      name: "Olivia Johnson",
-      avatar: "https://i.pravatar.cc/150?img=32",
-      performance: "30%",
-      attendance: "60%",
-      pendingWork: 2,
-      status: "Needs Attention",
-      statusColor: "text-amber-500",
-      perfColor: "text-rose-500",
-      attColor: "text-amber-500",
-    },
-    {
-      id: 3,
-      name: "Olivia Johnson",
-      avatar: "https://i.pravatar.cc/150?img=12",
-      performance: "0%",
-      attendance: "0%",
-      pendingWork: 2,
-      status: "Inactive",
-      statusColor: "text-rose-600",
-      perfColor: "text-rose-600",
-      attColor: "text-amber-500",
-    },
-    {
-      id: 4,
-      name: "Olivia Johnson",
-      avatar: "https://i.pravatar.cc/150?img=49",
-      performance: "85%",
-      attendance: "94%",
-      pendingWork: 2,
-      status: "Active",
-      statusColor: "text-emerald-500",
-      perfColor: "text-emerald-500",
-      attColor: "text-emerald-500",
-    },
-  ];
+const STATUS_COLOR = {
+  Active: "text-emerald-500",
+  "Needs Attention": "text-amber-500",
+  Inactive: "text-rose-600",
+};
+
+const StudentsOfferingSubject = ({ students = [] }) => {
+  const studentsData = students.map((st) => ({
+    id: st.id,
+    name: st.fullName,
+    avatarUrl: st.avatarUrl,
+    performance: percent(st.performance),
+    attendance: percent(st.attendanceRate),
+    pendingWork: st.pendingWork,
+    status: st.status,
+    statusColor: STATUS_COLOR[st.status] ?? "text-slate-500",
+    perfColor: scoreColor(st.performance),
+    attColor: scoreColor(st.attendanceRate),
+  }));
 
   return (
     <section className="w-full min-w-0 bg-[#F5F7FC]">
@@ -158,6 +128,13 @@ const StudentsOfferingSubject = () => {
                   TABLE BODY
               ================================================== */}
               <tbody className="divide-y divide-slate-100">
+                {studentsData.length === 0 && (
+                  <tr>
+                    <td colSpan="5" className="px-6 py-10 text-center text-sm font-medium text-slate-400">
+                      No students are enrolled in this subject yet.
+                    </td>
+                  </tr>
+                )}
                 {studentsData.map((student) => (
                   <tr
                     key={student.id}
@@ -186,14 +163,11 @@ const StudentsOfferingSubject = () => {
                             ring-white
                           "
                         >
-                          <img
-                            src={student.avatar}
-                            alt={student.name}
-                            className="
-                              h-full
-                              w-full
-                              object-cover
-                            "
+                          <Avatar
+                            name={student.name}
+                            avatarUrl={student.avatarUrl}
+                            className="h-full w-full"
+                            textClassName="text-sm font-semibold text-slate-500"
                           />
                         </div>
 

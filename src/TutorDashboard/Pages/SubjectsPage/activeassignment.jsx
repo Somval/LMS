@@ -1,38 +1,10 @@
 import React from "react";
 import { Clipboard } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { formatDate } from "./subjectFormat";
 
-const assignmentsData = [
-  {
-    id: 1,
-    title: "Quadratic Equations",
-    dueDate: "May 31, 2025",
-    score: "18/24",
-    status: "Submitted",
-  },
-  {
-    id: 2,
-    title: "Quadratic Equations",
-    dueDate: "May 31, 2025",
-    score: "18/24",
-    status: "Submitted",
-  },
-  {
-    id: 3,
-    title: "Quadratic Equations",
-    dueDate: "May 31, 2025",
-    score: "18/24",
-    status: "Submitted",
-  },
-  {
-    id: 4,
-    title: "Quadratic Equations",
-    dueDate: "May 31, 2025",
-    score: "18/24",
-    status: "Submitted",
-  },
-];
-
-const ActiveAssignments = () => {
+const ActiveAssignments = ({ work = [] }) => {
+  const navigate = useNavigate();
   return (
     <section className="w-full bg-[#F5F7FC] p-2 sm:p-3">
       {/* =====================================================
@@ -88,6 +60,7 @@ const ActiveAssignments = () => {
           {/* VIEW ALL */}
           <button
             type="button"
+            onClick={() => navigate("/tutor/assignment-quize")}
             className="
               shrink-0
               border-0
@@ -133,7 +106,12 @@ const ActiveAssignments = () => {
             md:mb-[14px]
           "
         >
-          {assignmentsData.map((item, index) => (
+          {work.length === 0 && (
+            <p className="m-0 px-[10px] py-6 text-center text-[12px] font-medium text-[#8C9098]">
+              No active assignments or quizzes for this subject.
+            </p>
+          )}
+          {work.map((item, index) => (
             <div
               key={item.id}
               className={`
@@ -153,7 +131,7 @@ const ActiveAssignments = () => {
                 sm:px-[11px]
 
                 ${
-                  index !== assignmentsData.length - 1
+                  index !== work.length - 1
                     ? "border-b border-[#EEEEF2]"
                     : ""
                 }
@@ -234,7 +212,7 @@ const ActiveAssignments = () => {
                     md:text-[11px]
                   "
                 >
-                  Due: {item.dueDate}
+                  {item.dueAt ? `Due: ${formatDate(item.dueAt)}` : "No due date"}
                 </p>
               </div>
 
@@ -269,7 +247,7 @@ const ActiveAssignments = () => {
                     md:text-[12px]
                   "
                 >
-                  {item.score}
+                  {item.submitted}/{item.total}
                 </span>
 
                 <span
@@ -286,7 +264,7 @@ const ActiveAssignments = () => {
                     md:text-[11px]
                   "
                 >
-                  {item.status}
+                  Submitted
                 </span>
               </div>
             </div>

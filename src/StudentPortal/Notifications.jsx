@@ -1,14 +1,27 @@
 
 import React, { useState } from "react";
+import { useAuth } from "../context/AuthContext";
+
+const DEFAULTS = {
+  assignments: true,
+  liveClasses: true,
+  announcements: true,
+  grades: true,
+  tutorMessages: true,
+  achievements: true,
+};
 
 export default function NotificationsSettings() {
-  const [notifications, setNotifications] = useState({
-    assignments: true,
-    liveClasses: true,
-    announcements: true,
-    grades: true,
-    tutorMessages: true,
-    achievements: true,
+  const { user } = useAuth();
+  const storageKey = `student-notification-preferences:${user?.id}`;
+
+  // Choices are remembered on this device (the browser's storage).
+  const [notifications, setNotifications] = useState(() => {
+    try {
+      return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(storageKey) || "{}") };
+    } catch {
+      return DEFAULTS;
+    }
   });
 
   const notificationItems = [
@@ -46,10 +59,15 @@ export default function NotificationsSettings() {
   ];
 
   const handleToggle = (key) => {
-    setNotifications((prev) => ({
-      ...prev,
-      [key]: !prev[key],
-    }));
+    setNotifications((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(next));
+      } catch {
+        // storage unavailable (private mode): the choice just won't be remembered
+      }
+      return next;
+    });
   };
 
   return (
@@ -61,7 +79,7 @@ export default function NotificationsSettings() {
         </h2>
 
         <p className="mt-0.5 text-[11px] leading-4 text-[#7B8493] sm:text-[11.5px]">
-          Choose what email notifications you want to receive.
+          Choose which notifications you want to see. Saved on this device.
         </p>
       </header>
 

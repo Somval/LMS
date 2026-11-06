@@ -1,30 +1,14 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { Bell } from "lucide-react";
 
-// NOTIFICATION SETTINGS DATA
-const notificationSettings = [
-  {
-    emailNotifications: true,
-    inAppNotifications: true,
-    smsNotifications: true,
-  },
-];
-
-export default function Notifications() {
-  const settings = notificationSettings[0];
-
-  const [emailNotifications, setEmailNotifications] = useState(
-    settings.emailNotifications
-  );
-
-  const [inAppNotifications, setInAppNotifications] = useState(
-    settings.inAppNotifications
-  );
-
-  const [smsNotifications, setSmsNotifications] = useState(
-    settings.smsNotifications
-  );
+export default function Notifications({ value, onChange }) {
+  const emailNotifications = value.email;
+  const inAppNotifications = value.inApp;
+  const smsNotifications = value.sms;
+  const setEmailNotifications = (v) => onChange({ email: v });
+  const setInAppNotifications = (v) => onChange({ inApp: v });
+  const setSmsNotifications = (v) => onChange({ sms: v });
 
   // REUSABLE TOGGLE SWITCH
   const ToggleSwitch = ({ enabled, onToggle, label }) => (

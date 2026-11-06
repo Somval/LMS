@@ -1,26 +1,61 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { api } from "../../lib/api";
+import {
+  formatDate,
+  monthTitle,
+  printReport,
+  reportDate,
+  summaryText,
+} from "../ProgressReports/reportData";
 import ImageReport from "../../assets/images/beaafa52f889bf07e0efa09168d5fc033d58bdbb (1).png";
 
 export default function RecentReport({ studentId, student }) {
+  const navigate = useNavigate();
   const studentName = student?.name ?? "Student";
+  const firstName = studentName.split(/\s+/)[0];
+
+  // Latest monthly report for this child: GET /dashboard/parent/:studentId/reports
+  const [info, setInfo] = useState(null); // { student, generatedAt, reports }
+  const [state, setState] = useState("loading"); // loading | ready | error
+
+  useEffect(() => {
+    if (!studentId) return;
+    let cancelled = false;
+    setState("loading");
+    api
+      .get(`/dashboard/parent/${studentId}/reports`)
+      .then((res) => {
+        if (cancelled) return;
+        setInfo(res);
+        setState("ready");
+      })
+      .catch(() => !cancelled && setState("error"));
+    return () => {
+      cancelled = true;
+    };
+  }, [studentId]);
+
+  const latest = info?.reports?.[0] ?? null;
 
   const handleDownload = () => {
-    const link = document.createElement("a");
-    link.href = ImageReport;
-    link.download = `${studentName.replace(/\s+/g, "-")}-Progress-Report.png`;
-
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    if (latest) printReport(latest, info.student, info.generatedAt);
   };
 
-  const handleViewAll = () => {
-    console.log("View all reports for:", {
-      studentId,
-      studentName,
-    });
-  };
+  const handleViewAll = () =>
+    navigate("/parent/progress-reports", { state: { childId: studentId } });
+
+  const title = latest ? `${monthTitle(latest)} Progress Report` : "Progress Report";
+  const description =
+    state === "loading"
+      ? "Loading the latest report…"
+      : state === "error"
+      ? "Could not load the report. Try again later."
+      : latest
+      ? summaryText(firstName, latest)
+      : `No report for ${firstName} yet.`;
+  const dateValue = latest ? reportDate(latest, info.generatedAt) : null;
 
   return (
     <section className="box-border mb-5 lg:mb-1 h-[252px] w-full max-w-[364px] overflow-hidden rounded-xl border border-[#EEF1F7] bg-white p-5 shadow-[0_3px_2px_rgba(15,23,42,0.10)]">
@@ -86,11 +121,11 @@ export default function RecentReport({ studentId, student }) {
 
         <div className="flex h-[138px] min-w-0 flex-1 flex-col">
           <h3 className="whitespace-nowrap text-[14px] font-semibold leading-[19px] text-[#111111]">
-            June Progress Report
+            {title}
           </h3>
 
           <p className="mt-[4px] line-clamp-2 text-[12px] leading-[17px] text-[#8490A3]">
-            Comprehensive report on {studentName}'s academic performance.
+            {description}
           </p>
 
           <div className="mt-[7px] flex shrink-0 items-center gap-[7px] text-[12px] leading-[17px] text-[#8490A3]">
@@ -110,15 +145,18 @@ export default function RecentReport({ studentId, student }) {
               <path d="M16 3v4M8 3v4M3 11h18" />
             </svg>
 
-            <time dateTime="2024-05-12" className="whitespace-nowrap">
-              May 12, 2024
-            </time>
+            {dateValue && (
+              <time dateTime={new Date(dateValue).toISOString()} className="whitespace-nowrap">
+                {formatDate(dateValue)}
+              </time>
+            )}
           </div>
 
           <button
             type="button"
             onClick={handleDownload}
-            className="mt-auto flex h-[42px] w-full shrink-0 items-center justify-center gap-[6px] whitespace-nowrap rounded-[7px] border border-[#2E6DFF] px-1 text-[12px] font-medium text-[#2E6DFF] transition-colors hover:bg-[#2E6DFF] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E6DFF] focus-visible:ring-offset-2"
+            disabled={!latest}
+            className="mt-auto flex disabled:cursor-not-allowed disabled:opacity-50 h-[42px] w-full shrink-0 items-center justify-center gap-[6px] whitespace-nowrap rounded-[7px] border border-[#2E6DFF] px-1 text-[12px] font-medium text-[#2E6DFF] transition-colors hover:bg-[#2E6DFF] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2E6DFF] focus-visible:ring-offset-2"
           >
             <svg
               width="19"

@@ -6,7 +6,7 @@ const stats = [
   {
     id: 1,
     title: 'Assigned Students',
-    value: '12',
+    key: 'assignedStudents',
     icon: (
       <svg
         width="26"
@@ -28,7 +28,7 @@ const stats = [
   {
     id: 2,
     title: 'Active Classes',
-    value: '8',
+    key: 'activeClasses',
     icon: Video,
     badgeBg: 'bg-blue-50',
     iconColor: 'text-blue-500',
@@ -36,14 +36,14 @@ const stats = [
   {
     id: 3,
     title: 'Subjects Taught',
-    value: '2',
+    key: 'subjectsTaught',
     icon: BookOpen,
     badgeBg: 'bg-purple-50',
     iconColor: 'text-purple-500',
   },
 ];
 
-export default function OverviewStats() {
+export default function OverviewStats({ tutor = null }) {
   return (
     <div className="w-full bg-[#f4f7fc]/60 p-6 pt-2">
     
@@ -76,7 +76,7 @@ export default function OverviewStats() {
                   {stat.title}
                 </span>
                 <span className="text-xl font-bold text-slate-900 tracking-tight">
-                  {stat.value}
+                  {tutor?.stats?.[stat.key] ?? "—"}
                 </span>
               </div>
             </div>

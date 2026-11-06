@@ -1,15 +1,17 @@
 
 import React from 'react';
 
-const ratingData = [
-  { stars: 5, percentage: 22, count: 28 },
-  { stars: 4, percentage: 72, count: 92 },
-  { stars: 3, percentage: 4, count: 5 },
-  { stars: 2, percentage: 1, count: 2 },
-  { stars: 1, percentage: 1, count: 1 },
-];
+// Rows built from stats.breakdown ({ 1..5: count }).
+const buildRatingData = (stats) => {
+  const total = stats?.count ?? 0;
+  return [5, 4, 3, 2, 1].map((stars) => {
+    const count = stats?.breakdown?.[stars] ?? 0;
+    return { stars, count, percentage: total ? Math.round((count / total) * 100) : 0 };
+  });
+};
 
-export default function RatingBreakdown() {
+export default function RatingBreakdown({ stats }) {
+  const ratingData = buildRatingData(stats);
   return (
     <section
       aria-labelledby="rating-breakdown-title"

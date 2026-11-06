@@ -12,23 +12,6 @@ import {
   UserRound,
 } from "lucide-react";
 
-const students = Array.from({ length: 127 }, (_, i) => ({
-  id: i + 1,
-  name: "John Doessssssssssss",
-  studentId: `STU${String(i + 1).padStart(4, "0")}`,
-  subjects: 5,
-  average: 85,
-  attendance: 50,
-  progress: 45,
-  status: [
-    "Excellent",
-    "On Track",
-    "Poor",
-    "Excellent",
-    "Excellent",
-    "Excellent",
-  ][i % 6],
-}));
 
 const statusStyles = {
   Excellent: "bg-[#DDFBE5] text-[#16803D]",
@@ -58,7 +41,7 @@ function ProgressBar({ value, color, mobile = false }) {
   );
 }
 
-export default function StudentProgressTable() {
+export default function StudentProgressTable({ students = [], loading = false, error = "" }) {
   const navigate = useNavigate();
 
   const [search, setSearch] = useState("");
@@ -157,9 +140,9 @@ export default function StudentProgressTable() {
         student.name,
         student.studentId,
         student.subjects,
-        `${student.average}%`,
-        `${student.attendance}%`,
-        `${student.progress}%`,
+        student.average == null ? "—" : `${student.average}%`,
+        student.attendance == null ? "—" : `${student.attendance}%`,
+        student.progress == null ? "—" : `${student.progress}%`,
         student.status,
       ],
     ];
@@ -219,10 +202,10 @@ export default function StudentProgressTable() {
   const renderMetric = (label, value, color, mobile = false) => (
     <div className="space-y-1.5">
       <span className="text-[11px] font-medium leading-4 text-[#454C59]">
-        {value}%
+        {value == null ? "—" : `${value}%`}
       </span>
 
-      <ProgressBar value={value} color={color} mobile={mobile} />
+      <ProgressBar value={value ?? 0} color={color} mobile={mobile} />
 
       <span className="sr-only">{label}</span>
     </div>
@@ -393,7 +376,11 @@ export default function StudentProgressTable() {
   return (
     <section className="min-h-screen w-full bg-[#F4F7FD] p-3 sm:p-5 lg:p-6">
       <div className="mx-auto w-full max-w-[1400px]">
-        {/* Search and filters */}
+        {error && (
+        <p role="alert" className="mb-3 rounded-lg bg-[#FFE4E5] px-3 py-2 text-sm text-[#D92735]">{error}</p>
+      )}
+
+      {/* Search and filters */}
         <div className="mb-3 flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
           <label className="flex h-10 w-full items-center gap-2 rounded-md border border-[#DCE1E9] bg-white px-3 sm:max-w-[320px]">
             <Search size={16} className="shrink-0 text-[#8993A3]" />
@@ -501,7 +488,7 @@ export default function StudentProgressTable() {
 
           {displayedStudents.length === 0 && (
             <p className="p-8 text-center text-sm text-[#778196]">
-              No students found. Try changing your search or filter.
+              {loading ? "Loading students…" : "No students found. Try changing your search or filter."}
             </p>
           )}
 
@@ -562,7 +549,7 @@ export default function StudentProgressTable() {
 
           {displayedStudents.length === 0 && (
             <div className="rounded-lg border border-[#E5E9F1] bg-white p-8 text-center text-sm text-[#778196]">
-              No students found. Try changing your search or filter.
+              {loading ? "Loading students…" : "No students found. Try changing your search or filter."}
             </div>
           )}
 

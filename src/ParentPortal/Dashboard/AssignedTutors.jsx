@@ -1,19 +1,184 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { MessageSquare, Star, Flag } from "lucide-react";
+import { MessageSquare, Star, Flag, X } from "lucide-react";
+import { api } from "../../lib/api";
 import { initials } from "./dashboardData";
+
+// Modal used by both Rate and Report.
+function Modal({ title, onClose, children }) {
+  useEffect(() => {
+    const onKey = (e) => e.key === "Escape" && onClose();
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
+      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div className="w-full max-w-md space-y-4 rounded-2xl bg-white p-6 shadow-xl">
+        <div className="flex items-center justify-between">
+          <h3 className="text-base font-bold text-gray-900">{title}</h3>
+          <button type="button" onClick={onClose} aria-label="Close" className="rounded-full p-1 text-gray-400 hover:bg-gray-100">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// Rate: POST /tutors/:id/reviews  (one review per tutor, editable)
+function RateForm({ tutor, onClose, onSaved }) {
+  const [rating, setRating] = useState(0);
+  const [hover, setHover] = useState(0);
+  const [comment, setComment] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [done, setDone] = useState(false);
+
+  const submit = async (e) => {
+    e.preventDefault();
+    if (!rating) return setError("Please choose a star rating.");
+    setSaving(true);
+    try {
+      await api.post(`/tutors/${tutor.id}/reviews`, {
+        rating,
+        ...(comment.trim() ? { comment: comment.trim() } : {}),
+      });
+      setDone(true);
+      onSaved();
+    } catch (err) {
+      setError(err.message || "Could not save your rating.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (done) {
+    return (
+      <>
+        <p className="text-sm text-emerald-600">Thank you. Your rating for {tutor.name} has been saved.</p>
+        <button type="button" onClick={onClose} className="w-full rounded-lg bg-indigo-600 py-2.5 text-sm font-semibold text-white">Done</button>
+      </>
+    );
+  }
+
+  return (
+    <form onSubmit={submit} className="space-y-4">
+      <p className="text-sm text-gray-500">How would you rate {tutor.name}?</p>
+      <div className="flex gap-1" onMouseLeave={() => setHover(0)}>
+        {[1, 2, 3, 4, 5].map((n) => (
+          <button
+            key={n}
+            type="button"
+            aria-label={`${n} star${n === 1 ? "" : "s"}`}
+            onMouseEnter={() => setHover(n)}
+            onClick={() => { setRating(n); setError(""); }}
+          >
+            <Star className={`h-8 w-8 ${(hover || rating) >= n ? "fill-amber-400 text-amber-400" : "text-gray-300"}`} />
+          </button>
+        ))}
+      </div>
+      <textarea
+        value={comment}
+        onChange={(e) => setComment(e.target.value)}
+        maxLength={2000}
+        rows={4}
+        placeholder="Add a comment (optional)"
+        className="w-full rounded-lg border border-gray-200 p-3 text-sm outline-none focus:border-indigo-400"
+      />
+      {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
+      <button type="submit" disabled={saving} className="w-full rounded-lg bg-indigo-600 py-2.5 text-sm font-semibold text-white disabled:opacity-60">
+        {saving ? "Saving…" : "Submit rating"}
+      </button>
+    </form>
+  );
+}
+
+// Report: sent to the admin team as a message (same way Settings → Support works).
+function ReportForm({ tutor, onClose }) {
+  const [text, setText] = useState("");
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState("");
+  const [done, setDone] = useState(false);
+
+  const submit = async (e) => {
+    e.preventDefault();
+    if (text.trim().length < 10) return setError("Please describe the problem in a few words.");
+    setSending(true);
+    try {
+      const people = await api.get("/messages/contacts");
+      const admin = people.find((p) => p.role === "ADMIN");
+      if (!admin) throw new Error("The support team isn't available right now. Please try again later.");
+      await api.post("/messages", {
+        recipientId: admin.id,
+        body: `Tutor report: ${tutor.name} (tutor ID ${tutor.id})\n\n${text.trim()}`,
+      });
+      setDone(true);
+    } catch (err) {
+      setError(err.message || "Could not send your report.");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  if (done) {
+    return (
+      <>
+        <p className="text-sm text-emerald-600">Your report has been sent to the admin team.</p>
+        <button type="button" onClick={onClose} className="w-full rounded-lg bg-indigo-600 py-2.5 text-sm font-semibold text-white">Done</button>
+      </>
+    );
+  }
+
+  return (
+    <form onSubmit={submit} className="space-y-4">
+      <p className="text-sm text-gray-500">Tell us what went wrong with {tutor.name}. Only the admin team will see this.</p>
+      <textarea
+        value={text}
+        onChange={(e) => { setText(e.target.value); setError(""); }}
+        maxLength={2000}
+        rows={5}
+        placeholder="Describe the problem"
+        className="w-full rounded-lg border border-gray-200 p-3 text-sm outline-none focus:border-red-400"
+      />
+      {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
+      <button type="submit" disabled={sending} className="w-full rounded-lg bg-red-500 py-2.5 text-sm font-semibold text-white disabled:opacity-60">
+        {sending ? "Sending…" : "Send report"}
+      </button>
+    </form>
+  );
+}
 
 export default function AssignedTutor({ data }) {
   const navigate = useNavigate();
+  const [dialog, setDialog] = useState(null); // { type: "rate" | "report", tutor }
+  const [fresh, setFresh] = useState({}); // tutorId -> { average, count } after a new rating
+
+  // After saving a rating, pull the tutor's new average so the card updates.
+  const refreshRating = async (tutorId) => {
+    try {
+      const res = await api.get(`/tutors/${tutorId}/reviews`);
+      setFresh((f) => ({ ...f, [tutorId]: { average: res.stats.average, count: res.stats.count } }));
+    } catch {
+      /* the saved rating still counts; the card updates on next load */
+    }
+  };
 
   const tutorsData = (data?.tutors ?? []).map((tutor) => ({
     id: tutor.id,
     name: tutor.name,
     role: `${tutor.subjects.join(", ")} Tutor`,
-    rating: tutor.rating, // null until a parent has reviewed them
-    reviews: tutor.reviews
-      ? `${tutor.reviews} review${tutor.reviews === 1 ? "" : "s"}`
+    rating: fresh[tutor.id] ? fresh[tutor.id].average : tutor.rating, // null until a parent has reviewed them
+    reviews: (fresh[tutor.id] ? fresh[tutor.id].count : tutor.reviews)
+      ? `${fresh[tutor.id] ? fresh[tutor.id].count : tutor.reviews} review${(fresh[tutor.id] ? fresh[tutor.id].count : tutor.reviews) === 1 ? "" : "s"}`
       : "no reviews yet",
     initials: initials(tutor.name),
   }));
@@ -114,7 +279,10 @@ export default function AssignedTutor({ data }) {
                 <button
                   key={label}
                   type="button"
-                  onClick={() => label === "Message" && navigate("/parent/messages")}
+                  onClick={() => {
+                    if (label === "Message") navigate("/parent/messages");
+                    else setDialog({ type: label === "Rate" ? "rate" : "report", tutor });
+                  }}
                   aria-label={`${label} ${tutor.name}`}
                   className={`flex min-h-[48px] min-w-0 items-center justify-center gap-1.5 rounded-lg border ${border} px-1.5 py-2 ${color} ${hover} transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 ${ring} sm:gap-2 sm:px-2`}
                 >
@@ -135,6 +303,17 @@ export default function AssignedTutor({ data }) {
           </article>
         ))}
       </div>
+
+      {dialog?.type === "rate" && (
+        <Modal title={`Rate ${dialog.tutor.name}`} onClose={() => setDialog(null)}>
+          <RateForm tutor={dialog.tutor} onClose={() => setDialog(null)} onSaved={() => refreshRating(dialog.tutor.id)} />
+        </Modal>
+      )}
+      {dialog?.type === "report" && (
+        <Modal title={`Report ${dialog.tutor.name}`} onClose={() => setDialog(null)}>
+          <ReportForm tutor={dialog.tutor} onClose={() => setDialog(null)} />
+        </Modal>
+      )}
     </section>
   );
 }

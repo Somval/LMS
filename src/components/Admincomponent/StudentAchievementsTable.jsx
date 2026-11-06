@@ -9,86 +9,38 @@ import {
   ChevronRight,
 } from "lucide-react";
 
-const subjectNames = ["Mathematics", "English", "Science"];
-
-const badgesData = [
-  { id: 1, name: "Quick Learner", description: "Completed learning activities ahead of schedule.", icon: "zap", date: "2026-10-05", color: "yellow" },
-  { id: 2, name: "Perfect Attendance", description: "Maintained excellent class attendance.", icon: "calendar", date: "2026-10-08", color: "blue" },
-  { id: 3, name: "Problem Solver", description: "Successfully solved challenging questions.", icon: "brain", date: "2026-10-12", color: "purple" },
-  { id: 4, name: "Star Student", description: "Demonstrated outstanding academic performance.", icon: "star", date: "2026-10-15", color: "orange" },
-  { id: 5, name: "Reading Champion", description: "Demonstrated excellent reading progress.", icon: "book", date: "2026-10-16", color: "blue" },
-  { id: 6, name: "Creative Thinker", description: "Showed creativity when solving learning tasks.", icon: "lightbulb", date: "2026-10-18", color: "yellow" },
-  { id: 7, name: "Team Player", description: "Worked effectively with other learners.", icon: "users", date: "2026-10-20", color: "purple" },
-  { id: 8, name: "Fast Finisher", description: "Completed assigned activities on time.", icon: "clock", date: "2026-10-22", color: "orange" },
-  { id: 9, name: "Knowledge Seeker", description: "Showed enthusiasm for learning new topics.", icon: "graduation", date: "2026-10-25", color: "blue" },
-  { id: 10, name: "Excellent Effort", description: "Consistently demonstrated dedication to learning.", icon: "medal", date: "2026-10-28", color: "yellow" },
-];
-
-const achievementsData = [
-  { id: 1, name: "Mathematics Excellence", description: "Achieved excellent results in Mathematics.", date: "2026-10-06", status: "Completed", points: 100 },
-  { id: 2, name: "Learning Champion", description: "Completed all assigned learning activities.", date: "2026-10-10", status: "Completed", points: 150 },
-  { id: 3, name: "Consistent Performer", description: "Maintained consistent academic progress.", date: "2026-10-12", status: "Completed", points: 200 },
-  { id: 4, name: "Perfect Attendance", description: "Achieved the required attendance milestone.", date: "2026-10-14", status: "Completed", points: 100 },
-  { id: 5, name: "Reading Excellence", description: "Completed the assigned reading milestones.", date: "2026-10-16", status: "Completed", points: 150 },
-  { id: 6, name: "Science Explorer", description: "Successfully completed science activities.", date: "2026-10-18", status: "Completed", points: 100 },
-  { id: 7, name: "Creative Mind", description: "Demonstrated creativity in classroom activities.", date: "2026-10-20", status: "Completed", points: 150 },
-  { id: 8, name: "Academic Star", description: "Reached an outstanding academic milestone.", date: "2026-10-22", status: "Completed", points: 200 },
-  { id: 9, name: "Independent Learner", description: "Completed independent learning tasks.", date: "2026-10-25", status: "Completed", points: 100 },
-  { id: 10, name: "Outstanding Progress", description: "Made excellent progress across learning activities.", date: "2026-10-28", status: "Completed", points: 200 },
-];
-
-const rewardsData = [
-  { id: 1, name: "Gold Star Reward", description: "Awarded for outstanding classroom performance.", date: "2026-10-07", points: 100, status: "Claimed" },
-  { id: 2, name: "Learning Champion Reward", description: "Reward for completing learning milestones.", date: "2026-10-10", points: 150, status: "Claimed" },
-  { id: 3, name: "Excellence Award", description: "Recognition for excellent academic performance.", date: "2026-10-12", points: 200, status: "Claimed" },
-  { id: 4, name: "Perfect Attendance Reward", description: "Awarded for maintaining excellent attendance.", date: "2026-10-14", points: 100, status: "Claimed" },
-  { id: 5, name: "Reading Star Reward", description: "Recognition for reading achievements.", date: "2026-10-16", points: 150, status: "Claimed" },
-  { id: 6, name: "Science Explorer Reward", description: "Awarded for completing science milestones.", date: "2026-10-18", points: 100, status: "Claimed" },
-  { id: 7, name: "Creative Thinker Reward", description: "Recognition for creative learning.", date: "2026-10-20", points: 150, status: "Claimed" },
-  { id: 8, name: "Academic Star Reward", description: "Awarded for excellent academic performance.", date: "2026-10-22", points: 200, status: "Claimed" },
-  { id: 9, name: "Independent Learner Reward", description: "Recognition for independent learning.", date: "2026-10-25", points: 100, status: "Claimed" },
-  { id: 10, name: "Outstanding Progress Reward", description: "Reward for outstanding learning progress.", date: "2026-10-28", points: 200, status: "Available" },
-];
-
-// All student records are maintained in this file.
-// Each student has their own copies of the badge, achievement and reward records.
-export const students = Array.from({ length: 127 }, (_, index) => {
-  const id = index + 1;
-
-  const badges = badgesData.map((item) => ({ ...item }));
-  const achievements = achievementsData.map((item) => ({ ...item }));
-  const rewards = rewardsData.map((item) => ({ ...item }));
-
-  return {
-    id,
-    name: "John Doe",
-    studentId: `STU${String(id).padStart(4, "0")}`,
-    subject: subjectNames[index % subjectNames.length],
-    badgesEarned: badges.length,
-    achievementsEarned: achievements.length,
-    rewardsEarned: rewards.length,
-    badges,
-    achievements,
-    rewards,
-  };
-});
-
-const subjects = [
-  { label: "All Subjects", value: "All Subjects" },
-  { label: "Mathematics", value: "Mathematics" },
-  { label: "English", value: "English" },
-  { label: "Science", value: "Science" },
-];
-
 const rowsPerPage = 8;
 
-export default function Achievement({ onViewStudent }) {
+export default function Achievement({ students: rawStudents = [], loading = false, onViewStudent }) {
+  // Real students from GET /admin/achievements/overview, in the shape the table draws.
+  const students = useMemo(
+    () =>
+      rawStudents.map((st) => ({
+        id: st.id,
+        name: st.name,
+        studentId: st.learnerId,
+        subject: st.subjects.join(", ") || "–",
+        subjectList: st.subjects,
+        badgesEarned: st.badges,
+        achievementsEarned: `${st.points}`,
+        rewardsEarned: st.rewards,
+        dates: st.awardDates.map((d) => d.slice(0, 10)),
+      })),
+    [rawStudents]
+  );
+  const subjects = useMemo(
+    () => [
+      { label: "All Subjects", value: "All Subjects" },
+      ...[...new Set(students.flatMap((s) => s.subjectList))].sort().map((v) => ({ label: v, value: v })),
+    ],
+    [students]
+  );
   const navigate = useNavigate();
 
   const [search, setSearch] = useState("");
   const [selectedSubject, setSelectedSubject] = useState("All Subjects");
-  const [startDate, setStartDate] = useState("2026-10-01");
-  const [endDate, setEndDate] = useState("2026-10-31");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
   const filteredStudents = useMemo(() => {
@@ -100,14 +52,9 @@ export default function Achievement({ onViewStudent }) {
         student.studentId.toLowerCase().includes(searchTerm);
 
       const matchesSubject =
-        selectedSubject === "All Subjects" ||
-        student.subject === selectedSubject;
+        selectedSubject === "All Subjects" || student.subjectList.includes(selectedSubject);
 
-      const allDates = [
-        ...student.badges.map((item) => item.date),
-        ...student.achievements.map((item) => item.date),
-        ...student.rewards.map((item) => item.date),
-      ];
+      const allDates = student.dates;
 
       const matchesDate =
         (!startDate && !endDate) ||
@@ -119,7 +66,7 @@ export default function Achievement({ onViewStudent }) {
 
       return matchesSearch && matchesSubject && matchesDate;
     });
-  }, [search, selectedSubject, startDate, endDate]);
+  }, [students, search, selectedSubject, startDate, endDate]);
 
   const totalPages = Math.max(
     1,
@@ -145,7 +92,7 @@ export default function Achievement({ onViewStudent }) {
 
   const handleViewStudent = (student) => {
     onViewStudent?.(student);
-    navigate(`/admin/achievements/${student.id}`);
+    navigate(`/admin/achievements/${student.id}`, { state: { name: student.name, learnerId: student.studentId } });
   };
 
   const startCount =
@@ -261,14 +208,14 @@ export default function Achievement({ onViewStudent }) {
 
       {/* Desktop and Tablet Table */}
       <div className="hidden w-full overflow-x-auto rounded-md border border-[#E2E7F0] bg-white md:block">
-        <table className="w-full min-w-[760px] table-fixed border-collapse text-left">
+        <table className="w-full min-w-[860px] table-fixed border-collapse text-left">
           <colgroup>
-            <col className="w-[19%]" />
-            <col className="w-[15%]" />
-            <col className="w-[15%]" />
             <col className="w-[20%]" />
+            <col className="w-[24%]" />
+            <col className="w-[13%]" />
+            <col className="w-[11%]" />
             <col className="w-[17%]" />
-            <col className="w-[14%]" />
+            <col className="w-[15%]" />
           </colgroup>
 
           <thead>
@@ -277,14 +224,13 @@ export default function Achievement({ onViewStudent }) {
                 "Student",
                 "Subjects",
                 "Badges Earned",
-                "Achievements Earned",
-                "Rewards Earned",
+                "Points", "Rewards Earned",
                 "Action",
               ].map((heading) => (
                 <th
                   key={heading}
                   scope="col"
-                  className="whitespace-nowrap border-r border-[#E8ECF3] px-3 py-3 text-xs font-semibold text-[#626D7D] last:border-r-0 lg:text-sm"
+                  className="border-r border-[#E8ECF3] px-3 py-3 text-xs font-semibold text-[#626D7D] last:border-r-0 lg:text-sm"
                 >
                   {heading}
                 </th>
@@ -312,7 +258,7 @@ export default function Achievement({ onViewStudent }) {
                   </div>
                 </td>
 
-                <td className="whitespace-nowrap border-r border-[#EDF0F5] px-3 py-3 text-sm text-[#454B57]">
+                <td className="border-r border-[#EDF0F5] px-3 py-3 text-sm leading-snug text-[#454B57] [overflow-wrap:anywhere]">
                   {student.subject}
                 </td>
                 <td className="whitespace-nowrap border-r border-[#EDF0F5] px-3 py-3 text-sm text-[#454B57]">
@@ -339,7 +285,7 @@ export default function Achievement({ onViewStudent }) {
             {visibleStudents.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-4 py-12 text-center text-sm text-[#7A8493]">
-                  No students found. Try changing your search, subject or date range.
+                  {loading ? "Loading students…" : students.length === 0 ? "No students yet." : "No students found. Try changing your search, subject or date range."}
                 </td>
               </tr>
             )}
@@ -398,7 +344,7 @@ export default function Achievement({ onViewStudent }) {
                 </p>
               </div>
               <div className="min-w-0">
-                <p className="text-xs font-medium text-[#8993A2]">Achievements Earned</p>
+                <p className="text-xs font-medium text-[#8993A2]">Points</p>
                 <p className="mt-1 text-base font-semibold text-[#343A46]">
                   {student.achievementsEarned}
                 </p>

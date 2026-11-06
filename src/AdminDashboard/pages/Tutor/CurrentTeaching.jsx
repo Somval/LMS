@@ -2,50 +2,18 @@
 import React from "react";
 import { Calculator } from "lucide-react";
 
-const teachingData = [
-  {
-    id: 1,
-    subject: "Mathematics",
-    level: "Year 4",
-    students: 12,
-    classes: 7,
-    nextClass: "Mon, 5:00 PM",
-  },
-  {
-    id: 2,
-    subject: "Mathematics",
-    level: "Year 5",
-    students: 12,
-    classes: 7,
-    nextClass: "Mon, 5:00 PM",
-  },
-  {
-    id: 3,
-    subject: "Mathematics",
-    level: "Year 6",
-    students: 12,
-    classes: 7,
-    nextClass: "Mon, 5:00 PM",
-  },
-  {
-    id: 4,
-    subject: "Science",
-    level: "Year 6",
-    students: 12,
-    classes: 7,
-    nextClass: "Mon, 5:00 PM",
-  },
-  {
-    id: 5,
-    subject: "Science",
-    level: "Year 6",
-    students: 12,
-    classes: 7,
-    nextClass: "Mon, 5:00 PM",
-  },
-];
+const fmtNext = (d) =>
+  d
+    ? new Date(d).toLocaleString("en-GB", { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })
+    : "—";
 
-export default function CurrentTeaching() {
+export default function CurrentTeaching({ teaching = [] }) {
+  const teachingData = teaching.map((t) => ({
+    ...t,
+    level: t.level || "—",
+    nextClass: fmtNext(t.nextClassAt),
+  }));
+
   return (
     <section className="min-h-[399px] w-full min-w-0 overflow-hidden rounded-[11px] bg-white font-sans">
       {/* Card Heading */}
@@ -54,6 +22,10 @@ export default function CurrentTeaching() {
           Current Teaching
         </h2>
       </div>
+
+      {teachingData.length === 0 && (
+        <p className="px-4 py-8 text-sm text-[#98A2B3]">This tutor isn't teaching any subjects yet.</p>
+      )}
 
       {/* Desktop and Tablet Table */}
       <div className="hidden w-full sm:block">

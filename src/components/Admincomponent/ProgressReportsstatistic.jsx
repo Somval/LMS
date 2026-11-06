@@ -10,38 +10,44 @@ import {
 const progressStats = [
   {
     title: "Total Students",
-    value: "258",
+    key: "total",
     icon: UsersRound,
     iconColor: "text-[#1763D1]",
     iconBg: "bg-[#E7F0FF]",
   },
   {
     title: "Excellent Progress",
-    value: "120",
+    key: "excellent",
     icon: TrendingUp,
     iconColor: "text-[#00D632]",
     iconBg: "bg-[#E5FBEA]",
-    description: "50% of students",
   },
   {
     title: "On Track",
-    value: "90",
+    key: "onTrack",
     icon: ChartNoAxesColumnIncreasing,
     iconColor: "text-[#E600B8]",
     iconBg: "bg-[#FCE7F8]",
-    description: "30% of students",
   },
   {
     title: "Poor Performance",
-    value: "30",
+    key: "poor",
     icon: ArrowDownRight,
     iconColor: "text-[#FF454D]",
     iconBg: "bg-[#FFE5E5]",
-    description: "12% of students",
   },
 ];
 
-export default function ProgressReports() {
+const fmt = (n) => (n == null ? "—" : Number(n).toLocaleString());
+
+export default function ProgressReports({ summary = null }) {
+  const share = (n) => (summary?.total ? `${Math.round((n / summary.total) * 100)}% of students` : undefined);
+  const stats = progressStats.map((stat) => ({
+    ...stat,
+    value: fmt(summary?.[stat.key]),
+    description: stat.key === "total" ? undefined : share(summary?.[stat.key]),
+  }));
+
   return (
     <section className=" w-full bg-[#F4F7FD] px-3 py-4 sm:px-6 sm:py-6 lg:px-7">
       <div className="mx-auto w-full max-w-[1400px]">
@@ -55,7 +61,7 @@ export default function ProgressReports() {
         </div>
 
         <div className="grid grid-cols-1 gap-2.5 min-[480px]:grid-cols-2 sm:gap-3 xl:grid-cols-[repeat(4,288px)] xl:gap-2">
-          {progressStats.map((stat) => {
+          {stats.map((stat) => {
             const Icon = stat.icon;
 
             return (

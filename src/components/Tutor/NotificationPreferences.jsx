@@ -1,10 +1,27 @@
 import React, { useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
 
 export const NotificationPreferences = ({ initialSettings }) => {
-  const [preferences, setPreferences] = useState(initialSettings);
+  const { user } = useAuth();
+  const storageKey = `tutor-notification-preferences:${user?.id}`;
+
+  // Choices are remembered on this device (the browser's storage).
+  const [preferences, setPreferences] = useState(() => {
+    try {
+      return { ...initialSettings, ...JSON.parse(localStorage.getItem(storageKey) || '{}') };
+    } catch {
+      return initialSettings;
+    }
+  });
 
   const togglePreference = (key) => {
-    setPreferences((prev) => ({ ...prev, [key]: !prev[key] }));
+    const next = { ...preferences, [key]: !preferences[key] };
+    setPreferences(next);
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(next));
+    } catch {
+      // storage unavailable (private mode): the choice just won't be remembered
+    }
   };
 
   const options = [
@@ -28,6 +45,10 @@ export const NotificationPreferences = ({ initialSettings }) => {
               <p className="text-xs text-gray-400">{desc}</p>
             </div>
             <button
+              type="button"
+              role="switch"
+              aria-checked={!!preferences[key]}
+              aria-label={title}
               onClick={() => togglePreference(key)}
               className={`w-11 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors ${
                 preferences[key] ? 'bg-blue-600 justify-end' : 'bg-gray-300 justify-start'
@@ -38,6 +59,8 @@ export const NotificationPreferences = ({ initialSettings }) => {
           </div>
         ))}
       </div>
+
+      <p className="mt-6 text-[11px] text-gray-400">Your choices are remembered on this device.</p>
     </div>
   );
 };

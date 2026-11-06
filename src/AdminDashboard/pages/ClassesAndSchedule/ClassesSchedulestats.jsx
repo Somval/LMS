@@ -91,7 +91,7 @@ export default function ClassesSchedule({
           </h2>
 
           <p className="mt-1.5 text-xs leading-5 text-[#64748B] sm:text-sm sm:leading-6">
-            View all classes, their recurring schedule and sessions.
+            View and manage every scheduled class session.
           </p>
         </div>
 

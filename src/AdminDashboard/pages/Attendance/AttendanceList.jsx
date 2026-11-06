@@ -1,90 +1,13 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { Search, ChevronDown, Calendar, MoreVertical, Eye } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-const INITIAL_ATTENDANCE = [
-  {
-    id: 1,
-    date: "Oct 16, 2026",
-    studentName: "John Doe",
-    studentId: "STU0012",
-    subject: "Mathematics-Year 1",
-    classTime: "4:00 PM – 5:00 PM",
-    timeJoined: "4:00 PM",
-    tutorName: "John Doe",
-    tutorId: "TID0012",
-    duration: "58 min",
-    attendance: "Present",
-  },
-  {
-    id: 2,
-    date: "Oct 16, 2026",
-    studentName: "John Doe",
-    studentId: "STU0012",
-    subject: "Mathematics-Year 1",
-    classTime: "4:00 PM – 5:00 PM",
-    timeJoined: "4:00 PM",
-    tutorName: "John Doe",
-    tutorId: "TID0012",
-    duration: "58 min",
-    attendance: "Present",
-  },
-  {
-    id: 3,
-    date: "Oct 16, 2026",
-    studentName: "John Doe",
-    studentId: "STU0012",
-    subject: "Mathematics-Year 1",
-    classTime: "4:00 PM – 5:00 PM",
-    timeJoined: "4:00 PM",
-    tutorName: "John Doe",
-    tutorId: "TID0012",
-    duration: "58 min",
-    attendance: "Absent",
-  },
-  {
-    id: 4,
-    date: "Oct 16, 2026",
-    studentName: "John Doe",
-    studentId: "STU0012",
-    subject: "Mathematics-Year 1",
-    classTime: "4:00 PM – 5:00 PM",
-    timeJoined: "4:00 PM",
-    tutorName: "John Doe",
-    tutorId: "TID0012",
-    duration: "58 min",
-    attendance: "Present",
-  },
-  {
-    id: 5,
-    date: "Oct 16, 2026",
-    studentName: "John Doe",
-    studentId: "STU0012",
-    subject: "Mathematics-Year 1",
-    classTime: "4:00 PM – 5:00 PM",
-    timeJoined: "4:00 PM",
-    tutorName: "John Doe",
-    tutorId: "TID0012",
-    duration: "58 min",
-    attendance: "Absent",
-  },
-  {
-    id: 6,
-    date: "Oct 16, 2026",
-    studentName: "John Doe",
-    studentId: "STU0012",
-    subject: "Mathematics-Year 1",
-    classTime: "4:00 PM – 5:00 PM",
-    timeJoined: "4:00 PM",
-    tutorName: "John Doe",
-    tutorId: "TID0012",
-    duration: "58 min",
-    attendance: "Present",
-  },
-];
-
 export default function AttendanceTableComponent({
-  data = INITIAL_ATTENDANCE,
+  data = [],
+  loading = false,
+  error = "",
+  range = null,
+  onRangeChange = () => {},
   onViewStudentProfile,
   onViewAttendanceDetails,
 }) {
@@ -92,7 +15,7 @@ export default function AttendanceTableComponent({
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSubject, setSelectedSubject] = useState("All Subjects");
-  const [dateRange, setDateRange] = useState("Oct 12, 2026 – Oct 18, 2026");
+  const subjectOptions = useMemo(() => [...new Set(data.map((d) => d.subject))].sort(), [data]);
   const [activeMenuId, setActiveMenuId] = useState(null);
 
   const menuRef = useRef(null);
@@ -117,7 +40,7 @@ export default function AttendanceTableComponent({
     if (onViewStudentProfile) {
       onViewStudentProfile(row);
     } else {
-      navigate(`/admin/students/${row.studentId}`);
+      navigate(`/admin/students/${row.userId}`);
     }
   };
 
@@ -128,6 +51,8 @@ export default function AttendanceTableComponent({
         return "bg-[#e6f9ed] text-[#16a34a]";
       case "Absent":
         return "bg-[#fef3c7] text-[#d97706]";
+      case "Late":
+        return "bg-[#ffedd5] text-[#ea580c]";
       default:
         return "bg-slate-100 text-slate-600";
     }
@@ -175,26 +100,40 @@ export default function AttendanceTableComponent({
                 className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 pr-9 text-xs sm:text-sm font-medium text-slate-700 outline-none transition focus:border-[#3b82f6] cursor-pointer shadow-2xs select-text"
               >
                 <option value="All Subjects">All Subjects</option>
-                <option value="Mathematics-Year 1">Mathematics-Year 1</option>
+                {subjectOptions.map((subject) => (
+                  <option key={subject} value={subject}>{subject}</option>
+                ))}
               </select>
               <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
             </div>
 
-            {/* Selectable Date Range Input Field */}
-            <div className="relative min-w-[240px]">
-              <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none select-none" />
+            {/* Date range */}
+            <div className="flex items-center gap-2">
               <input
-                type="text"
-                value={dateRange}
-                onChange={(e) => setDateRange(e.target.value)}
-                placeholder="Select date range..."
-                className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-9 py-2.5 text-xs sm:text-sm font-medium text-slate-700 outline-none transition focus:border-[#3b82f6] focus:ring-2 focus:ring-[#3b82f6]/10 shadow-2xs select-text cursor-text"
+                type="date"
+                aria-label="From date"
+                value={range?.from ?? ""}
+                max={range?.to || undefined}
+                onChange={(e) => onRangeChange({ ...range, from: e.target.value })}
+                className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs sm:text-sm font-medium text-slate-700 outline-none"
               />
-              <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+              <span className="text-sm text-slate-400">to</span>
+              <input
+                type="date"
+                aria-label="To date"
+                value={range?.to ?? ""}
+                min={range?.from || undefined}
+                onChange={(e) => onRangeChange({ ...range, to: e.target.value })}
+                className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs sm:text-sm font-medium text-slate-700 outline-none"
+              />
             </div>
           </div>
 
         </div>
+
+        {error && (
+          <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">{error}</p>
+        )}
 
         {/* Data Table Container */}
         <div className="w-full rounded-2xl bg-white shadow-xs border border-slate-200 overflow-hidden">
@@ -344,7 +283,7 @@ export default function AttendanceTableComponent({
                       colSpan="9"
                       className="py-12 text-center text-slate-400 text-xs sm:text-sm"
                     >
-                      No attendance records found matching your filters.
+                      {loading ? "Loading attendance…" : "No attendance records found for these dates and filters."}
                     </td>
                   </tr>
                 )}

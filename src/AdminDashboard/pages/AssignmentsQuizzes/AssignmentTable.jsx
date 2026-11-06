@@ -1,71 +1,17 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Search, ChevronDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-const INITIAL_DATA = [
-  {
-    id: 1,
-    title: "Algebra Practice",
-    type: "Assignment",
-    subject: "Mathematics-Year 1",
-    tutorName: "Jane Doe",
-    tutorId: "TUT0012",
-    lesson: "Introduction to Algebra",
-    submissions: "18/20",
-    availableAfter: "Topic 3",
-  },
-  {
-    id: 2,
-    title: "Algebra Practice",
-    type: "Assignment",
-    subject: "Mathematics-Year 1",
-    tutorName: "Jane Doe",
-    tutorId: "TUT0012",
-    lesson: "Introduction to Algebra",
-    submissions: "18/20",
-    availableAfter: "Topic 3",
-  },
-  {
-    id: 3,
-    title: "Algebra Practice",
-    type: "Assignment",
-    subject: "Mathematics-Year 1",
-    tutorName: "Jane Doe",
-    tutorId: "TUT0012",
-    lesson: "Introduction to Algebra",
-    submissions: "18/20",
-    availableAfter: "Topic 3",
-  },
-  {
-    id: 4,
-    title: "Algebra Practice",
-    type: "Assignment",
-    subject: "Mathematics-Year 1",
-    tutorName: "Jane Doe",
-    tutorId: "TUT0012",
-    lesson: "Introduction to Algebra",
-    submissions: "18/20",
-    availableAfter: "Topic 3",
-  },
-  {
-    id: 5,
-    title: "Algebra Practice",
-    type: "Assignment",
-    subject: "Mathematics-Year 1",
-    tutorName: "Jane Doe",
-    tutorId: "TUT0012",
-    lesson: "Introduction to Algebra",
-    submissions: "18/20",
-    availableAfter: "Topic 3",
-  },
-];
-
 export default function AssignmentsTableComponent({
-  data = INITIAL_DATA,
+  data = [],
+  loading = false,
+  error = "",
   onViewItem,
 }) {
   const navigate = useNavigate();
 
+  const subjectOptions = useMemo(() => [...new Set(data.map((d) => d.subject))].sort(), [data]);
+  const tutorOptions = useMemo(() => [...new Set(data.map((d) => d.tutorName))].sort(), [data]);
   const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSubject, setSelectedSubject] = useState("All Subjects");
@@ -84,8 +30,7 @@ export default function AssignmentsTableComponent({
     const matchesSearch =
       item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.tutorName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.lesson.toLowerCase().includes(searchQuery.toLowerCase());
+      item.tutorName.toLowerCase().includes(searchQuery.toLowerCase()) ;
 
     const matchesTab =
       activeTab === "all" ||
@@ -153,7 +98,7 @@ export default function AssignmentsTableComponent({
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <input
               type="text"
-              placeholder="Search by title, subject, tutor or lesson..."
+              placeholder="Search by title, subject or tutor..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 py-2.5 text-xs sm:text-sm text-slate-800 outline-none transition focus:border-[#3b82f6] focus:ring-2 focus:ring-[#3b82f6]/10 shadow-2xs"
@@ -170,7 +115,9 @@ export default function AssignmentsTableComponent({
                 className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 pr-9 text-xs sm:text-sm text-slate-700 outline-none transition focus:border-[#3b82f6] cursor-pointer shadow-2xs"
               >
                 <option value="All Subjects">All Subjects</option>
-                <option value="Mathematics-Year 1">Mathematics-Year 1</option>
+                {subjectOptions.map((subject) => (
+                  <option key={subject} value={subject}>{subject}</option>
+                ))}
               </select>
               <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
             </div>
@@ -183,14 +130,19 @@ export default function AssignmentsTableComponent({
                 className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 pr-9 text-xs sm:text-sm text-slate-700 outline-none transition focus:border-[#3b82f6] cursor-pointer shadow-2xs"
               >
                 <option value="All Tutors">All Tutors</option>
-                <option value="Jane Doe">Jane Doe</option>
+                {tutorOptions.map((tutor) => (
+                  <option key={tutor} value={tutor}>{tutor}</option>
+                ))}
               </select>
               <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
             </div>
           </div>
         </div>
+        {error && (
+          <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">{error}</p>
+        )}
 
-        {/* Data Table Card */}
+                {/* Data Table Card */}
         <div className="w-full rounded-2xl bg-white shadow-xs border border-slate-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
@@ -200,9 +152,9 @@ export default function AssignmentsTableComponent({
                   <th className="py-3.5 px-4 sm:px-6">Type</th>
                   <th className="py-3.5 px-4 sm:px-6">Subject</th>
                   <th className="py-3.5 px-4 sm:px-6">Tutor</th>
-                  <th className="py-3.5 px-4 sm:px-6">Lesson</th>
+                  <th className="py-3.5 px-4 sm:px-6">Due date</th>
                   <th className="py-3.5 px-4 sm:px-6">Submissions</th>
-                  <th className="py-3.5 px-4 sm:px-6">Available After Unlocking</th>
+                  <th className="py-3.5 px-4 sm:px-6">Status</th>
                   <th className="py-3.5 px-4 sm:px-6 text-right">Actions</th>
                 </tr>
               </thead>
@@ -228,13 +180,13 @@ export default function AssignmentsTableComponent({
                         </div>
                       </td>
                       <td className="py-4 px-4 sm:px-6 text-slate-600">
-                        {row.lesson}
+                        {row.due}
                       </td>
                       <td className="py-4 px-4 sm:px-6 text-slate-600 font-medium">
                         {row.submissions}
                       </td>
                       <td className="py-4 px-4 sm:px-6 text-slate-600">
-                        {row.availableAfter}
+                        {row.state}
                       </td>
                       <td className="py-4 px-4 sm:px-6 text-right">
                         <button
@@ -250,7 +202,7 @@ export default function AssignmentsTableComponent({
                 ) : (
                   <tr>
                     <td colSpan="8" className="py-12 text-center text-slate-400 text-xs sm:text-sm">
-                      No records found matching your filters.
+                      {loading ? "Loading assignments…" : "No records found matching your filters."}
                     </td>
                   </tr>
                 )}

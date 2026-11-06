@@ -1,5 +1,7 @@
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { api } from "../../../lib/api";
 import {
   Calculator,
   ArrowRight,
@@ -8,48 +10,55 @@ import {
   CalendarDays,
 } from "lucide-react";
 
-const upcomingClasses = [
-  {
-    id: 1,
-    subject: "Mathematics",
-    category: "Mathematics",
-    day: "Today",
-    time: "10:00 AM – 11:00 AM",
-    students: "John Doe",
-    tutor: "Tutor John Doe",
-  },
-  {
-    id: 2,
-    subject: "Mathematics",
-    category: "Mathematics",
-    day: "Today",
-    time: "10:30 AM – 11:30 AM",
-    students: "John Doe",
-    tutor: "Tutor John Doe",
-  },
-  {
-    id: 3,
-    subject: "Mathematics",
-    category: "Mathematics",
-    day: "Today",
-    time: "10:00 AM – 11:00 AM",
-    students: "John Doe",
-    tutor: "Tutor John Doe",
-  },
-];
+const SHOWN = 4;
+
+const dayLabel = (date) => {
+  const d = new Date(date);
+  const today = new Date();
+  const start = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate());
+  const diff = Math.round((start(d) - start(today)) / 86400000);
+  if (diff === 0) return "Today";
+  if (diff === 1) return "Tomorrow";
+  return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+};
+const clock = (date) => new Date(date).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 
 export default function UpcomingClasses() {
+  const navigate = useNavigate();
   const [activeMenu, setActiveMenu] = useState(null);
+  const [upcomingClasses, setUpcomingClasses] = useState([]);
+  const [state, setState] = useState("loading"); // loading | ready | error
 
-  const handleViewClass = (classItem) => {
-    setActiveMenu(null);
-    console.log("View class:", classItem);
-  };
+  // GET /classes?upcoming=true (admins see every tutor's classes)
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .get("/classes", { upcoming: true })
+      .then((rows) => {
+        if (cancelled) return;
+        setUpcomingClasses(
+          rows.slice(0, SHOWN).map((c) => ({
+            id: c.id,
+            subject: c.subject?.name ?? "Class",
+            category: c.title,
+            day: dayLabel(c.startsAt),
+            time: `${clock(c.startsAt)} – ${clock(c.endsAt)}`,
+            tutor: c.tutor?.user?.fullName ?? "Tutor",
+          }))
+        );
+        setState("ready");
+      })
+      .catch(() => !cancelled && setState("error"));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleSchedule = () => {
     setActiveMenu(null);
-    console.log("Open class schedule");
+    navigate("/admin/classes");
   };
+  const handleViewClass = () => handleSchedule();
 
   return (
     <section className="box-border mt-5 lg:mt-1 w-full min-w-0 max-w-full overflow-hidden rounded-[9px] border border-[#F0F1F5] bg-white">
@@ -79,6 +88,15 @@ export default function UpcomingClasses() {
 
       {/* Class List */}
       <div className="min-w-0 px-3 sm:px-4">
+        {upcomingClasses.length === 0 && (
+          <p className="py-8 text-center text-[11px] text-[#777F90]">
+            {state === "loading"
+              ? "Loading classes…"
+              : state === "error"
+              ? "Could not load classes."
+              : "No upcoming classes scheduled."}
+          </p>
+        )}
         {upcomingClasses.map((classItem, index) => (
           <div
             key={classItem.id}
@@ -109,9 +127,7 @@ export default function UpcomingClasses() {
               </p>
 
               <p className="mt-0.5 break-words text-[8px] leading-[1.5] text-[#777F90] sm:text-[9px]">
-                <span>Student: {classItem.students}</span>
-                <span className="hidden sm:inline"> | </span>
-                <span className="block sm:inline">{classItem.tutor}</span>
+                <span className="block sm:inline">Tutor: {classItem.tutor}</span>
               </p>
             </div>
 

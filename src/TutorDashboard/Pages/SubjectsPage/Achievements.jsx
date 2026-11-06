@@ -1,9 +1,12 @@
 import React from "react";
 import { ChevronRight, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
+import useSubjectCrumb from "./useSubjectCrumb";
 import AchievementTable from "./AchiementTable";
 
 export default function AchievementsHome() {
+  const { query, label } = useSubjectCrumb();
+
   return (
     <div className="w-full">
       {/* =====================================================
@@ -15,9 +18,9 @@ export default function AchievementsHome() {
         ==================================================== */}
         <div className="flex w-full flex-wrap items-center gap-1.5 sm:gap-2">
           {/* Subjects */}
-          <h1 className="whitespace-nowrap text-xs font-medium text-[#2E6DFF] sm:text-sm lg:text-base">
+          <Link to="/tutor/subjects" className="whitespace-nowrap text-xs font-medium text-[#2E6DFF] hover:underline sm:text-sm lg:text-base">
             Subjects
-          </h1>
+          </Link>
 
           <ChevronRight
             size={15}
@@ -25,10 +28,14 @@ export default function AchievementsHome() {
             className="shrink-0 text-[#2E6DFF]"
           />
 
-          {/* Mathematics */}
-          <h1 className="whitespace-nowrap text-xs font-medium text-[#2E6DFF] sm:text-sm lg:text-base">
-            Mathematics (Year 1)
-          </h1>
+          {label && (
+            <>
+              <ChevronRight size={15} strokeWidth={2} className="shrink-0 text-[#2E6DFF]" />
+              <Link to={`/tutor/subjects-details${query}`} className="whitespace-nowrap text-xs font-medium text-[#2E6DFF] hover:underline sm:text-sm lg:text-base">
+                {label}
+              </Link>
+            </>
+          )}
 
           <ChevronRight
             size={17}
@@ -64,7 +71,7 @@ export default function AchievementsHome() {
           ================================================== */}
           <div className="w-full shrink-0 sm:w-auto">
             <Link
-              to="/Tutor/createAchievement"
+              to={`/tutor/createAchievement${query}`}
               className="flex h-[56px] w-full items-center justify-center gap-3 rounded-[8px] bg-[#2E6DFF] px-1 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-[#245FE5] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-[#2E6DFF]/30 sm:h-[60px] sm:w-[231px] sm:text-base"
             >
               <Plus size={10} strokeWidth={2.5} className="shrink-0" />

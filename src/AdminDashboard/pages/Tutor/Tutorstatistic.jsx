@@ -1,10 +1,12 @@
 import React from "react";
 
-export default function TutorStats() {
+const fmt = (n) => (n == null ? "—" : Number(n).toLocaleString());
+
+export default function TutorStats({ summary = null }) {
   const stats = [
     {
       title: "Total Tutors",
-      value: "86",
+      key: "total",
       bgColor: "bg-[#E2F5D8]", // Light green card background
       borderColor: "border-[#C5EBAA]",
       circleBg: "bg-[#CEF1B2]", // Lighter green icon circle
@@ -23,7 +25,7 @@ export default function TutorStats() {
     },
     {
       title: "Active Tutors",
-      value: "1,200",
+      key: "active",
       bgColor: "bg-[#E2F5D8]",
       borderColor: "border-[#C5EBAA]",
       circleBg: "bg-[#CEF1B2]",
@@ -49,7 +51,7 @@ export default function TutorStats() {
     },
     {
       title: "Pending Applications",
-      value: "6",
+      key: "pending",
       bgColor: "bg-[#FBE2E2]", // Light red/pink card background
       borderColor: "border-[#F8C8C8]",
       circleBg: "bg-[#F7C8C8]", // Soft reddish icon circle
@@ -104,7 +106,7 @@ export default function TutorStats() {
               {item.title}
             </span>
             <span className="text-[28px] font-bold text-[#0F172A] leading-tight mt-1">
-              {item.value}
+              {fmt(summary?.[item.key])}
             </span>
           </div>
         </div>

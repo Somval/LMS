@@ -2,52 +2,9 @@
 import React from "react";
 import { CalendarDays, FileText } from "lucide-react";
 
-const attendanceRecords = [
-  {
-    id: 1,
-    date: "Oct 16, 2026",
-    subject: "Mathematics",
-    classTime: "4:00PM - 5:00PM",
-    timeJoined: "3:58PM",
-    timeSpent: "1 hour",
-    status: "Present",
-  },
-  {
-    id: 2,
-    date: "Oct 16, 2026",
-    subject: "Mathematics",
-    classTime: "4:00PM - 5:00PM",
-    timeJoined: "3:58PM",
-    timeSpent: "1 hour",
-    status: "Present",
-  },
-  {
-    id: 3,
-    date: "Oct 16, 2026",
-    subject: "Mathematics",
-    classTime: "4:00PM - 5:00PM",
-    timeJoined: "3:58PM",
-    timeSpent: "1 hour",
-    status: "Present",
-  },
-];
 
-const teachersRemarks = [
-  {
-    id: 1,
-    message:
-      "Emma has shown consistent effort and good understanding across the subject. She actively participates in class and completes assignments on time. Keep up the great work!",
-    teacher: "Math Teacher: James O.",
-  },
-  {
-    id: 2,
-    message:
-      "Emma has shown consistent effort and good understanding across the subject. She actively participates in class and completes assignments on time. Keep up the great work!",
-    teacher: "Math Teacher: James O.",
-  },
-];
 
-function AttendanceRecords() {
+function AttendanceRecords({ attendanceRecords = [] }) {
   const columns = [
     "Date",
     "Subject",
@@ -141,7 +98,7 @@ function AttendanceRecords() {
   );
 }
 
-function TeachersRemarks() {
+function TeachersRemarks({ teachersRemarks = [] }) {
   return (
     <section className="w-full rounded-lg bg-white p-3.5 sm:p-4 lg:p-5">
       {/* Section Heading */}
@@ -179,11 +136,24 @@ function TeachersRemarks() {
   );
 }
 
-export default function AttendanceAndRemarks() {
+const fmtDate = (d) => new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+const fmtTime = (d) => new Date(d).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+
+export default function AttendanceAndRemarks({ report }) {
+  const records = report.attendance.map((a) => ({
+    id: a.id,
+    date: fmtDate(a.startsAt),
+    subject: a.subject,
+    classTime: `${fmtTime(a.startsAt)} - ${fmtTime(a.endsAt)}`,
+    timeJoined: "—", // join times are not recorded
+    timeSpent: `${Math.round((new Date(a.endsAt) - new Date(a.startsAt)) / 60000)} min`, // scheduled length
+    status: a.status,
+  }));
+
   return (
     <div className="flex w-full flex-col gap-3.5 bg-[#F4F7FD]">
-      <AttendanceRecords />
-      <TeachersRemarks />
+      <AttendanceRecords attendanceRecords={records} />
+      <TeachersRemarks teachersRemarks={report.remarks} />
     </div>
   );
 }

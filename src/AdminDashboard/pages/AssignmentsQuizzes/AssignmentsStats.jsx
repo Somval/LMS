@@ -39,8 +39,16 @@ const STATS_DATA = [
 export default function AssignmentsAndQuizzesHeader({
   title = "Assignments & Quizzes",
   description = "View and monitor all assignments and quizzes created by tutors.",
-  stats = STATS_DATA,
+  counts = null,
 }) {
+  const keyOf = {
+    "all-assignments": "assignments",
+    "all-quizzes": "quizzes",
+    "completed-assignments": "completedAssignments",
+    "completed-quizzes": "completedQuizzes",
+  };
+  const stats = STATS_DATA.map((s) => ({ ...s, count: counts?.[keyOf[s.id]] ?? "—" }));
+
   return (
     <section className="w-full bg-[#F4F7FC] px-4 py-6 sm:px-6 lg:px-8 font-sans antialiased">
       <div className="w-full">

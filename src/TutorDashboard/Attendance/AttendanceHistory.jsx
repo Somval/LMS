@@ -1,78 +1,14 @@
 
 import React, { useMemo, useState } from "react";
 import { Search } from "lucide-react";
-
-const initialAttendance = [
-  {
-    id: 1,
-    student: "Olivia Johnson",
-    date: "Sep 16, 2026",
-    time: "10:00 AM – 11:00 AM",
-    joinedAt: "10:30 AM",
-    status: "Present",
-    className: "Quadratic Equations",
-  },
-  {
-    id: 2,
-    student: "Olivia Johnson",
-    date: "Sep 16, 2026",
-    time: "10:00 AM – 11:00 AM",
-    joinedAt: "10:30 AM",
-    status: "Absent",
-    className: "Quadratic Equations",
-  },
-  {
-    id: 3,
-    student: "Olivia Johnson",
-    date: "Sep 16, 2026",
-    time: "10:00 AM – 11:00 AM",
-    joinedAt: "10:30 AM",
-    status: "Late",
-    className: "Quadratic Equations",
-  },
-  {
-    id: 4,
-    student: "Olivia Johnson",
-    date: "Sep 16, 2026",
-    time: "10:00 AM – 11:00 AM",
-    joinedAt: "10:30 AM",
-    status: "Present",
-    className: "Quadratic Equations",
-  },
-  {
-    id: 5,
-    student: "Olivia Johnson",
-    date: "Sep 16, 2026",
-    time: "10:00 AM – 11:00 AM",
-    joinedAt: "10:30 AM",
-    status: "Present",
-    className: "Quadratic Equations",
-  },
-  {
-    id: 6,
-    student: "Olivia Johnson",
-    date: "Sep 16, 2026",
-    time: "10:00 AM – 11:00 AM",
-    joinedAt: "10:30 AM",
-    status: "Present",
-    className: "Quadratic Equations",
-  },
-];
+import Avatar from "../../components/Avatar";
+import { STATUS_LABEL, formatClock, formatDate, formatRange } from "./attendanceData";
 
 const statusStyles = {
   Present: "bg-[#DDF7E7] text-[#16B85D]",
   Absent: "bg-[#FFE0E0] text-[#FF4141]",
   Late: "bg-[#E9ECEF] text-[#7B838D]",
 };
-
-function StudentAvatar() {
-  return (
-    <div
-      aria-hidden="true"
-      className="h-6 w-6 shrink-0 rounded-full bg-[#D9D9D9]"
-    />
-  );
-}
 
 function StatusBadge({ status }) {
   return (
@@ -84,25 +20,48 @@ function StatusBadge({ status }) {
   );
 }
 
-export default function AttendanceHistory() {
+export default function AttendanceHistory({
+  records = [],
+  truncated = false,
+  loading = false,
+  error = "",
+  hasCourses = true,
+}) {
   const [search, setSearch] = useState("");
+
+  // One row per student per class, shaped for the table.
+  const rows = useMemo(
+    () =>
+      records.map((r) => ({
+        id: r.id,
+        student: r.student.user.fullName,
+        avatarUrl: r.student.user.avatarUrl,
+        date: formatDate(r.class.startsAt),
+        time: formatRange(r.class.startsAt, r.class.endsAt),
+        // The database keeps when attendance was marked, not when the student joined.
+        markedAt: formatClock(r.markedAt),
+        status: STATUS_LABEL[r.status],
+        className: r.class.title,
+      })),
+    [records]
+  );
 
   const filteredAttendance = useMemo(() => {
     const query = search.trim().toLowerCase();
 
-    if (!query) return initialAttendance;
+    if (!query) return rows;
 
-    return initialAttendance.filter((record) =>
+    return rows.filter((record) =>
       [
         record.student,
         record.date,
         record.time,
-        record.joinedAt,
+        record.markedAt,
         record.status,
         record.className,
       ].some((value) => value.toLowerCase().includes(query))
     );
-  }, [search]);
+  }, [search, rows]);
 
   return (
     <section className="min-h-full w-full bg-[#F4F7FD] p-0">
@@ -152,7 +111,7 @@ export default function AttendanceHistory() {
                 <th className="px-2 text-[11px] font-medium">Student</th>
                 <th className="px-2 text-[11px] font-medium">Date</th>
                 <th className="px-2 text-[11px] font-medium">Time</th>
-                <th className="px-2 text-[11px] font-medium">Joined At</th>
+                <th className="px-2 text-[11px] font-medium">Marked At</th>
                 <th className="px-2 text-[11px] font-medium">Status</th>
                 <th className="rounded-r-[3px] px-2 text-[11px] font-medium">
                   Class
@@ -174,7 +133,12 @@ export default function AttendanceHistory() {
                   {/* Student */}
                   <td className="border-b border-[#EDF0F3] px-2 align-middle">
                     <div className="flex items-center gap-[11px]">
-                      <StudentAvatar />
+                      <Avatar
+                        name={record.student}
+                        avatarUrl={record.avatarUrl}
+                        className="h-6 w-6 rounded-full"
+                        textClassName="text-[8px]"
+                      />
 
                       <span className="max-w-[90px] text-[9px] font-medium leading-[12px] text-[#171717]">
                         {record.student.split(" ")[0]}
@@ -196,7 +160,7 @@ export default function AttendanceHistory() {
 
                   {/* Joined at */}
                   <td className="whitespace-nowrap border-b border-[#EDF0F3] px-2 align-middle text-[9px] font-normal text-[#566477]">
-                    {record.joinedAt}
+                    {record.markedAt}
                   </td>
 
                   {/* Status */}
@@ -213,8 +177,18 @@ export default function AttendanceHistory() {
             </tbody>
           </table>
 
-          {/* Empty search result */}
-          {filteredAttendance.length === 0 && (
+          {/* Loading, error and empty states */}
+          {loading && (
+            <p className="py-10 text-center text-[11px] text-[#98A1AD]">Loading attendance…</p>
+          )}
+
+          {!loading && error && (
+            <p role="alert" className="py-10 text-center text-[11px] font-medium text-red-600">
+              {error}
+            </p>
+          )}
+
+          {!loading && !error && filteredAttendance.length === 0 && (
             <div className="flex min-h-[150px] flex-col items-center justify-center gap-2 text-center">
               <Search size={22} className="text-[#A0A9B6]" />
 
@@ -223,9 +197,19 @@ export default function AttendanceHistory() {
               </p>
 
               <p className="text-[11px] text-[#98A1AD]">
-                Try searching with a different name, date, or status.
+                {!hasCourses
+                  ? "Courses you teach will show up here once they are assigned to you."
+                  : rows.length === 0
+                  ? "Nothing has been marked for this course in this period."
+                  : "Try searching with a different name, date, or status."}
               </p>
             </div>
+          )}
+
+          {truncated && !loading && (
+            <p className="py-3 text-center text-[10px] text-[#98A1AD]">
+              Showing the most recent {rows.length} records. Choose a shorter period to see the rest.
+            </p>
           )}
         </div>
       </div>

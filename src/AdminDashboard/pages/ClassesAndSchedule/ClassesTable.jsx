@@ -11,90 +11,6 @@ import {
   X,
 } from "lucide-react";
 
-const initialClasses = [
-  {
-    id: 1,
-    student: "John Doe",
-    studentId: "STU0012",
-    subject: "Mathematics",
-    year: "Year 1",
-    tutor: "Jane Doe",
-    tutorId: "TUT0012",
-    schedule: ["Mon 10:00–11:00 AM", "Thu 10:00–11:00 AM"],
-    nextDate: "Mon, Oct 13, 2026",
-    nextTime: "5:00 PM – 6:00 PM",
-    lastDate: "Mon, Oct 13, 2026",
-    lastTime: "5:00 PM – 6:00 PM",
-    status: "Upcoming",
-  },
-  {
-    id: 2,
-    student: "John Doe",
-    studentId: "STU0012",
-    subject: "Mathematics",
-    year: "Year 1",
-    tutor: "Jane Doe",
-    tutorId: "TUT0012",
-    schedule: ["Mon 10:00–11:00 AM", "Thu 10:00–11:00 AM"],
-    nextDate: "Mon, Oct 13, 2026",
-    nextTime: "5:00 PM – 6:00 PM",
-    lastDate: "Mon, Oct 13, 2026",
-    lastTime: "5:00 PM – 6:00 PM",
-    status: "Upcoming",
-  },
-  {
-    id: 3,
-    student: "John Doe",
-    studentId: "STU0012",
-    subject: "Mathematics",
-    year: "Year 1",
-    tutor: "Jane Doe",
-    tutorId: "TUT0012",
-    schedule: ["Mon 10:00–11:00 AM", "Thu 10:00–11:00 AM"],
-    nextDate: "Mon, Oct 13, 2026",
-    nextTime: "5:00 PM – 6:00 PM",
-    lastDate: "Mon, Oct 13, 2026",
-    lastTime: "5:00 PM – 6:00 PM",
-    status: "Completed",
-  },
-  {
-    id: 4,
-    student: "John Doe",
-    studentId: "STU0012",
-    subject: "Mathematics",
-    year: "Year 1",
-    tutor: "Jane Doe",
-    tutorId: "TUT0012",
-    schedule: ["Mon 10:00–11:00 AM", "Thu 10:00–11:00 AM"],
-    nextDate: "Mon, Oct 13, 2026",
-    nextTime: "5:00 PM – 6:00 PM",
-    lastDate: "Mon, Oct 13, 2026",
-    lastTime: "5:00 PM – 6:00 PM",
-    status: "Upcoming",
-  },
-  {
-    id: 5,
-    student: "John Doe",
-    studentId: "STU0012",
-    subject: "Mathematics",
-    year: "Year 1",
-    tutor: "Jane Doe",
-    tutorId: "TUT0012",
-    schedule: ["Mon 10:00–11:00 AM", "Thu 10:00–11:00 AM"],
-    nextDate: "Mon, Oct 13, 2026",
-    nextTime: "5:00 PM – 6:00 PM",
-    lastDate: "Mon, Oct 13, 2026",
-    lastTime: "5:00 PM – 6:00 PM",
-    status: "Upcoming",
-  },
-];
-
-const tabs = [
-  { label: "All Classes", value: "All", count: 146 },
-  { label: "Upcoming", value: "Upcoming", count: 28 },
-  { label: "Completed", value: "Completed", count: 112 },
-];
-
 function Avatar({ name, size = "sm" }) {
   return (
     <div
@@ -134,8 +50,15 @@ function DateCell({ date, time }) {
   );
 }
 
+const statusStyles = {
+  Upcoming: "bg-[#E7F0FF] text-[#3269F6]",
+  Completed: "bg-[#E4FFF1] text-[#14A760]",
+  Cancelled: "bg-[#FFE5EA] text-[#E5384F]",
+};
+
 export default function ClassesTable({
-  classes = initialClasses,
+  classes = [],
+  loading = false,
   onEditSchedule,
   onViewRecordings,
   onCancelClass,
@@ -146,6 +69,13 @@ export default function ClassesTable({
   const [subjectFilter, setSubjectFilter] = useState("All Subjects");
   const [tutorFilter, setTutorFilter] = useState("All Tutors");
   const [openMenu, setOpenMenu] = useState(null);
+
+  const tabs = [
+    { label: "All Classes", value: "All", count: classes.length },
+    { label: "Upcoming", value: "Upcoming", count: classes.filter((c) => c.status === "Upcoming").length },
+    { label: "Completed", value: "Completed", count: classes.filter((c) => c.status === "Completed").length },
+    { label: "Cancelled", value: "Cancelled", count: classes.filter((c) => c.status === "Cancelled").length },
+  ];
   const [cancelTarget, setCancelTarget] = useState(null);
   const [page, setPage] = useState(1);
   const menuRef = useRef(null);
@@ -295,7 +225,7 @@ export default function ClassesTable({
               setSearch(event.target.value);
               setPage(1);
             }}
-            placeholder="Search by student, subject or tutor..."
+            placeholder="Search by class, subject or tutor..."
             aria-label="Search classes"
             className="h-12 w-full rounded-lg border border-[#DCE3ED] bg-white pl-11 pr-4 text-sm text-[#303846] outline-none transition placeholder:text-[#9AA3B2] focus:border-[#3269F6] focus:ring-4 focus:ring-[#3269F6]/10"
           />
@@ -353,24 +283,22 @@ export default function ClassesTable({
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1120px] border-collapse text-left">
             <colgroup>
-              <col className="w-[13%]" />
+              <col className="w-[22%]" />
+              <col className="w-[16%]" />
+              <col className="w-[20%]" />
+              <col className="w-[20%]" />
               <col className="w-[12%]" />
-              <col className="w-[13%]" />
-              <col className="w-[18%]" />
-              <col className="w-[18%]" />
-              <col className="w-[18%]" />
-              <col className="w-[8%]" />
+              <col className="w-[10%]" />
             </colgroup>
 
             <thead>
               <tr className="h-[58px] border-b border-[#E9EDF4] bg-[#F8FAFD]">
                 {[
-                  "Student",
+                  "Class",
                   "Subject",
                   "Tutor",
-                  "Class Schedule",
-                  "Next Class",
-                  "Last Class",
+                  "Date & Time",
+                  "Status",
                   "Actions",
                 ].map((heading) => (
                   <th
@@ -439,34 +367,16 @@ export default function ClassesTable({
                     </button>
                   </td>
 
-                  {/* Recurring schedule */}
+                  {/* Date and time of this class */}
                   <td className="px-4 py-4 align-middle sm:px-5">
-                    <div className="space-y-1.5">
-                      {item.schedule.map((session, index) => (
-                        <p
-                          key={`${item.id}-${index}`}
-                          className="whitespace-nowrap text-xs leading-5 text-[#3E4756]"
-                        >
-                          {session}
-                        </p>
-                      ))}
-                    </div>
+                    <DateCell date={item.nextDate} time={item.nextTime} />
                   </td>
 
-                  {/* Next class */}
+                  {/* Status */}
                   <td className="px-4 py-4 align-middle sm:px-5">
-                    <DateCell
-                      date={item.nextDate}
-                      time={item.nextTime}
-                    />
-                  </td>
-
-                  {/* Last class */}
-                  <td className="px-4 py-4 align-middle sm:px-5">
-                    <DateCell
-                      date={item.lastDate}
-                      time={item.lastTime}
-                    />
+                    <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusStyles[item.status]}`}>
+                      {item.status}
+                    </span>
                   </td>
 
                   {/* Row actions */}
@@ -481,7 +391,7 @@ export default function ClassesTable({
                           current === item.id ? null : item.id
                         )
                       }
-                      aria-label={`Actions for ${item.student}'s class`}
+                      aria-label={`Actions for ${item.student}`}
                       aria-expanded={openMenu === item.id}
                       className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[#DCE3ED] bg-white text-[#718096] transition hover:border-[#A9BDEB] hover:bg-[#F4F7FF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3269F6]"
                     >
@@ -490,6 +400,7 @@ export default function ClassesTable({
 
                     {openMenu === item.id && (
                       <div className="absolute right-3 top-[64px] z-30 w-[240px] rounded-xl border border-[#E7EBF2] bg-white p-2 text-left shadow-xl shadow-slate-900/10">
+                        {item.status === "Upcoming" && (
                         <button
                           type="button"
                           onClick={() => {
@@ -501,6 +412,7 @@ export default function ClassesTable({
                           <Pencil size={16} />
                           Edit Schedule
                         </button>
+                        )}
 
                         <button
                           type="button"
@@ -514,7 +426,7 @@ export default function ClassesTable({
                           View Past Class Recordings
                         </button>
 
-                        {item.status !== "Completed" && (
+                        {item.status === "Upcoming" && (
                           <button
                             type="button"
                             onClick={() => {
@@ -535,16 +447,20 @@ export default function ClassesTable({
 
               {visibleClasses.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-16 text-center">
+                  <td colSpan={6} className="px-4 py-16 text-center">
                     <div className="mx-auto flex max-w-sm flex-col items-center">
                       <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-[#F1F5F9]">
                         <Search size={25} className="text-[#A0AABB]" />
                       </div>
                       <p className="text-base font-semibold text-[#475569]">
-                        No classes found
+                        {loading ? "Loading classes…" : "No classes found"}
                       </p>
                       <p className="mt-2 text-sm leading-6 text-[#94A3B8]">
-                        Try changing your search or filter selections.
+                        {loading
+                          ? ""
+                          : classes.length === 0
+                          ? "Use Schedule Class to create the first one."
+                          : "Try changing your search or filter selections."}
                       </p>
                     </div>
                   </td>
@@ -636,7 +552,7 @@ export default function ClassesTable({
             </h3>
 
             <p className="mt-3 text-sm leading-6 text-[#647084] sm:text-base">
-              Are you sure you want to cancel the class for{" "}
+              Are you sure you want to cancel{" "}
               <strong className="font-semibold text-[#303846]">
                 {cancelTarget.student}
               </strong>{" "}
@@ -644,7 +560,7 @@ export default function ClassesTable({
               <strong className="font-semibold text-[#303846]">
                 {cancelTarget.tutor}
               </strong>
-              ?
+              ? Students of this subject will be notified.
             </p>
 
             <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">

@@ -1,93 +1,62 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronRight, Bookmark } from "lucide-react";
+import { api } from "../../lib/api";
+import { useAuth } from "../../context/AuthContext";
+import { readSaved, toggleSavedTopic, topicLink } from "./lessonStore";
 
-const curriculumTopics = [
-  {
-    id: "math-y4-numbers-01",
-    number: "01",
-    title: "Numbers",
-    description: "Place value, rounding, ordering and more.",
-    lessons: 8,
-  },
-  {
-    id: "math-y4-numbers-02",
-    number: "02",
-    title: "Numbers",
-    description: "Place value, rounding, ordering and more.",
-    lessons: 8,
-  },
-  {
-    id: "math-y4-numbers-03",
-    number: "03",
-    title: "Numbers",
-    description: "Place value, rounding, ordering and more.",
-    lessons: 8,
-  },
-  {
-    id: "math-y4-numbers-04",
-    number: "04",
-    title: "Numbers",
-    description: "Place value, rounding, ordering and more.",
-    lessons: 8,
-  },
-  {
-    id: "math-y4-numbers-05",
-    number: "05",
-    title: "Numbers",
-    description: "Place value, rounding, ordering and more.",
-    lessons: 8,
-  },
-  {
-    id: "math-y4-numbers-06",
-    number: "06",
-    title: "Numbers",
-    description: "Place value, rounding, ordering and more.",
-    lessons: 8,
-  },
-  {
-    id: "math-y4-numbers-07",
-    number: "07",
-    title: "Numbers",
-    description: "Place value, rounding, ordering and more.",
-    lessons: 8,
-  },
-  {
-    id: "math-y4-numbers-08",
-    number: "08",
-    title: "Numbers",
-    description: "Place value, rounding, ordering and more.",
-    lessons: 8,
-  },
-  {
-    id: "math-y4-numbers-09",
-    number: "09",
-    title: "Numbers",
-    description: "Place value, rounding, ordering and more.",
-    lessons: 8,
-  },
-  {
-    id: "math-y4-numbers-10",
-    number: "10",
-    title: "Numbers",
-    description: "Place value, rounding, ordering and more.",
-    lessons: 8,
-  },
-];
-
-export default function CurriculumTabs() {
+export default function CurriculumTabs({ subject, year }) {
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const [curriculumTopics, setCurriculumTopics] = useState([]);
+  const [loading, setLoading] = useState(!!subject);
+  const [error, setError] = useState("");
+  const [saved, setSaved] = useState(() => readSaved(user?.id));
+  const savedTopics = saved.map((t) => t.id);
+
+  // Published topics of the chosen subject, in curriculum order.
+  useEffect(() => {
+    setError("");
+    if (!subject) {
+      setCurriculumTopics([]);
+      setLoading(false);
+      return undefined;
+    }
+    let cancelled = false;
+    setLoading(true);
+    api
+      .get(`/curriculum/subjects/${subject.subjectId}/topics`)
+      .then((list) => {
+        if (cancelled) return;
+        setCurriculumTopics(
+          list
+            .filter((t) => t.published)
+            .map((t, i) => ({
+              id: t.id,
+              number: String(i + 1).padStart(2, "0"),
+              title: t.title,
+              description: t.description || "",
+              lessons: t.lessons.length,
+              subjectId: subject.subjectId,
+              year: year || null,
+            }))
+        );
+      })
+      .catch((err) => !cancelled && setError(err.message || "Could not load the topics."))
+      .finally(() => !cancelled && setLoading(false));
+    return () => {
+      cancelled = true;
+    };
+  }, [subject, year]);
 
   const [activeTab, setActiveTab] = useState("curriculum");
   const [selectedTopics, setSelectedTopics] = useState([]);
-  const [savedTopics, setSavedTopics] = useState([]);
 
   const visibleTopics =
     activeTab === "curriculum"
       ? curriculumTopics
-      : curriculumTopics.filter((topic) =>
-          savedTopics.includes(topic.id)
-        );
+      : saved;
 
   const toggleSelected = (id) => {
     setSelectedTopics((previous) =>
@@ -98,16 +67,11 @@ export default function CurriculumTabs() {
   };
 
   const toggleSaved = (id) => {
-    setSavedTopics((previous) =>
-      previous.includes(id)
-        ? previous.filter((topicId) => topicId !== id)
-        : [...previous, id]
-    );
+    const topic = [...curriculumTopics, ...saved].find((t) => t.id === id);
+    if (topic) setSaved(toggleSavedTopic(user?.id, topic));
   };
 
-  const openTopic = (id) => {
-    navigate(`/Tutor/curriculum/topics/${id}`);
-  };
+  const openTopic = (topic) => navigate(topicLink(topic));
 
   return (
     <main className="min-h-screen w-full bg-[#F4F6FC] p-3 font-sans sm:p-5">
@@ -175,7 +139,7 @@ export default function CurriculumTabs() {
           <div className="mb-3 flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
             <h2 className="text-xs font-semibold leading-snug text-[#171717] sm:text-sm">
               {activeTab === "curriculum"
-                ? "Topics in Mathematics · Year 4"
+                ? `Topics in ${subject?.name ?? "your subjects"}${year ? ` · ${year}` : ""}`
                 : "Saved topics"}
             </h2>
 
@@ -215,7 +179,7 @@ export default function CurriculumTabs() {
                     {/* Topic Details Navigation */}
                     <button
                       type="button"
-                      onClick={() => openTopic(topic.id)}
+                      onClick={() => openTopic(topic)}
                       className="flex min-w-0 flex-1 flex-col justify-center text-left focus:outline-none"
                     >
                       <span className="truncate text-xs font-semibold text-[#242424] sm:text-sm">
@@ -229,7 +193,7 @@ export default function CurriculumTabs() {
 
                     {/* Lesson Count */}
                     <span className="shrink-0 whitespace-nowrap text-[10px] font-medium text-[#9297A1] sm:text-xs">
-                      {topic.lessons} lessons
+                      {topic.lessons} {topic.lessons === 1 ? "lesson" : "lessons"}
                     </span>
 
                     {/* Save / Unsave Topic */}
@@ -258,7 +222,7 @@ export default function CurriculumTabs() {
                     {/* Open Topic */}
                     <button
                       type="button"
-                      onClick={() => openTopic(topic.id)}
+                      onClick={() => openTopic(topic)}
                       aria-label={`Open topic ${topic.number}`}
                       className="flex h-8 w-6 shrink-0 items-center justify-center text-[#737D8D] transition-colors hover:text-[#3978FF]"
                     >
@@ -269,8 +233,18 @@ export default function CurriculumTabs() {
               })
             ) : (
               <div className="flex min-h-[140px] w-full items-center justify-center rounded-md border border-dashed border-[#E6EAF2] p-4 text-center">
-                <p className="text-xs text-[#858B97] sm:text-sm">
-                  No saved topics yet. Save a topic using the bookmark icon.
+                <p
+                  role={error ? "alert" : undefined}
+                  className={`text-xs sm:text-sm ${error ? "text-red-600" : "text-[#858B97]"}`}
+                >
+                  {activeTab === "curriculum"
+                    ? loading
+                      ? "Loading topics…"
+                      : error ||
+                        (subject
+                          ? "No published topics for this subject yet."
+                          : "Courses you teach will show up here once they are assigned to you.")
+                    : "No saved topics yet. Save a topic using the bookmark icon."}
                 </p>
               </div>
             )}

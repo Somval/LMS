@@ -251,6 +251,7 @@ const ChildrenSelector = () => {
 
           <section className="w-full min-w-0 max-w-full">
             <CompleteProjectReport
+              studentId={data.student.id}
               studentName={data.student.fullName.split(" ")[0]}
             />
           </section>

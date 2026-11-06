@@ -1,14 +1,34 @@
 
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, Bell, Menu, LogOut } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import Avatar from "../Avatar";
+import { api } from "../../lib/api";
 
 export default function DashboardHeader({ onMenuClick = () => {} }) {
   const [search, setSearch] = useState("");
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const [unread, setUnread] = useState(0);
+
+  // Number of unread notifications, checked every minute and whenever the inbox page changes it.
+  const loadUnread = useCallback(() => {
+    api
+      .get("/notifications", { unread: "true" })
+      .then((res) => setUnread(res.unread))
+      .catch(() => {}); // the bell just keeps its last count
+  }, []);
+
+  useEffect(() => {
+    loadUnread();
+    const timer = setInterval(loadUnread, 60000);
+    window.addEventListener("notifications-changed", loadUnread);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener("notifications-changed", loadUnread);
+    };
+  }, [loadUnread]);
   const initials =
     (user?.fullName ?? "")
       .split(" ")
@@ -57,15 +77,20 @@ export default function DashboardHeader({ onMenuClick = () => {} }) {
         {/* Notifications */}
         <button
           type="button"
-          aria-label="Notifications"
+          onClick={() => navigate("/admin/notifications")}
+          aria-label={unread > 0 ? `Notifications, ${unread} unread` : "Notifications"}
           className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[#343434] transition-colors hover:bg-[#F0F1F4] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#159A42]"
         >
           <Bell size={17} strokeWidth={1.5} />
 
-          <span
-            aria-hidden="true"
-            className="absolute right-[6px] top-[5px] h-[5px] w-[5px] rounded-full bg-[#F04438] ring-1 ring-[#FCFCFD]"
-          />
+          {unread > 0 && (
+            <span
+              aria-hidden="true"
+              className="absolute -right-0.5 -top-0.5 flex h-[15px] min-w-[15px] items-center justify-center rounded-full bg-[#F04438] px-[3px] text-[9px] font-semibold leading-none text-white ring-1 ring-[#FCFCFD]"
+            >
+              {unread > 9 ? "9+" : unread}
+            </span>
+          )}
         </button>
 
         {/* Profile Avatar */}

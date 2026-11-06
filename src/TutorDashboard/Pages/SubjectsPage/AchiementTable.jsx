@@ -1,49 +1,14 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Edit2, Trash2, CheckCircle2, AlertTriangle } from "lucide-react";
 import EditBadgeModal from "../../Modals/EditBadgeModal";
+import { api } from "../../../lib/api";
+import { toPayload, toRow } from "./rewardFormat";
 
 import badgeImage from "../../../assets/images/134a082cca973150969aa91355d8ac63a4934a6a (1).png";
 
-const initialBadgesData = [
-  {
-    id: 1,
-    name: "Perfect Attendance",
-    description: "Awarded for attending all scheduled classes.",
-    criteria: "Attend 100% of classes",
-    studentsEarned: 12,
-  },
-  {
-    id: 2,
-    name: "Perfect Attendance",
-    description: "Awarded for attending all scheduled classes.",
-    criteria: "Attend 100% of classes",
-    studentsEarned: 12,
-  },
-  {
-    id: 3,
-    name: "Perfect Attendance",
-    description: "Awarded for attending all scheduled classes.",
-    criteria: "Attend 100% of classes",
-    studentsEarned: 12,
-  },
-  {
-    id: 4,
-    name: "Perfect Attendance",
-    description: "Awarded for attending all scheduled classes.",
-    criteria: "Attend 100% of classes",
-    studentsEarned: 12,
-  },
-  {
-    id: 5,
-    name: "Perfect Attendance",
-    description: "Awarded for attending all scheduled classes.",
-    criteria: "Attend 100% of classes",
-    studentsEarned: 12,
-  },
-];
-
 export default function BadgesTable() {
-  const [badgesData, setBadgesData] = useState(initialBadgesData);
+  const [badgesData, setBadgesData] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [currentBadge, setCurrentBadge] = useState(null);
   
@@ -57,24 +22,46 @@ export default function BadgesTable() {
     }, 4000);
   };
 
+  // Achievements are the tutor's badges; rewards are listed on the Rewards & Badges page.
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .get("/rewards")
+      .then((list) => !cancelled && setBadgesData(list.filter((a) => a.kind === "BADGE").map(toRow)))
+      .catch((err) => !cancelled && showAlert(err.message || "Could not load achievements.", "error"))
+      .finally(() => !cancelled && setLoading(false));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const handleEditClick = (item) => {
     setCurrentBadge(item);
     setIsEditing(true);
   };
 
-  const handleSaveBadge = (updatedBadge) => {
-    setBadgesData((prev) =>
-      prev.map((item) => (item.id === updatedBadge.id ? updatedBadge : item))
-    );
-    setIsEditing(false);
-    setCurrentBadge(null);
-    showAlert(`Successfully updated "${updatedBadge.name}" badge!`, "success");
+  const handleSaveBadge = async (updatedBadge) => {
+    try {
+      const saved = await api.put(`/rewards/${updatedBadge.id}`, toPayload(updatedBadge));
+      setBadgesData((prev) =>
+        prev.map((item) => (item.id === updatedBadge.id ? { ...updatedBadge, ...toRow({ ...saved, studentsEarned: updatedBadge.studentsEarned }) } : item))
+      );
+      setIsEditing(false);
+      setCurrentBadge(null);
+      showAlert(`Successfully updated "${updatedBadge.name}" badge!`, "success");
+    } catch (err) {
+      showAlert(err.message || "Could not save your changes.", "error");
+    }
   };
 
-  const handleDelete = (id, name) => {
-    if (window.confirm(`Are you sure you want to delete the "${name}" badge?`)) {
+  const handleDelete = async (id, name) => {
+    if (!window.confirm(`Are you sure you want to delete the "${name}" badge?`)) return;
+    try {
+      await api.delete(`/rewards/${id}`);
       setBadgesData((prev) => prev.filter((item) => item.id !== id));
       showAlert(`Badge "${name}" has been deleted.`, "error");
+    } catch (err) {
+      showAlert(err.message || "Could not delete this badge.", "error");
     }
   };
 
@@ -122,7 +109,7 @@ export default function BadgesTable() {
               {badgesData.length === 0 ? (
                 <tr>
                   <td colSpan="5" className="px-6 py-12 text-center text-slate-400">
-                    No badges found.
+                    {loading ? "Loading achievements…" : "No achievements yet. Create your first one."}
                   </td>
                 </tr>
               ) : (

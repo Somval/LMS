@@ -10,7 +10,7 @@ export const PaymentSettings = () => {
 ,
       title: 'Payment Account',
       desc: 'Add bank account details to receive payments.',
-      onClick: () => console.log('Payment account clicked'),
+      comingSoon: true,
     },
     {
       icon: <svg width="29" height="26" viewBox="0 0 29 26" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -21,7 +21,7 @@ export const PaymentSettings = () => {
 ,
       title: 'Payment History',
       desc: 'View your past payments and transaction details.',
-      onClick: () => console.log('Payment history clicked'),
+      comingSoon: true,
     },
   ];
 
@@ -34,8 +34,12 @@ export const PaymentSettings = () => {
         {items.map((item, idx) => (
           <button
             key={idx}
+            type="button"
             onClick={item.onClick}
-            className="w-full flex items-center justify-between py-4 hover:bg-gray-50 px-2 rounded-lg transition-colors text-left"
+            disabled={item.comingSoon}
+            className={`w-full flex items-center justify-between py-4 px-2 rounded-lg transition-colors text-left ${
+              item.comingSoon ? 'opacity-70 cursor-default' : 'hover:bg-gray-50'
+            }`}
           >
             <div className="flex items-center gap-3">
               <div className="p-2 bg-gray-50 rounded-lg">{item.icon}</div>
@@ -44,7 +48,11 @@ export const PaymentSettings = () => {
                 <p className="text-xs text-gray-400">{item.desc}</p>
               </div>
             </div>
-            <ChevronRight size={18} className="text-gray-400" />
+            {item.comingSoon ? (
+              <span className="px-3 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-500">Coming soon</span>
+            ) : (
+              <ChevronRight size={18} className="text-gray-400" />
+            )}
           </button>
         ))}
       </div>

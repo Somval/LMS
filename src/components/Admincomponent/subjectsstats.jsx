@@ -3,21 +3,15 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, BookOpen } from "lucide-react";
 
-const initialSubjectStats = [
-  {
-    id: 1,
-    title: "Total Subject Levels",
-    value: 12,
-  },
-  {
-    id: 2,
-    title: "Active Subject Levels",
-    value: 11,
-  },
-];
 
-export default function Subjects() {
+export default function Subjects({ subjects = [], loading = false }) {
   const navigate = useNavigate();
+
+  // The platform keeps one subject per name; year levels are listed on each subject.
+  const stats = [
+    { id: 1, title: "Total Subjects", value: subjects.length },
+    { id: 2, title: "Active Subjects", value: subjects.filter((s) => s.active).length },
+  ];
 
   return (
     <main className="min-h-full w-full min-w-0 bg-[#F5F7FD] px-4 py-5 font-[Inter,sans-serif] text-[#111827] sm:px-5 sm:py-6 lg:px-6">
@@ -49,7 +43,7 @@ export default function Subjects() {
           aria-label="Subject statistics"
           className="mt-5 grid w-full grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:max-w-[820px]"
         >
-          {initialSubjectStats.map((subject) => (
+          {stats.map((subject) => (
             <article
               key={subject.id}
               className="flex min-h-[82px] min-w-0 items-center gap-3 rounded-md border border-[#E6EAF0] bg-white px-4 py-3 transition-shadow hover:shadow-sm sm:min-h-[90px] sm:gap-4 sm:px-5"
@@ -68,7 +62,7 @@ export default function Subjects() {
                 </p>
 
                 <p className="mt-0.5 text-xl font-semibold leading-6 text-[#111111] sm:text-2xl">
-                  {subject.value}
+                  {loading ? "…" : subject.value}
                 </p>
               </div>
             </article>

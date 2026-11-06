@@ -5,7 +5,7 @@ const studentStats = [
   {
     id: 1,
     title: "Total Students",
-    value: "1,248",
+    key: "total",
     icon: (
       <svg
         width="39"
@@ -50,7 +50,7 @@ const studentStats = [
   {
     id: 2,
     title: "Active Students",
-    value: "1,200",
+    key: "active",
     icon: <CheckCircle2 size={21} strokeWidth={2} />,
     cardColor: "bg-[#E6F6DE]",
     borderColor: "border-[#D1E8C7]",
@@ -60,7 +60,7 @@ const studentStats = [
   {
     id: 3,
     title: "Needs Assigning",
-    value: "6",
+    key: "needsAssigning",
     icon: <Clock size={21} strokeWidth={2} />,
     cardColor: "bg-[#F8DDDE]",
     borderColor: "border-[#EFCBCC]",
@@ -69,7 +69,9 @@ const studentStats = [
   },
 ];
 
-export default function StudentsHeader({ onAddStudent = () => {} }) {
+const fmt = (n) => (n == null ? "—" : Number(n).toLocaleString());
+
+export default function StudentsHeader({ onAddStudent = () => {}, summary = null }) {
   return (
     <section className="mx-auto w-full max-w-[1066px] min-w-0 bg-[#F5F7FC] font-[Inter]">
       {/* Page heading and action */}
@@ -113,7 +115,7 @@ export default function StudentsHeader({ onAddStudent = () => {} }) {
               </p>
 
               <p className="mt-1 text-[16px] font-bold leading-[1.3] tracking-[0.1px] text-[#111111] sm:text-[18px]">
-                {stat.value}
+                {fmt(summary?.[stat.key])}
               </p>
             </div>
           </article>

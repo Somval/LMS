@@ -1,15 +1,29 @@
-import React from "react";
+import React, { useCallback, useEffect, useState } from "react";
+import { api } from "../../lib/api";
 import AchievementsRewards from "../../components/Admincomponent/AchievementsRewards";
 import StudentAchievementsTable from "../../components/Admincomponent/StudentAchievementsTable";
 
-export default function Achievement(){
+// GET /admin/achievements/overview -> { stats, students }
+export default function Achievement() {
+  const [data, setData] = useState(null);
+  const [error, setError] = useState("");
 
-    return(
-        <div>
+  const load = useCallback(() => {
+    api
+      .get("/admin/achievements/overview")
+      .then((res) => { setData(res); setError(""); })
+      .catch((err) => setError(err.message || "Could not load achievements."));
+  }, []);
 
-<AchievementsRewards/>
-<StudentAchievementsTable/>
+  useEffect(() => { load(); }, [load]);
 
-        </div>
-    )
+  return (
+    <div>
+      <AchievementsRewards stats={data?.stats} loading={!data && !error} onCreated={load} />
+      {error && (
+        <p role="alert" className="mx-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>
+      )}
+      <StudentAchievementsTable students={data?.students ?? []} loading={!data && !error} />
+    </div>
+  );
 }

@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { api } from "../../lib/api";
 import {
   Search,
   ChevronDown,
@@ -9,6 +10,13 @@ import {
   BookOpen,
   Languages,
   Atom,
+  Calculator,
+  FlaskConical,
+  Palette,
+  Music,
+  Globe,
+  Code2,
+  GraduationCap,
   X,
 } from "lucide-react";
 import EditSubject from "../Admincomponent/Editsubjects";
@@ -16,97 +24,6 @@ import EditSubject from "../Admincomponent/Editsubjects";
 /* -------------------------------------------------------
    SUBJECT DATA
 ------------------------------------------------------- */
-
-const initialSubjects = [
-  {
-    id: 1,
-    name: "Mathematics - Year 1",
-    category: "Mathematics",
-    year: "Year 1",
-    description: "Build problem-solving and critical thinking skills.",
-    availableTutors: 12,
-    enrolledStudents: 145,
-    classesHeld: 320,
-    status: "Active",
-  },
-  {
-    id: 2,
-    name: "Mathematics - Year 2",
-    category: "Mathematics",
-    year: "Year 2",
-    description: "Build problem-solving and critical thinking skills.",
-    availableTutors: 12,
-    enrolledStudents: 145,
-    classesHeld: 320,
-    status: "Active",
-  },
-  {
-    id: 3,
-    name: "Mathematics - Year 3",
-    category: "Mathematics",
-    year: "Year 3",
-    description: "Build problem-solving and critical thinking skills.",
-    availableTutors: 12,
-    enrolledStudents: 145,
-    classesHeld: 320,
-    status: "Active",
-  },
-  {
-    id: 4,
-    name: "English - Year 1",
-    category: "English",
-    year: "Year 1",
-    description: "Develop reading, writing and communication skills.",
-    availableTutors: 12,
-    enrolledStudents: 145,
-    classesHeld: 320,
-    status: "Active",
-  },
-  {
-    id: 5,
-    name: "English - Year 2",
-    category: "English",
-    year: "Year 2",
-    description: "Develop reading, writing and communication skills.",
-    availableTutors: 12,
-    enrolledStudents: 145,
-    classesHeld: 320,
-    status: "Inactive",
-  },
-  {
-    id: 6,
-    name: "English - Year 3",
-    category: "English",
-    year: "Year 3",
-    description: "Develop reading, writing and communication skills.",
-    availableTutors: 12,
-    enrolledStudents: 145,
-    classesHeld: 320,
-    status: "Active",
-  },
-  {
-    id: 7,
-    name: "Science - Year 1",
-    category: "Science",
-    year: "Year 1",
-    description: "Explore the natural world through experiments.",
-    availableTutors: 12,
-    enrolledStudents: 145,
-    classesHeld: 320,
-    status: "Active",
-  },
-  {
-    id: 8,
-    name: "Science - Year 2",
-    category: "Science",
-    year: "Year 2",
-    description: "Explore the natural world through experiments.",
-    availableTutors: 12,
-    enrolledStudents: 145,
-    classesHeld: 320,
-    status: "Active",
-  },
-];
 
 /* -------------------------------------------------------
    SUBJECT ICONS
@@ -126,6 +43,20 @@ const subjectStyles = {
     Icon: Atom,
     color: "bg-[#08CC55]",
   },
+};
+
+// Icons the admin can pick when creating a subject (same names as the Add Subject form).
+const ICON_MAP = {
+  Book: BookOpen,
+  Mathematics: Calculator,
+  English: Languages,
+  Science: Atom,
+  Laboratory: FlaskConical,
+  Art: Palette,
+  Music: Music,
+  Geography: Globe,
+  Technology: Code2,
+  Education: GraduationCap,
 };
 
 /* Custom English book icon using inline SVG.
@@ -164,7 +95,7 @@ function EnglishBookIcon({ className = "" }) {
   );
 }
 
-function SubjectIcon({ category, size = "normal" }) {
+function SubjectIcon({ category, icon, size = "normal" }) {
   if (category === "English") {
     return (
       <span
@@ -178,8 +109,9 @@ function SubjectIcon({ category, size = "normal" }) {
     );
   }
 
-  const style = subjectStyles[category] || subjectStyles.Mathematics;
-  const Icon = style.Icon;
+  const known = subjectStyles[category];
+  const style = known || { color: "bg-[#159A42]" };
+  const Icon = ICON_MAP[icon] || known?.Icon || BookOpen;
 
   return (
     <span
@@ -352,8 +284,36 @@ function DeleteConfirmation({ subject, onCancel, onConfirm }) {
    SUBJECTS PAGE
 ------------------------------------------------------- */
 
-export default function SubjectsPage() {
-  const [subjects, setSubjects] = useState(initialSubjects);
+export default function SubjectsPage({
+  subjects: apiSubjects = [],
+  loading = false,
+  error = "",
+  onChanged,
+}) {
+  const [actionError, setActionError] = useState("");
+
+  // One row per subject, in the shape the table below expects.
+  const subjects = useMemo(
+    () =>
+      apiSubjects.map((s) => ({
+        id: s.id,
+        name: s.name,
+        category: s.name,
+        icon: s.icon,
+        year: Array.isArray(s.yearLevels) ? s.yearLevels.join(", ") : "",
+        description: s.description || "",
+        availableTutors: s.tutors,
+        enrolledStudents: s.students,
+        classesHeld: s.classesHeld,
+        status: s.active ? "Active" : "Inactive",
+      })),
+    [apiSubjects]
+  );
+  const subjectNames = useMemo(
+    () => [...new Set(subjects.map((s) => s.name))],
+    [subjects]
+  );
+
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All Subjects");
   const [statusFilter, setStatusFilter] = useState("All Statuses");
@@ -395,45 +355,53 @@ export default function SubjectsPage() {
     setOpenMenuId(null);
   };
 
-  const handleSave = (updatedSubject) => {
-    setSubjects((current) =>
-      current.map((subject) =>
-        subject.id === updatedSubject.id
-          ? { ...subject, ...updatedSubject }
-          : subject
-      )
-    );
-
+  // Saves the name and description; the modal shows any error and stays open.
+  const handleSave = async (updatedSubject) => {
+    setActionError("");
+    try {
+      await api.put(`/admin/subjects/${updatedSubject.id}`, {
+        name: updatedSubject.name,
+        description: updatedSubject.description,
+      });
+    } catch (err) {
+      throw new Error(
+        err?.status === 409
+          ? "A subject with that name already exists."
+          : err?.message || "Unable to save changes. Please try again."
+      );
+    }
+    await onChanged?.();
     setIsEditOpen(false);
     setSelectedSubject(null);
   };
 
-  const handleToggleStatus = (subject) => {
-    setSubjects((current) =>
-      current.map((item) =>
-        item.id === subject.id
-          ? {
-              ...item,
-              status: item.status === "Active" ? "Inactive" : "Active",
-            }
-          : item
-      )
-    );
-
+  const handleToggleStatus = async (subject) => {
     setOpenMenuId(null);
+    setActionError("");
+    try {
+      await api.put(`/admin/subjects/${subject.id}`, {
+        active: subject.status !== "Active",
+      });
+      await onChanged?.();
+    } catch (err) {
+      setActionError(err?.message || "Could not change the subject's status.");
+    }
   };
 
-  const handleDelete = () => {
+  // Permanent delete: the server refuses when the subject already has tutors, students, classes or lessons.
+  const handleDelete = async () => {
     if (!deleteSubject) return;
-
-    setSubjects((current) =>
-      current.filter((subject) => subject.id !== deleteSubject.id)
-    );
-
+    const target = deleteSubject;
     setDeleteSubject(null);
     setOpenMenuId(null);
+    setActionError("");
+    try {
+      await api.delete(`/admin/subjects/${target.id}?permanent=true`);
+      await onChanged?.();
+    } catch (err) {
+      setActionError(err?.message || "Could not delete this subject.");
+    }
   };
-
   const resetFilters = () => {
     setSearch("");
     setCategoryFilter("All Subjects");
@@ -485,6 +453,15 @@ export default function SubjectsPage() {
       }}
     >
       <section className="w-full min-w-0 rounded-lg border border-[#E9ECF1] bg-white p-3 sm:p-4">
+        {(error || actionError) && (
+          <p
+            role="alert"
+            className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm font-medium text-red-700"
+          >
+            {actionError || error}
+          </p>
+        )}
+
         {/* Search and Filters */}
         <div className="mb-4 grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(150px,0.43fr)_minmax(150px,0.43fr)]">
           <label className="relative block min-w-0">
@@ -512,9 +489,9 @@ export default function SubjectsPage() {
               className={`${inputClass} appearance-none pr-9`}
             >
               <option>All Subjects</option>
-              <option>Mathematics</option>
-              <option>English</option>
-              <option>Science</option>
+              {subjectNames.map((name) => (
+                <option key={name}>{name}</option>
+              ))}
             </select>
 
             <ChevronDown
@@ -584,7 +561,7 @@ export default function SubjectsPage() {
                   const groupStarts =
                     index > 0 &&
                     previous &&
-                    previous.category !== subject.category;
+                    false; // each row is its own subject, so no group bands
 
                   return (
                     <React.Fragment key={subject.id}>
@@ -599,10 +576,17 @@ export default function SubjectsPage() {
                       <tr className="h-[62px] border-b border-[#F0F1F4] last:border-b-0 hover:bg-[#FCFDFE]">
                         <td className="px-2.5 py-3 lg:px-3">
                           <div className="flex min-w-0 items-center gap-2">
-                            <SubjectIcon category={subject.category} />
+                            <SubjectIcon category={subject.category} icon={subject.icon} />
 
-                            <span className="break-words text-xs font-semibold leading-5 text-[#292D35] lg:text-[13px]">
-                              {subject.name}
+                            <span className="min-w-0">
+                              <span className="block break-words text-xs font-semibold leading-5 text-[#292D35] lg:text-[13px]">
+                                {subject.name}
+                              </span>
+                              {subject.year && (
+                                <span className="block break-words text-[11px] leading-4 text-[#8A94A3]">
+                                  {subject.year}
+                                </span>
+                              )}
                             </span>
                           </div>
                         </td>
@@ -648,7 +632,7 @@ export default function SubjectsPage() {
             const groupStarts =
               index > 0 &&
               previous &&
-              previous.category !== subject.category;
+              false; // each row is its own subject, so no group bands
 
             return (
               <React.Fragment key={subject.id}>
@@ -661,12 +645,18 @@ export default function SubjectsPage() {
 
                 <article className="min-w-0 rounded-lg border border-[#E8EBF0] bg-white p-4 transition hover:border-[#D9E2EB]">
                   <div className="flex min-w-0 items-start gap-3">
-                    <SubjectIcon category={subject.category} size="large" />
+                    <SubjectIcon category={subject.category} icon={subject.icon} size="large" />
 
                     <div className="min-w-0 flex-1">
                       <h3 className="break-words text-sm font-semibold leading-5 text-[#292D35]">
                         {subject.name}
                       </h3>
+
+                      {subject.year && (
+                        <p className="break-words text-xs leading-4 text-[#8A94A3]">
+                          {subject.year}
+                        </p>
+                      )}
 
                       <p className="mt-1.5 text-sm leading-5 text-[#69737F]">
                         {subject.description}
@@ -725,20 +715,30 @@ export default function SubjectsPage() {
             </div>
 
             <p className="mt-4 text-base font-semibold text-[#394150]">
-              No subjects found
+              {loading
+                ? "Loading subjects…"
+                : subjects.length === 0
+                ? "No subjects yet"
+                : "No subjects found"}
             </p>
 
             <p className="mt-1 text-sm leading-5 text-[#89919D]">
-              Try another search term or clear your filters.
+              {loading
+                ? "One moment."
+                : subjects.length === 0
+                ? "Use Add Subject to create the first one."
+                : "Try another search term or clear your filters."}
             </p>
 
-            <button
-              type="button"
-              onClick={resetFilters}
-              className="mt-4 text-sm font-semibold text-[#159A42] hover:underline"
-            >
-              Clear filters
-            </button>
+            {!loading && subjects.length > 0 && (
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="mt-4 text-sm font-semibold text-[#159A42] hover:underline"
+              >
+                Clear filters
+              </button>
+            )}
           </div>
         )}
       </section>

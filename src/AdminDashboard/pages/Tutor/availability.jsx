@@ -1,16 +1,35 @@
 
 import React from "react";
 
-const availability = [
-  { day: "Monday", time: "4:00 PM – 8:00 PM", available: true },
-  { day: "Tuesday", time: "4:00 PM – 8:00 PM", available: true },
-  { day: "Wednesday", time: "4:00 PM – 8:00 PM", available: true },
-  { day: "Friday", time: "4:00 PM – 8:00 PM", available: true },
-  { day: "Saturday", time: "Not Available", available: false },
-  { day: "Sunday", time: "Not Available", available: false },
+const DAYS = [
+  ["mon", "Monday"],
+  ["tue", "Tuesday"],
+  ["wed", "Wednesday"],
+  ["thu", "Thursday"],
+  ["fri", "Friday"],
+  ["sat", "Saturday"],
+  ["sun", "Sunday"],
 ];
 
-export default function TeachingAvailability() {
+const fmtTime = (t) => {
+  const m = /^(\d{1,2}):(\d{2})/.exec(t || "");
+  if (!m) return t || "";
+  const h = Number(m[1]);
+  return `${h % 12 || 12}:${m[2]} ${h >= 12 ? "PM" : "AM"}`;
+};
+
+const buildRows = (info) => {
+  const chosen = new Set((info?.days ?? []).map((d) => String(d).slice(0, 3).toLowerCase()));
+  const time = info?.from && info?.to ? `${fmtTime(info.from)} – ${fmtTime(info.to)}` : "Available";
+  return DAYS.map(([key, day]) => ({
+    day,
+    available: chosen.has(key),
+    time: chosen.has(key) ? time : "Not Available",
+  }));
+};
+
+export default function TeachingAvailability({ availability: info = null }) {
+  const availability = buildRows(info);
   return (
     <section className="h-[399px] w-full max-w-[433px] overflow-hidden rounded-[12px] bg-white px-[13px] pb-[18px] pt-[15px] font-sans">
       {/* Heading */}

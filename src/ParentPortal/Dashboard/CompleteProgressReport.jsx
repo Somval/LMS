@@ -1,11 +1,37 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { api } from '../../lib/api';
+import { printAllReports } from '../ProgressReports/printAllReports';
 import { FileText, Download } from 'lucide-react';
 
 export default function ProgressReportBanner({ 
-  studentName = "Olivia", 
+  studentId,
+  studentName = "your child", 
   subtitle = "Get a detailed PDF report of your child's academic performance, attendance, homework, and achievements.",
-  onDownload = () => {} 
+  onDownload
 }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  // Fetches every monthly report and opens the print dialog (Save as PDF).
+  const handleDownload = async () => {
+    if (onDownload) return onDownload();
+    if (!studentId || busy) return;
+    setBusy(true);
+    setError('');
+    try {
+      const res = await api.get(`/dashboard/parent/${studentId}/reports`);
+      if (!res.reports?.length) {
+        setError('There are no reports to download yet.');
+      } else {
+        printAllReports(res.reports, res.student, res.generatedAt);
+      }
+    } catch (err) {
+      setError(err.message || 'Could not load the report.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <div className="w-full mx-auto max-w-[1059px] p-2 sm:p-0">
       <div className="w-full relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6 p-4 sm:px-6 sm:py-4 bg-[#2E6DFF2E] dark:bg-indigo-950/40 border border-indigo-100/60 dark:border-indigo-900/50 rounded-2xl shadow-xs transition-all duration-300 hover:shadow-md min-h-[104px]">
@@ -31,12 +57,14 @@ export default function ProgressReportBanner({
         {/* Right Section: Action Button */}
         <div className="w-full sm:w-auto flex-shrink-0 mt-2 sm:mt-0">
           <button
-            onClick={onDownload}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 sm:py-3 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-xs sm:text-sm rounded-xl shadow-xs hover:shadow transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900 cursor-pointer"
+            onClick={handleDownload}
+            disabled={busy}
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 sm:py-3 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-xs sm:text-sm rounded-xl shadow-xs hover:shadow transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900 cursor-pointer disabled:opacity-60"
           >
             <Download className="w-4 h-4 stroke-[2]" />
-            <span>Download Full Report</span>
+            <span>{busy ? 'Preparing…' : 'Download Full Report'}</span>
           </button>
+          {error && <p role="alert" className="mt-2 text-xs text-red-600">{error}</p>}
         </div>
 
       </div>

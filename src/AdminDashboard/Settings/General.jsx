@@ -2,19 +2,8 @@
 import React from "react";
 import { Settings, ChevronDown } from "lucide-react";
 
-// GENERAL SETTINGS DATA
-const generalSettings = [
-  {
-    platformName: "LMS Platform",
-    supportEmail: "support@edulearn.com",
-    supportPhone: "+234 801 234 5678",
-    timezone: "(GMT+01:00) West Africa Time (Lagos)",
-    language: "English (Default)",
-  },
-];
-
-export default function GeneralSettings() {
-  const settings = generalSettings[0];
+export default function GeneralSettings({ value, onChange }) {
+  const settings = value;
 
   const inputClass =
     "h-[35px] w-full min-w-0 rounded-[6px] border border-[#DCDCDC] bg-white px-3 text-[11px] font-normal text-[#171717] outline-none transition focus:border-[#A5B4C8]";
@@ -67,7 +56,8 @@ export default function GeneralSettings() {
               <input
                 type="text"
                 name="platformName"
-                defaultValue={settings.platformName}
+                value={settings.platformName ?? ""}
+                onChange={(e) => onChange({ platformName: e.target.value })}
                 className={inputClass}
               />
             </div>
@@ -81,7 +71,8 @@ export default function GeneralSettings() {
               <input
                 type="email"
                 name="supportEmail"
-                defaultValue={settings.supportEmail}
+                value={settings.supportEmail ?? ""}
+                onChange={(e) => onChange({ supportEmail: e.target.value })}
                 className={inputClass}
               />
             </div>
@@ -95,7 +86,8 @@ export default function GeneralSettings() {
               <input
                 type="tel"
                 name="supportPhone"
-                defaultValue={settings.supportPhone}
+                value={settings.supportPhone ?? ""}
+                onChange={(e) => onChange({ supportPhone: e.target.value })}
                 className={inputClass}
               />
             </div>
@@ -108,7 +100,8 @@ export default function GeneralSettings() {
 
               <select
                 name="timezone"
-                defaultValue={settings.timezone}
+                value={settings.timezone ?? ""}
+                onChange={(e) => onChange({ timezone: e.target.value })}
                 className={`${inputClass} appearance-none pr-9`}
               >
                 <option value="(GMT+01:00) West Africa Time (Lagos)">
@@ -143,7 +136,8 @@ export default function GeneralSettings() {
 
               <select
                 name="language"
-                defaultValue={settings.language}
+                value={settings.language ?? ""}
+                onChange={(e) => onChange({ language: e.target.value })}
                 className={`${inputClass} appearance-none pr-9`}
               >
                 <option value="English (Default)">

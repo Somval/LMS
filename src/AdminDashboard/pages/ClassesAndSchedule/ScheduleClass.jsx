@@ -1,76 +1,91 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ArrowLeft, ChevronDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { api } from "../../../lib/api";
 
-const DAYS = [
-  { id: "mon", label: "Mon" },
-  { id: "tue", label: "Tue" },
-  { id: "wed", label: "Wed" },
-  { id: "thu", label: "Thu" },
-  { id: "fri", label: "Fri" },
-  { id: "sat", label: "Sat" },
-];
+const select =
+  "w-full appearance-none rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-3 text-xs sm:text-sm text-[#334155] outline-none focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/10 disabled:bg-[#f1f5f9]";
+const input = select.replace("appearance-none ", "");
 
-const TIME_SLOTS = [
-  { id: "12:00", label: "12:00 PM – 1:00 PM", available: false },
-  { id: "13:00", label: "1:00 PM – 2:00 PM", available: true },
-  { id: "14:00", label: "2:00 PM – 3:00 PM", available: true },
-  { id: "15:00", label: "3:00 PM – 4:00 PM", available: true },
-  { id: "16:00", label: "4:00 PM – 5:00 PM", available: false },
-];
+const today = () => {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+};
 
-export default function ScheduleClassForm({
-  students = ["John Doe", "Jane Smith", "Ogungbe Oluwatosin"],
-  subjects = ["Mathematics - Year 1", "English - Year 2", "Science - Year 3"],
-  tutors = ["Dr. Alabi", "Mr. Johnson", "Ms. Sarah"],
-  onBack,
-  onSchedule,
-}) {
+// Schedules class sessions: POST /classes (one per week when repeating).
+export default function ScheduleClassForm({ onBack }) {
   const navigate = useNavigate();
 
-  const [selectedStudent, setSelectedStudent] = useState("");
-  const [selectedSubject, setSelectedSubject] = useState(subjects[0] || "");
-  const [selectedTutor, setSelectedTutor] = useState("");
-  const [selectedDays, setSelectedDays] = useState(["Mon", "Tue", "Wed", "Thu"]);
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState("1:00 PM – 2:00 PM");
+  const [subjects, setSubjects] = useState([]);
+  const [tutors, setTutors] = useState([]);
+  const [loadError, setLoadError] = useState("");
+
+  const [subjectId, setSubjectId] = useState("");
+  const [tutorId, setTutorId] = useState("");
+  const [title, setTitle] = useState("");
+  const [date, setDate] = useState(today());
+  const [startTime, setStartTime] = useState("13:00");
+  const [endTime, setEndTime] = useState("14:00");
+  const [weeks, setWeeks] = useState(1);
+  const [meetingUrl, setMeetingUrl] = useState("");
+
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleBack = () => {
-    if (onBack) {
-      onBack();
-      return;
-    }
-    navigate(-1);
-  };
+  // GET /subjects
+  useEffect(() => {
+    api.get("/subjects").then(setSubjects).catch((err) => setLoadError(err.message || "Could not load subjects."));
+  }, []);
 
-  const toggleDay = (dayLabel) => {
-    setSelectedDays((prev) =>
-      prev.includes(dayLabel)
-        ? prev.filter((d) => d !== dayLabel)
-        : [...prev, dayLabel]
-    );
-  };
+  // GET /admin/subjects/:id/tutors: approved, active tutors who teach the chosen subject
+  useEffect(() => {
+    setTutorId("");
+    setTutors([]);
+    if (!subjectId) return;
+    api
+      .get(`/admin/subjects/${subjectId}/tutors`)
+      .then(setTutors)
+      .catch((err) => setLoadError(err.message || "Could not load tutors."));
+  }, [subjectId]);
 
-  const handleSubmit = (e) => {
+  const tutor = tutors.find((t) => String(t.id) === String(tutorId));
+
+  const handleBack = () => (onBack ? onBack() : navigate(-1));
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    const starts = new Date(`${date}T${startTime}`);
+    const ends = new Date(`${date}T${endTime}`);
+    if (ends <= starts) return setError("The end time must be after the start time.");
+    if (starts < new Date()) return setError("You can't schedule a class in the past.");
+
     setIsSubmitting(true);
-
-    const payload = {
-      student: selectedStudent,
-      subject: selectedSubject,
-      tutor: selectedTutor,
-      days: selectedDays,
-      timeSlot: selectedTimeSlot,
-    };
-
-    setTimeout(() => {
-      setIsSubmitting(false);
-      if (onSchedule) {
-        onSchedule(payload);
-      } else {
-        alert("Class scheduled successfully!");
+    const created = [];
+    try {
+      for (let week = 0; week < weeks; week += 1) {
+        const offset = week * 7 * 24 * 60 * 60 * 1000;
+        const body = {
+          subjectId: Number(subjectId),
+          tutorId: Number(tutorId),
+          title: title.trim(),
+          startsAt: new Date(starts.getTime() + offset).toISOString(),
+          endsAt: new Date(ends.getTime() + offset).toISOString(),
+          ...(meetingUrl.trim() ? { meetingUrl: meetingUrl.trim() } : {}),
+        };
+        await api.post("/classes", body);
+        created.push(week + 1);
       }
-    }, 500);
+      navigate("/admin/classes");
+    } catch (err) {
+      setError(
+        created.length
+          ? `Week ${created.length} of ${weeks} was scheduled, but week ${created.length + 1} failed: ${err.message}`
+          : err.message || "Could not schedule the class."
+      );
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -80,7 +95,7 @@ export default function ScheduleClassForm({
         <button
           type="button"
           onClick={handleBack}
-          className="mb-4 inline-flex items-center gap-1.5 text-xs font-medium text-[#64748b] hover:text-[#0f172a] transition-colors cursor-pointer focus:outline-none"
+          className="mb-4 inline-flex items-center gap-1.5 text-xs font-medium text-[#64748b] hover:text-[#0f172a] transition-colors cursor-pointer"
         >
           <ArrowLeft className="h-4 w-4" />
           <span>Back to Classes &amp; Schedule</span>
@@ -88,187 +103,117 @@ export default function ScheduleClassForm({
 
         {/* Page Title & Subtitle */}
         <div className="mb-6">
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#0f172a]">
-            Schedule Class
-          </h1>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#0f172a]">Schedule Class</h1>
           <p className="mt-1 text-xs sm:text-sm text-[#64748b]">
-            Assign a recurring class schedule for a student or group.
+            Schedule a class for a subject. Every student taking the subject is notified.
           </p>
         </div>
 
-        {/* Full Width Form Card Container */}
         <form onSubmit={handleSubmit} className="w-full space-y-6">
           <div className="w-full rounded-2xl bg-white p-5 sm:p-8 shadow-xs border border-[#e2e8f0]">
-            
-            {/* 1. Select Student */}
+            {loadError && <p role="alert" className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">{loadError}</p>}
+
+            {/* 1. Select Subject */}
             <div className="space-y-1.5 w-full">
-              <label className="block text-xs sm:text-sm font-bold text-[#0f172a]">
-                1. Select Student
-              </label>
-              <p className="text-xs text-[#64748b]">
-                Choose the student who will attend this class.
-              </p>
+              <label htmlFor="subject" className="block text-xs sm:text-sm font-bold text-[#0f172a]">1. Select Subject</label>
+              <p className="text-xs text-[#64748b]">Choose the subject for this class.</p>
               <div className="relative mt-2 w-full">
-                <select
-                  value={selectedStudent}
-                  onChange={(e) => setSelectedStudent(e.target.value)}
-                  className="w-full appearance-none rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-3 text-xs sm:text-sm text-[#334155] outline-none transition focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20 cursor-pointer"
-                  required
-                >
-                  <option value="" disabled>
-                    Select student
-                  </option>
-                  {students.map((student) => (
-                    <option key={student} value={student}>
-                      {student}
-                    </option>
+                <select id="subject" value={subjectId} onChange={(e) => setSubjectId(e.target.value)} className={select} required>
+                  <option value="" disabled>Select subject</option>
+                  {subjects.map((s) => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
                   ))}
                 </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5 text-[#64748b]">
-                  <ChevronDown className="h-4 w-4" />
-                </div>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5 text-[#64748b]"><ChevronDown className="h-4 w-4" /></div>
               </div>
             </div>
 
             <hr className="my-6 border-[#f1f5f9]" />
 
-            {/* 2. Select Subject */}
+            {/* 2. Assign Tutor */}
             <div className="space-y-1.5 w-full">
-              <label className="block text-xs sm:text-sm font-bold text-[#0f172a]">
-                2. Select Subject
-              </label>
-              <p className="text-xs text-[#64748b]">
-                Choose the subject for this class.
-              </p>
+              <label htmlFor="tutor" className="block text-xs sm:text-sm font-bold text-[#0f172a]">2. Assign Tutor</label>
+              <p className="text-xs text-[#64748b]">Choose the tutor who will deliver the class.</p>
               <div className="relative mt-2 w-full">
-                <select
-                  value={selectedSubject}
-                  onChange={(e) => setSelectedSubject(e.target.value)}
-                  className="w-full appearance-none rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-3 text-xs sm:text-sm text-[#334155] outline-none transition focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20 cursor-pointer"
-                  required
-                >
-                  {subjects.map((sub) => (
-                    <option key={sub} value={sub}>
-                      {sub}
-                    </option>
+                <select id="tutor" value={tutorId} onChange={(e) => setTutorId(e.target.value)} className={select} required disabled={!subjectId}>
+                  <option value="" disabled>{subjectId ? (tutors.length ? "Select tutor" : "No approved tutors teach this subject") : "Choose a subject first"}</option>
+                  {tutors.map((t) => (
+                    <option key={t.id} value={t.id}>{t.name}</option>
                   ))}
                 </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5 text-[#64748b]">
-                  <ChevronDown className="h-4 w-4" />
-                </div>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5 text-[#64748b]"><ChevronDown className="h-4 w-4" /></div>
               </div>
+              {tutor && (
+                <p className="text-xs text-[#64748b] pt-1">Available: {tutor.days} · {tutor.time}</p>
+              )}
             </div>
 
             <hr className="my-6 border-[#f1f5f9]" />
 
-            {/* 3. Assign Tutor */}
+            {/* 3. Class title */}
             <div className="space-y-1.5 w-full">
-              <label className="block text-xs sm:text-sm font-bold text-[#0f172a]">
-                3. Assign Tutor
-              </label>
-              <p className="text-xs text-[#64748b]">
-                Choose the tutor who will deliver the class.
-              </p>
-              <div className="relative mt-2 w-full">
-                <select
-                  value={selectedTutor}
-                  onChange={(e) => setSelectedTutor(e.target.value)}
-                  className="w-full appearance-none rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-3 text-xs sm:text-sm text-[#334155] outline-none transition focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20 cursor-pointer"
-                  required
-                >
-                  <option value="" disabled>
-                    Select tutor
-                  </option>
-                  {tutors.map((tutor) => (
-                    <option key={tutor} value={tutor}>
-                      {tutor}
-                    </option>
-                  ))}
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5 text-[#64748b]">
-                  <ChevronDown className="h-4 w-4" />
-                </div>
-              </div>
+              <label htmlFor="title" className="block text-xs sm:text-sm font-bold text-[#0f172a]">3. Class Title</label>
+              <p className="text-xs text-[#64748b]">What students will see, for example "Fractions: Week 1".</p>
+              <input id="title" type="text" value={title} onChange={(e) => setTitle(e.target.value)} minLength={2} maxLength={200} required className={`${input} mt-2`} />
             </div>
 
             <hr className="my-6 border-[#f1f5f9]" />
 
-            {/* 4. Set Class Schedule */}
+            {/* 4. Date and time */}
             <div className="space-y-3 w-full">
               <div>
-                <label className="block text-xs sm:text-sm font-bold text-[#0f172a]">
-                  4. Set Class Schedule
+                <label className="block text-xs sm:text-sm font-bold text-[#0f172a]">4. Set Date &amp; Time</label>
+                <p className="text-xs text-[#64748b] mt-0.5">Pick when the class starts and ends. A tutor can't have two classes at the same time.</p>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <label className="text-xs font-semibold text-[#475569]">
+                  Date
+                  <input type="date" value={date} min={today()} onChange={(e) => setDate(e.target.value)} required className={`${input} mt-1`} />
                 </label>
-                <p className="text-xs text-[#64748b] mt-0.5">
-                  Choose a day from the student’s preferred days.
-                </p>
+                <label className="text-xs font-semibold text-[#475569]">
+                  Starts
+                  <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} required className={`${input} mt-1`} />
+                </label>
+                <label className="text-xs font-semibold text-[#475569]">
+                  Ends
+                  <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} required className={`${input} mt-1`} />
+                </label>
               </div>
 
-              {/* Day Selector Buttons */}
-              <div className="flex flex-wrap gap-2.5 pt-1">
-                {DAYS.map((day) => {
-                  const isSelected = selectedDays.includes(day.label);
-                  return (
-                    <button
-                      key={day.id}
-                      type="button"
-                      onClick={() => toggleDay(day.label)}
-                      className={`min-w-[64px] rounded-xl border px-4 py-2.5 text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
-                        isSelected
-                          ? "border-[#2563eb] bg-white text-[#2563eb] shadow-2xs ring-2 ring-[#2563eb]/10"
-                          : "border-[#cbd5e1] bg-white text-[#475569] hover:bg-[#f8fafc]"
-                      }`}
-                    >
-                      {day.label}
-                    </button>
-                  );
-                })}
-              </div>
+              <label className="block text-xs font-semibold text-[#475569] sm:max-w-xs">
+                Repeat weekly
+                <div className="relative mt-1">
+                  <select value={weeks} onChange={(e) => setWeeks(Number(e.target.value))} className={select}>
+                    <option value={1}>Just this once</option>
+                    {[2, 3, 4, 6, 8, 12].map((n) => (
+                      <option key={n} value={n}>For {n} weeks</option>
+                    ))}
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5 text-[#64748b]"><ChevronDown className="h-4 w-4" /></div>
+                </div>
+              </label>
 
-              {/* Time Slots Helper Text */}
-              <p className="text-[11px] sm:text-xs text-[#64748b] pt-2">
-                Available time slots for the tutor on the day(s) you selected (within the student’s preferred time).
-              </p>
-
-              {/* Time Slot Chips */}
-              <div className="flex flex-wrap gap-2.5 pt-1">
-                {TIME_SLOTS.map((slot) => {
-                  const isSelected = selectedTimeSlot === slot.label;
-                  return (
-                    <button
-                      key={slot.id}
-                      type="button"
-                      disabled={!slot.available}
-                      onClick={() => setSelectedTimeSlot(slot.label)}
-                      className={`rounded-xl border px-4 py-2.5 text-xs font-semibold transition-all ${
-                        !slot.available
-                          ? "border-[#e2e8f0] bg-[#f1f5f9] text-[#94a3b8] cursor-not-allowed"
-                          : isSelected
-                          ? "border-[#0f172a] bg-white text-[#0f172a] ring-2 ring-[#0f172a]/10 cursor-pointer shadow-2xs"
-                          : "border-[#cbd5e1] bg-white text-[#334155] hover:bg-[#f8fafc] cursor-pointer"
-                      }`}
-                    >
-                      {slot.label}
-                    </button>
-                  );
-                })}
-              </div>
+              <label className="block text-xs font-semibold text-[#475569]">
+                Meeting link (optional)
+                <input type="url" value={meetingUrl} onChange={(e) => setMeetingUrl(e.target.value)} placeholder="https://" className={`${input} mt-1`} />
+              </label>
             </div>
-
           </div>
+
+          {error && <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
 
           {/* Action Button Footer */}
           <div className="flex justify-end pt-2">
             <button
               type="submit"
               disabled={isSubmitting}
-              className="inline-flex items-center justify-center rounded-xl bg-[#2563eb] px-6 py-3 text-xs sm:text-sm font-semibold text-white shadow-sm hover:bg-[#1d4ed8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563eb]/30 transition-all cursor-pointer disabled:opacity-50"
+              className="inline-flex items-center justify-center rounded-xl bg-[#2563eb] px-6 py-3 text-xs sm:text-sm font-semibold text-white shadow-xs hover:bg-[#1d4ed8] transition-colors disabled:opacity-60 cursor-pointer"
             >
-              {isSubmitting ? "Scheduling..." : "Schedule Class"}
+              {isSubmitting ? "Scheduling..." : weeks > 1 ? `Schedule ${weeks} Classes` : "Schedule Class"}
             </button>
           </div>
         </form>
-
       </div>
     </main>
   );

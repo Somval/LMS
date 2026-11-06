@@ -1,11 +1,13 @@
 
 import React from "react";
 
-export default function ParentsOverview() {
+const fmt = (n) => (n == null ? "—" : Number(n).toLocaleString());
+
+export default function ParentsOverview({ summary = null, onAddParent = () => {} }) {
   const stats = [
     {
       title: "Total Parents",
-      value: "86",
+      key: "total",
       type: "users",
       cardColor: "bg-[#E5F6DC]",
       borderColor: "border-[#C4E3B9]",
@@ -14,7 +16,7 @@ export default function ParentsOverview() {
     },
     {
       title: "Active Parents",
-      value: "1,200",
+      key: "active",
       type: "check",
       cardColor: "bg-[#E5F6DC]",
       borderColor: "border-[#C4E3B9]",
@@ -23,7 +25,7 @@ export default function ParentsOverview() {
     },
     {
       title: "Inactive Parents",
-      value: "6",
+      key: "inactive",
       type: "warning",
       cardColor: "bg-[#F7DCDC]",
       borderColor: "border-[#E8BFC0]",
@@ -121,6 +123,7 @@ export default function ParentsOverview() {
 
         <button
           type="button"
+          onClick={onAddParent}
           className="flex h-[54px] w-full shrink-0 items-center justify-center gap-6 rounded-lg bg-[#004509] px-7 text-[16px] font-medium text-white transition-colors hover:bg-[#003607] sm:w-[208px]"
         >
           <svg
@@ -137,7 +140,7 @@ export default function ParentsOverview() {
             />
           </svg>
 
-          <span>Add Tutor</span>
+          <span>Add Parent</span>
         </button>
       </div>
 
@@ -162,7 +165,7 @@ export default function ParentsOverview() {
               </p>
 
               <p className="mt-1 text-[23px] font-semibold leading-7 tracking-[-0.4px] text-black">
-                {stat.value}
+                {fmt(summary?.[stat.key])}
               </p>
             </div>
           </div>

@@ -2,16 +2,6 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const parentsData = Array.from({ length: 127 }, (_, index) => ({
-  id: index + 1,
-  name: "Daniel Smith",
-  parentId: `PID${String(1010111 + index)}`,
-  email: "daniel.smith@email.com",
-  children: ["Ella Smith", "Laurel Smith"],
-  subscription: "Monthly",
-  status: index === 7 ? "Inactive" : "Active",
-}));
-
 function SearchIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
@@ -84,7 +74,7 @@ function ChevronRight() {
   );
 }
 
-export default function ParentsTable() {
+export default function ParentsTable({ parents = [], loading = false, error = "" }) {
   const navigate = useNavigate();
 
   const [search, setSearch] = useState("");
@@ -98,7 +88,7 @@ export default function ParentsTable() {
   const filteredParents = useMemo(() => {
     const query = search.trim().toLowerCase();
 
-    return parentsData.filter((parent) => {
+    return parents.filter((parent) => {
       const matchesSearch =
         !query ||
         parent.name.toLowerCase().includes(query) ||
@@ -110,11 +100,11 @@ export default function ParentsTable() {
 
       return (
         matchesSearch &&
-        (!subscription || parent.subscription === subscription) &&
+        (!subscription || parent.payment === subscription) &&
         (!status || parent.status === status)
       );
     });
-  }, [search, subscription, status]);
+  }, [parents, search, subscription, status]);
 
   const totalPages = Math.max(
     1,
@@ -160,6 +150,12 @@ export default function ParentsTable() {
 
   return (
     <section className="w-full min-w-0 rounded-xl border border-[#E6E9EF] bg-white p-4 sm:p-5 lg:p-6">
+      {error && (
+        <p role="alert" className="mb-4 rounded-md bg-[#FCE4E4] px-3 py-2 text-sm text-[#C62828]">
+          {error}
+        </p>
+      )}
+
       {/* Search and filters */}
       <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_180px_150px] lg:grid-cols-[minmax(220px,1fr)_190px_160px]">
         <div className="relative min-w-0">
@@ -187,13 +183,14 @@ export default function ParentsTable() {
               setSubscription(e.target.value);
               resetPage();
             }}
-            aria-label="Filter by subscription"
+            aria-label="Filter by payment status"
             className="h-12 w-full appearance-none rounded-lg border border-[#E1E5EB] bg-white px-3.5 pr-10 text-sm text-[#263445] outline-none focus:border-[#8DA2D6] sm:text-base"
           >
-            <option value="">Subscriptions</option>
-            <option value="Monthly">Monthly</option>
-            <option value="Quarterly">Quarterly</option>
-            <option value="Yearly">Yearly</option>
+            <option value="">Payment</option>
+            <option value="Paid">Paid</option>
+            <option value="Pending">Pending</option>
+            <option value="Failed">Failed</option>
+            <option value="No payment">No payment</option>
           </select>
 
           <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#7A8699]">
@@ -232,7 +229,7 @@ export default function ParentsTable() {
               </th>
               <th className="w-[21%] px-4">Email</th>
               <th className="w-[16%] px-4">Children</th>
-              <th className="w-[14%] px-4">Subscription</th>
+              <th className="w-[14%] px-4">Payment</th>
               <th className="w-[13%] px-4">Status</th>
               <th className="w-[17%] rounded-r-lg px-4">Action</th>
             </tr>
@@ -293,7 +290,7 @@ export default function ParentsTable() {
 
                 <td className="px-4 py-4">
                   <span className="text-sm text-[#475467]">
-                    {parent.subscription}
+                    {parent.payment}
                   </span>
                 </td>
 
@@ -371,7 +368,7 @@ export default function ParentsTable() {
                   colSpan={6}
                   className="px-4 py-16 text-center text-sm text-[#7C8794]"
                 >
-                  No parents found. Try adjusting your search or filters.
+                  {loading ? "Loading parents…" : "No parents found. Try adjusting your search or filters."}
                 </td>
               </tr>
             )}

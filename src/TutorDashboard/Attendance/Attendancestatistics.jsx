@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   UsersRound,
   CircleCheck,
@@ -7,12 +7,12 @@ import {
   CalendarDays,
   ChevronDown,
 } from "lucide-react";
+import { PERIODS, courseKey, courseLabel } from "./attendanceData";
 
-const attendanceStats = [
+const statDefs = [
   {
     id: "students",
     label: "Total Students",
-    value: 28,
     icon: UsersRound,
     iconBg: "bg-[#E5EEFF]",
     iconColor: "text-[#4385FF]",
@@ -20,7 +20,6 @@ const attendanceStats = [
   {
     id: "present",
     label: "Total Present",
-    value: 156,
     icon: CircleCheck,
     iconBg: "bg-[#DDFBE9]",
     iconColor: "text-[#18C96E]",
@@ -28,7 +27,6 @@ const attendanceStats = [
   {
     id: "absent",
     label: "Total Absent",
-    value: 32,
     icon: CircleX,
     iconBg: "bg-[#FFE1E1]",
     iconColor: "text-[#FF4545]",
@@ -36,17 +34,21 @@ const attendanceStats = [
   {
     id: "late",
     label: "Total Late",
-    value: 8,
     icon: CircleMinus,
     iconBg: "bg-[#ECEFF2]",
     iconColor: "text-[#8B949E]",
   },
 ];
 
-export default function AttendanceOverview() {
-  const [course, setCourse] = useState("mathematics-year-1");
-  const [period, setPeriod] = useState("this-month");
-
+export default function AttendanceOverview({
+  courses = [],
+  course = "",
+  onCourseChange = () => {},
+  period = "this-month",
+  onPeriodChange = () => {},
+  stats = {},
+  loading = false,
+}) {
   return (
     <section className="w-full min-w-0 bg-[#F4F7FD] p-0">
       <div className="w-full min-w-0">
@@ -65,21 +67,16 @@ export default function AttendanceOverview() {
               <select
                 id="attendance-course"
                 value={course}
-                onChange={(event) => setCourse(event.target.value)}
+                onChange={(event) => onCourseChange(event.target.value)}
+                disabled={courses.length === 0}
                 className="h-[27px] w-full appearance-none rounded-[3px] border border-[#DDE2E8] bg-white pl-[9px] pr-7 text-[10px] font-medium text-[#20252B] outline-none transition focus:border-[#8AAEFF] focus:ring-2 focus:ring-[#E5EDFF]"
               >
-                <option value="mathematics-year-1">
-                  Mathematics — Year 1
-                </option>
-                <option value="mathematics-year-2">
-                  Mathematics — Year 2
-                </option>
-                <option value="english-year-1">
-                  English — Year 1
-                </option>
-                <option value="physics-year-1">
-                  Physics — Year 1
-                </option>
+                {courses.length === 0 && <option value="">No courses yet</option>}
+                {courses.map((c) => (
+                  <option key={courseKey(c.subjectId, c.yearLevel)} value={courseKey(c.subjectId, c.yearLevel)}>
+                    {courseLabel(c)}
+                  </option>
+                ))}
               </select>
 
               <ChevronDown
@@ -109,13 +106,14 @@ export default function AttendanceOverview() {
               <select
                 id="attendance-period"
                 value={period}
-                onChange={(event) => setPeriod(event.target.value)}
+                onChange={(event) => onPeriodChange(event.target.value)}
                 className="h-[27px] w-full appearance-none rounded-[3px] border border-[#DDE2E8] bg-white pl-[32px] pr-7 text-[10px] font-semibold text-[#20252B] outline-none transition focus:border-[#8AAEFF] focus:ring-2 focus:ring-[#E5EDFF]"
               >
-                <option value="today">Today</option>
-                <option value="this-week">This Week</option>
-                <option value="this-month">This Month</option>
-                <option value="this-year">This Year</option>
+                {PERIODS.map((p) => (
+                  <option key={p.value} value={p.value}>
+                    {p.label}
+                  </option>
+                ))}
               </select>
 
               <ChevronDown
@@ -129,7 +127,7 @@ export default function AttendanceOverview() {
 
         {/* Attendance statistics */}
         <div className="mt-3 grid w-full min-w-0 grid-cols-1 gap-[10px] sm:grid-cols-2 lg:grid-cols-4">
-          {attendanceStats.map((stat) => {
+          {statDefs.map((stat) => {
             const Icon = stat.icon;
 
             return (
@@ -149,7 +147,7 @@ export default function AttendanceOverview() {
 
                 <div className="flex min-w-0 flex-col justify-center">
                   <span className="text-[20px] font-semibold leading-[25px] tracking-[-0.5px] text-[#080B10]">
-                    {stat.value}
+                    {loading ? "—" : stats[stat.id] ?? 0}
                   </span>
 
                   <span className="mt-[2px] whitespace-nowrap text-[10px] font-normal leading-[13px] text-[#8791A0]">

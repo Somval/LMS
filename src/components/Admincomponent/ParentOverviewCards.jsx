@@ -25,7 +25,7 @@ const overviewCards = [
   },
   {
     id: 3,
-    title: "Subscription Plan",
+    title: "Total Paid",
     value: "Monthly",
     Icon: CreditCard,
     iconColor: "#E600A9",
@@ -33,14 +33,27 @@ const overviewCards = [
   },
 ];
 
-export default function ParentOverviewCards() {
+const money = (n, currency = "NGN") =>
+  new Intl.NumberFormat("en-NG", { style: "currency", currency, maximumFractionDigits: 0 }).format(n ?? 0);
+
+const valueFor = (parent, id) => {
+  const stats = parent?.stats;
+  if (!stats) return "—";
+  if (id === 1) return String(stats.linkedChildren);
+  if (id === 2) return String(stats.enrolledSubjects);
+  return money(stats.totalPaid, stats.currency);
+};
+
+export default function ParentOverviewCards({ parent = null }) {
+  const cards = overviewCards.map((card) => ({ ...card, value: valueFor(parent, card.id) }));
+
   return (
     <section
       aria-label="Parent overview"
       className="w-full min-w-0 bg-[#F5F7FD] p-4 sm:p-6"
     >
       <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {overviewCards.map(
+        {cards.map(
           ({
             id,
             title,

@@ -1,55 +1,25 @@
 
 import React, { useMemo, useState } from "react";
 import { Plus, Award, CalendarDays } from "lucide-react";
-import Badge from "../../assets/images/134a082cca973150969aa91355d8ac63a4934a6a.png";
-import CreateAchievement from "./CreateAchievement";
 
-// Initial achievement data
-export const INITIAL_ACHIEVEMENTS = [
-  {
-    id: 1,
-    title: "Perfect Attendance",
-    description: "Awarded for attending all scheduled classes.",
-    date: "May 20, 2025",
-    icon: Badge,
-  },
-  {
-    id: 2,
-    title: "Perfect Attendance",
-    description: "Awarded for attending all scheduled classes.",
-    date: "May 20, 2025",
-    icon: Badge,
-  },
-  {
-    id: 3,
-    title: "Perfect Attendance",
-    description: "Awarded for attending all scheduled classes.",
-    date: "May 20, 2025",
-    icon: Badge,
-  },
-  {
-    id: 4,
-    title: "Perfect Attendance",
-    description: "Awarded for attending all scheduled classes.",
-    date: "May 20, 2025",
-    icon: Badge,
-  },
-];
 
-export default function Achievements() {
-  const [achievements, setAchievements] = useState(INITIAL_ACHIEVEMENTS);
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Display newest achievements first.
+const fmtDate = (d) =>
+  new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+
+// Badges this student has earned. items: [{ id, title, description, awardedAt }]
+export default function Achievements({ items = [], loading = false, onAward }) {
+  // Newest first (the list already arrives newest first).
   const sortedAchievements = useMemo(
-    () => [...achievements].reverse(),
-    [achievements]
+    () =>
+      items.map((a) => ({
+        id: a.id,
+        title: a.title,
+        description: a.description || (a.note ? a.note : "No description."),
+        date: fmtDate(a.awardedAt),
+      })),
+    [items]
   );
-
-  // Add a newly created achievement.
-  const handleCreateAchievement = (newAchievement) => {
-    setAchievements((previous) => [...previous, newAchievement]);
-  };
 
   return (
     <>
@@ -58,21 +28,21 @@ export default function Achievements() {
         <header className="mb-6 p-5 rounded flex flex-col gap-4 sm:mb-7 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
             <h2 className="text-xl font-bold tracking-[-0.4px] text-[#171717] sm:text-2xl">
-              Achievements
+              Badges
             </h2>
 
             <p className="mt-1.5 max-w-xl text-xs leading-relaxed text-[#718096] sm:text-sm">
-              A record of this student's key milestones and accomplishments.
+              Badges this student has earned for key milestones.
             </p>
           </div>
 
           <button
             type="button"
-            onClick={() => setIsModalOpen(true)}
+            onClick={onAward}
             className="inline-flex min-h-10 w-full shrink-0 items-center justify-center gap-2 rounded-md bg-[#2563EB] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#1D4ED8] focus:outline-none focus:ring-2 focus:ring-[#93B4FF] focus:ring-offset-2 sm:w-auto"
           >
             <Plus size={17} strokeWidth={2.3} />
-            <span>Create Achievement</span>
+            <span>Award Badge</span>
           </button>
         </header>
 
@@ -182,11 +152,11 @@ export default function Achievements() {
                         </div>
 
                         <h3 className="text-sm font-semibold text-[#303846]">
-                          No achievements yet
+                          {loading ? "Loading…" : "No badges yet"}
                         </h3>
 
                         <p className="mt-1 text-xs text-[#8993A2]">
-                          Create your first achievement to get started.
+                          {loading ? "" : "Use Award Badge to give this student one."}
                         </p>
                       </div>
                     </td>
@@ -250,23 +220,16 @@ export default function Achievements() {
               </div>
 
               <h3 className="text-sm font-semibold text-[#303846]">
-                No achievements yet
+                {loading ? "Loading…" : "No badges yet"}
               </h3>
 
               <p className="mt-1 text-xs text-[#8993A2]">
-                Create your first achievement to get started.
+                {loading ? "" : "Use Award Badge to give this student one."}
               </p>
             </div>
           )}
         </div>
       </section>
-
-      {/* Create Achievement Modal */}
-      <CreateAchievement
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onCreate={handleCreateAchievement}
-      />
     </>
   );
 }

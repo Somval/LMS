@@ -4,11 +4,11 @@ import { Ribbon, Gift } from "lucide-react";
 
 
 
-const statsData = [
+const statCards = [
   {
     id: "achievements",
     label: "Achievements Created",
-    value: 8,
+    key: "total",
     iconType: "custom",
     bgColor: "bg-[#EAFBF1]",
     iconColor: "text-[#10B981]",
@@ -16,7 +16,7 @@ const statsData = [
   {
     id: "badges",
     label: "Badges Created",
-    value: 5,
+    key: "badges",
     icon: Ribbon,
     bgColor: "bg-[#F9EBF8]",
     iconColor: "text-[#C084FC]",
@@ -24,7 +24,7 @@ const statsData = [
   {
     id: "rewards",
     label: "Rewards Created",
-    value: 3,
+    key: "rewards",
     icon: Gift,
     bgColor: "bg-[#FEF9E7]",
     iconColor: "text-[#EAB308]",
@@ -54,7 +54,14 @@ function AchievementIcon() {
   );
 }
 
-export default function StatCards() {
+export default function StatCards({ items = [], loading = false }) {
+  const counts = {
+    total: items.length,
+    badges: items.filter((a) => a.kind === "BADGE").length,
+    rewards: items.filter((a) => a.kind === "REWARD").length,
+  };
+  const statsData = statCards.map((card) => ({ ...card, value: loading ? "…" : counts[card.key] }));
+
   return (
     <section className="box-border w-full min-w-0  p-2 sm:p-4">
       <div

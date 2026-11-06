@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import Avatar from "../components/Avatar";
 import { api } from "../lib/api";
 import { countdown, fullDate, timeRange, openLink } from "./classFormat";
 import {
@@ -187,10 +188,11 @@ export default function NextLiveClass() {
                   bg-[#d9dde5]
                 "
               >
-                <img
-                  src="https://i.pravatar.cc/100?img=47"
-                  alt="Sarah Johnson"
-                  className="h-full w-full object-cover grayscale"
+                <Avatar
+                  name={next ? next.tutor.user.fullName : "Tutor"}
+                  avatarUrl={next?.tutor.user.avatarUrl}
+                  className="h-full w-full"
+                  textClassName="text-[7px]"
                 />
               </div>
 

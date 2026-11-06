@@ -11,7 +11,7 @@ const fmtDate = (d) =>
   new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 const naira = (n) => `₦${Number(n).toLocaleString()}`;
 
-export default function Payments() {
+export default function Payments({ onChanged }) {
   const [tab, setTab] = useState("PENDING");
   const [rows, setRows] = useState([]);
   const [total, setTotal] = useState(0);
@@ -40,6 +40,7 @@ export default function Payments() {
     try {
       await api.patch(`/payments/admin/${payment.id}`, { status });
       await load();
+      onChanged?.();
     } catch (err) {
       setError(err.message);
     } finally {

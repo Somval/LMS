@@ -1,5 +1,7 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { api } from "../../../lib/api";
 import {
   UsersRound,
   TriangleAlert,
@@ -7,30 +9,20 @@ import {
   ChevronRight,
 } from "lucide-react";
 
+// Rows shown; counts are filled in from the backend below.
+// (There is no complaints data in the backend yet, so that row is not shown.)
 const attentionItems = [
   {
-    id: 1,
-    count: 5,
+    id: "applications",
     label: "Tutor application",
     icon: UsersRound,
     rowBg: "bg-[#EFFCF3]",
     iconBg: "bg-[#D8F8E2]",
     iconColor: "text-[#16B84E]",
-    path: "/admin/users/tutors",
+    path: "/admin/users/applications",
   },
   {
-    id: 2,
-    count: 3,
-    label: "New complaints",
-    icon: TriangleAlert,
-    rowBg: "bg-[#FFF5ED]",
-    iconBg: "bg-[#FFE7D1]",
-    iconColor: "text-[#FF8A00]",
-    path: "/admin/complaints",
-  },
-  {
-    id: 3,
-    count: 8,
+    id: "payments",
     label: "Payments Due",
     icon: CreditCard,
     rowBg: "bg-[#F9F0FF]",
@@ -41,10 +33,25 @@ const attentionItems = [
 ];
 
 export default function NeedsAttention({ onItemClick }) {
+  const navigate = useNavigate();
+  const [counts, setCounts] = useState(null); // { applications, payments }
+
+  // GET /admin/stats (pending tutors) and GET /payments/admin?status=PENDING (total)
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([api.get("/admin/stats"), api.get("/payments/admin", { status: "PENDING", pageSize: 1 })])
+      .then(([stats, pending]) => {
+        if (!cancelled) setCounts({ applications: stats.pendingTutors, payments: pending.total });
+      })
+      .catch(() => !cancelled && setCounts({ applications: "–", payments: "–" }));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const handleItemClick = (item) => {
-    if (onItemClick) {
-      onItemClick(item);
-    }
+    if (onItemClick) return onItemClick(item);
+    navigate(item.path);
   };
 
   return (
@@ -70,7 +77,7 @@ export default function NeedsAttention({ onItemClick }) {
               key={item.id}
               type="button"
               onClick={() => handleItemClick(item)}
-              aria-label={`${item.count} ${item.label}`}
+              aria-label={`${counts?.[item.id] ?? 0} ${item.label}`}
               className={`group flex min-h-[57px] w-full min-w-0 items-center gap-2 rounded-[7px] px-2.5 py-2 text-left transition-colors hover:brightness-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#159A42] sm:gap-2.5 sm:px-3 ${item.rowBg}`}
             >
               {/* Icon */}
@@ -87,7 +94,7 @@ export default function NeedsAttention({ onItemClick }) {
 
               {/* Count */}
               <span className="w-[20px] shrink-0 text-center font-[Inter] text-[20px] font-bold leading-none text-[#080808] sm:text-[21px]">
-                {item.count}
+                {counts ? counts[item.id] : "…"}
               </span>
 
               {/* Label */}

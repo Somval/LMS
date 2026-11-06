@@ -7,43 +7,47 @@ import {
   Quote,
 } from "lucide-react";
 
-const summaryCards = [
-  {
-    id: "rating",
-    value: "4.9",
-    title: "Average Rating",
-    description: "Based on 120+ reviews",
-    icon: Star,
-    iconColor: "text-[#FFD000]",
-    iconBg: "bg-[#FFF8DD]",
-  },
-  {
-    id: "reviews",
-    value: "127",
-    title: "Total Reviews",
-    description: "From parents",
-    icon: UsersRound,
-    iconColor: "text-[#2860FF]",
-    iconBg: "bg-[#E5EDFF]",
-  },
-  {
-    id: "feedback",
-    value: "12",
-    title: "Recent Feedback",
-    description: "In the last 3 months",
-    icon: MessageSquare,
-    iconColor: "text-[#16A765]",
-    iconBg: "bg-[#E0FAE9]",
-  },
-];
+const buildSummaryCards = (stats, loading) => {
+  const count = stats.count ?? 0;
+  const dash = loading ? "…" : "—";
+  return [
+    {
+      id: "rating",
+      value: stats.average == null ? dash : stats.average.toFixed(1),
+      title: "Average Rating",
+      description: count ? `Based on ${count} review${count === 1 ? "" : "s"}` : "No reviews yet",
+      icon: Star,
+      iconColor: "text-[#FFD000]",
+      iconBg: "bg-[#FFF8DD]",
+    },
+    {
+      id: "reviews",
+      value: loading ? "…" : String(count),
+      title: "Total Reviews",
+      description: "From parents",
+      icon: UsersRound,
+      iconColor: "text-[#2860FF]",
+      iconBg: "bg-[#E5EDFF]",
+    },
+    {
+      id: "feedback",
+      value: loading ? "…" : String(stats.recent ?? 0),
+      title: "Recent Feedback",
+      description: "In the last 3 months",
+      icon: MessageSquare,
+      iconColor: "text-[#16A765]",
+      iconBg: "bg-[#E0FAE9]",
+    },
+  ];
+};
 
-const ratingBreakdown = [
-  { stars: 5, percentage: 22, count: 28 },
-  { stars: 4, percentage: 72, count: 92 },
-  { stars: 3, percentage: 4, count: 5 },
-  { stars: 2, percentage: 1, count: 2 },
-  { stars: 1, percentage: 1, count: 1 },
-];
+const buildBreakdown = (stats) => {
+  const total = stats.count ?? 0;
+  return [5, 4, 3, 2, 1].map((stars) => {
+    const count = stats.breakdown?.[stars] ?? 0;
+    return { stars, count, percentage: total ? Math.round((count / total) * 100) : 0 };
+  });
+};
 
 function SummaryCard({ item }) {
   const Icon = item.icon;
@@ -79,7 +83,8 @@ function SummaryCard({ item }) {
   );
 }
 
-function RatingBreakdown() {
+function RatingBreakdown({ stats }) {
+  const ratingBreakdown = buildBreakdown(stats);
   return (
     <section
       aria-labelledby="rating-breakdown-title"
@@ -138,7 +143,10 @@ function RatingBreakdown() {
   );
 }
 
-function ParentFeedback() {
+function ParentFeedback({ reviews, stats }) {
+  // The newest review that has a written comment.
+  const latest = reviews.find((r) => r.comment && r.comment.trim());
+  const doingWell = stats.average != null && stats.average >= 4;
   return (
     <section className="flex min-h-[300px] w-full min-w-0 flex-col items-center justify-center rounded-xl border border-[#B9CCFF] bg-[#E8EFFF] px-5 py-9 text-center sm:min-h-[340px] sm:px-7 sm:py-10 lg:min-h-0 lg:px-8">
       <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#C9DAFF] sm:h-16 sm:w-16">
@@ -155,19 +163,32 @@ function ParentFeedback() {
         Parent Feedback
       </h2>
 
-      <blockquote className="mt-4 max-w-sm text-sm font-medium leading-7 text-[#252525] sm:text-base sm:leading-8">
-        “Parents appreciate your clear explanations and patience with
-        students.”
-      </blockquote>
+      {latest ? (
+        <>
+          <blockquote className="mt-4 max-w-sm break-words text-sm font-medium leading-7 text-[#252525] sm:text-base sm:leading-8">
+            “{latest.comment.trim().length > 220 ? `${latest.comment.trim().slice(0, 220)}…` : latest.comment.trim()}”
+          </blockquote>
 
-      <p className="mt-4 text-sm leading-6 text-[#687385] sm:text-base">
-        Keep up the great work!
-      </p>
+          <p className="mt-4 text-sm leading-6 text-[#687385] sm:text-base">
+            — {latest.parentName}
+            {doingWell ? ". Keep up the great work!" : ""}
+          </p>
+        </>
+      ) : (
+        <p className="mt-4 max-w-sm text-sm leading-6 text-[#687385] sm:text-base">
+          Written feedback from parents will show up here.
+        </p>
+      )}
     </section>
   );
 }
 
-export default function TutorRatingFeedback() {
+export default function TutorRatingFeedback({
+  stats = { average: null, count: 0, recent: 0, breakdown: {} },
+  reviews = [],
+  loading = false,
+}) {
+  const summaryCards = buildSummaryCards(stats, loading);
   return (
     <section className="w-full min-w-0 bg-[#F3F6FC] font-sans">
       <div className="mx-auto w-full min-w-0 max-w-[1093px]">
@@ -183,8 +204,8 @@ export default function TutorRatingFeedback() {
 
         {/* Rating breakdown and parent feedback */}
         <div className="mt-5 grid w-full min-w-0 grid-cols-1 items-stretch gap-5 sm:mt-6 sm:gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:gap-5">
-          <RatingBreakdown />
-          <ParentFeedback />
+          <RatingBreakdown stats={stats} />
+          <ParentFeedback reviews={reviews} stats={stats} />
         </div>
       </div>
     </section>

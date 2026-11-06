@@ -1,37 +1,9 @@
 
-import React, { useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-
-const topicData = {
-  "math-y4-numbers-01": {
-    title: "Numbers",
-    subject: "Mathematics",
-    year: 4,
-    lessons: 8,
-    description: "Place value, rounding, ordering and more.",
-  },
-  "math-y4-numbers-02": {
-    title: "Numbers",
-    subject: "Mathematics",
-    year: 4,
-    lessons: 8,
-    description: "Place value, rounding, ordering and more.",
-  },
-  "math-y4-numbers-03": {
-    title: "Numbers",
-    subject: "Mathematics",
-    year: 4,
-    lessons: 8,
-    description: "Place value, rounding, ordering and more.",
-  },
-  "math-y4-numbers-04": {
-    title: "Numbers",
-    subject: "Mathematics",
-    year: 4,
-    lessons: 8,
-    description: "Place value, rounding, ordering and more.",
-  },
-};
+import React, { useEffect, useState } from "react";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { api, openPrivateFile } from "../../lib/api";
+import { useAuth } from "../../context/AuthContext";
+import { readSaved, saveTopic } from "./lessonStore";
 
 const resourceTypes = [
   {
@@ -66,54 +38,92 @@ const resourceTypes = [
   },
 ];
 
-const lessons = [
-  {
-    id: "lesson-01",
-    number: "01",
-    title: "Introduction to Place Value",
-    description:
-      "Understand what equivalent fractions are and how to identify them.",
-    selected: true,
-  },
-  {
-    id: "lesson-02",
-    number: "02",
-    title: "Introduction to Place Value",
-    description:
-      "Understand what equivalent fractions are and how to identify them.",
-    selected: false,
-  },
-  {
-    id: "lesson-03",
-    number: "03",
-    title: "Introduction to Place Value",
-    description:
-      "Understand what equivalent fractions are and how to identify them.",
-    selected: false,
-  },
-  {
-    id: "lesson-04",
-    number: "04",
-    title: "Introduction to Place Value",
-    description:
-      "Understand what equivalent fractions are and how to identify them.",
-    selected: true,
-  },
-];
+// Resource types the admin attaches to lessons, mapped to the icons above.
+const TYPE_ALIASES = {
+  "lesson-notes": "lesson-note",
+  presentation: "powerpoint",
+  activity: "practice-activity",
+};
+const iconFor = (type) =>
+  resourceTypes.find((r) => r.type === (TYPE_ALIASES[type] ?? type)) ?? resourceTypes[0];
 
 export default function TopicDetails() {
   const { topicId } = useParams();
+  const [params] = useSearchParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const subjectId = params.get("subject");
+  const year = params.get("year");
 
-  const topic = topicData[topicId];
+  const [topic, setTopic] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [resourceError, setResourceError] = useState("");
 
   const [activeTab, setActiveTab] = useState("lessons");
-  const [selectedLessons, setSelectedLessons] = useState(
-    lessons
-      .filter((lesson) => lesson.selected)
-      .map((lesson) => lesson.id)
-  );
+  const [selectedLessons, setSelectedLessons] = useState([]);
   const [saved, setSaved] = useState(false);
+
+  // The topic, its lessons and their attachments come from the curriculum of the chosen subject.
+  useEffect(() => {
+    if (!subjectId) {
+      setLoading(false);
+      return undefined;
+    }
+    let cancelled = false;
+    Promise.all([
+      api.get(`/curriculum/subjects/${subjectId}/topics`),
+      api.get("/tutors/subjects"),
+    ])
+      .then(([topics, courses]) => {
+        if (cancelled) return;
+        const published = topics.filter((t) => t.published);
+        const index = published.findIndex((t) => String(t.id) === topicId);
+        if (index === -1) return;
+        const t = published[index];
+        const lessons = t.lessons.map((l, i) => ({
+          id: l.id,
+          number: String(i + 1).padStart(2, "0"),
+          title: l.title,
+          description: (l.content || "").length > 300 ? `${l.content.slice(0, 300)}…` : l.content || "",
+          attachments: l.attachments ?? [],
+        }));
+        setTopic({
+          id: t.id,
+          number: String(index + 1).padStart(2, "0"),
+          title: t.title,
+          description: t.description || "",
+          lessons,
+          lessonCount: lessons.length,
+          subjectId: Number(subjectId),
+          subject: courses.find((c) => String(c.subjectId) === subjectId)?.name ?? "",
+          year,
+        });
+        const earlier = readSaved(user?.id).find((x) => x.id === t.id);
+        setSaved(!!earlier);
+        setSelectedLessons(earlier?.lessonIds ?? []);
+      })
+      .catch((err) => !cancelled && setError(err.message || "Could not load this topic."))
+      .finally(() => !cancelled && setLoading(false));
+    return () => {
+      cancelled = true;
+    };
+  }, [topicId, subjectId, year, user?.id]);
+
+  const lessons = topic?.lessons ?? [];
+
+  const openResource = async (attachment) => {
+    setResourceError("");
+    try {
+      if (/^https:\/\//.test(attachment.fileUrl)) {
+        window.open(attachment.fileUrl, "_blank", "noopener,noreferrer");
+      } else {
+        await openPrivateFile(attachment.fileUrl);
+      }
+    } catch (err) {
+      setResourceError(err.message || "Could not open this file.");
+    }
+  };
 
   const toggleLesson = (lessonId) => {
     setSelectedLessons((previous) =>
@@ -124,8 +134,17 @@ export default function TopicDetails() {
   };
 
   const handleSaveTopic = () => {
+    saveTopic(user?.id, {
+      id: topic.id,
+      number: topic.number,
+      subjectId: topic.subjectId,
+      year: topic.year,
+      title: topic.title,
+      description: topic.description,
+      lessons: topic.lessonCount,
+      lessonIds: selectedLessons,
+    });
     setSaved(true);
-    // Connect your API here to persist the saved topic.
   };
 
   if (!topic) {
@@ -144,12 +163,14 @@ export default function TopicDetails() {
 
         <section className="mt-8 rounded-xl border border-[#E2E7ED] bg-white p-5 sm:p-8">
           <h1 className="text-2xl font-bold text-[#171717] sm:text-3xl">
-            Topic not found
+            {loading ? "Loading topic…" : "Topic not found"}
           </h1>
-          <p className="mt-2 text-base leading-7 text-[#737B8C]">
-            The requested topic could not be found. Please return to your
-            lesson notes and select a topic.
-          </p>
+          {!loading && (
+            <p role={error ? "alert" : undefined} className="mt-2 text-base leading-7 text-[#737B8C]">
+              {error ||
+                "The requested topic could not be found. Please return to your lesson notes and select a topic."}
+            </p>
+          )}
         </section>
       </main>
     );
@@ -181,11 +202,15 @@ export default function TopicDetails() {
           </h1>
 
           <p className="mt-2 text-sm leading-6 text-[#737B8C] sm:text-base">
-            {topic.lessons} lessons
-            <span className="mx-2 text-[#C1C8D3]" aria-hidden="true">
-              ·
-            </span>
-            Year {topic.year}
+            {topic.lessonCount} {topic.lessonCount === 1 ? "lesson" : "lessons"}
+            {topic.year && (
+              <>
+                <span className="mx-2 text-[#C1C8D3]" aria-hidden="true">
+                  ·
+                </span>
+                {topic.year}
+              </>
+            )}
             <span className="mx-2 text-[#C1C8D3]" aria-hidden="true">
               ·
             </span>
@@ -246,6 +271,16 @@ export default function TopicDetails() {
             aria-labelledby="lessons-tab"
             className="mt-5 flex flex-col gap-4 sm:mt-6 sm:gap-5"
           >
+            {resourceError && (
+              <p role="alert" className="text-sm font-medium text-red-600">
+                {resourceError}
+              </p>
+            )}
+            {lessons.length === 0 && (
+              <p className="rounded-xl border border-[#E2E7ED] bg-white p-5 text-sm text-[#737B8C]">
+                No lessons have been added to this topic yet.
+              </p>
+            )}
             {lessons.map((lesson) => {
               const isSelected = selectedLessons.includes(lesson.id);
 
@@ -286,32 +321,52 @@ export default function TopicDetails() {
 
                   {/* Learning resources */}
                   <div className="mt-5 border-t border-black/5 pt-4">
-                    <h3 className="mb-3 text-sm font-semibold text-[#414957] sm:text-base">
-                      Learning resources
-                    </h3>
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <h3 className="text-sm font-semibold text-[#414957] sm:text-base">
+                        Learning resources
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          navigate(
+                            `/tutor/curriculum/topics/${topic.id}/prepare-lesson`,
+                            {
+                              state: {
+                                topic: { id: topic.id, title: topic.title, subject: topic.subject, year: topic.year },
+                                lesson: { id: lesson.id, number: lesson.number, title: lesson.title },
+                              },
+                            }
+                          )
+                        }
+                        className="shrink-0 text-sm font-semibold text-[#306BFF] hover:underline"
+                      >
+                        Prepare lesson
+                      </button>
+                    </div>
 
                     <div className="flex flex-wrap gap-2">
-                      {resourceTypes.map((resource) => (
-                        <button
-                          key={resource.type}
-                          type="button"
-                          onClick={() => {
-                            // Connect this resource to its viewer or URL.
-                          }}
-                          className="inline-flex min-h-10 max-w-full items-center justify-center gap-2 rounded-lg border border-[#E1E5EB] bg-white px-3 py-2 text-sm font-medium text-[#333333] transition-colors hover:border-[#B9C9E8] hover:bg-[#FAFBFF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3478FF] sm:min-h-11 sm:px-4"
-                        >
-                          <span
-                            aria-hidden="true"
-                            className="flex h-5 w-5 shrink-0 items-center justify-center [&>svg]:h-full [&>svg]:w-full"
-                            dangerouslySetInnerHTML={{
-                              __html: resource.svg,
-                            }}
-                          />
-                          <span className="break-words">
-                            {resource.label}
-                          </span>
-                        </button>
-                      ))}
+                      {lesson.attachments.length === 0 && (
+                        <p className="text-sm text-[#8A93A3]">No learning resources uploaded for this lesson yet.</p>
+                      )}
+                      {lesson.attachments.map((attachment) => {
+                        const resource = iconFor(attachment.resourceType);
+                        return (
+                          <button
+                            key={attachment.id}
+                            type="button"
+                            title={attachment.fileName}
+                            onClick={() => openResource(attachment)}
+                            className="inline-flex min-h-10 max-w-full items-center justify-center gap-2 rounded-lg border border-[#E1E5EB] bg-white px-3 py-2 text-sm font-medium text-[#30343B] transition-colors hover:border-[#306BFF]"
+                          >
+                            <span
+                              aria-hidden="true"
+                              className="flex h-5 w-5 shrink-0 items-center justify-center [&>svg]:h-full [&>svg]:w-full"
+                              dangerouslySetInnerHTML={{ __html: resource.svg }}
+                            />
+                            <span className="truncate">{attachment.fileName}</span>
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 </article>
@@ -352,7 +407,7 @@ export default function TopicDetails() {
                   Year group
                 </dt>
                 <dd className="text-base font-semibold text-[#252525]">
-                  Year {topic.year}
+                  {topic.year || "All years"}
                 </dd>
               </div>
 
@@ -361,7 +416,7 @@ export default function TopicDetails() {
                   Total lessons
                 </dt>
                 <dd className="text-base font-semibold text-[#252525]">
-                  {topic.lessons} lessons
+                  {topic.lessonCount} {topic.lessonCount === 1 ? "lesson" : "lessons"}
                 </dd>
               </div>
             </dl>

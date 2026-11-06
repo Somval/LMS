@@ -1,6 +1,7 @@
 
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import Avatar from "../Avatar";
 import {
   ArrowLeft,
   Download,
@@ -11,18 +12,8 @@ import {
   BookOpen,
 } from "lucide-react";
 
-const student = {
-  name: "Daniel Smith",
-  studentId: "STU001",
-  guardian: "Mrs. Okafor",
-  reportPeriod: "Oct 1, 2026 – Oct 31, 2026",
-  averageScore: "85%",
-  subjectsEnrolled: 5,
-  classesAttended: "16 / 19",
-  attendanceRate: "84%",
-};
 
-const metrics = [
+const buildMetrics = (student) => [
   {
     title: "Average Score",
     value: student.averageScore,
@@ -57,48 +48,6 @@ const metrics = [
   },
 ];
 
-const subjects = [
-  {
-    id: 1,
-    subject: "Mathematics",
-    topicsCovered: "8/10",
-    assignments: "5/6",
-    quizzes: "5/6",
-    averageScore: "90%",
-    overallProgress: 85,
-    remarks: "Excellent",
-  },
-  {
-    id: 2,
-    subject: "Mathematics",
-    topicsCovered: "8/10",
-    assignments: "5/6",
-    quizzes: "5/6",
-    averageScore: "90%",
-    overallProgress: 85,
-    remarks: "Excellent",
-  },
-  {
-    id: 3,
-    subject: "Mathematics",
-    topicsCovered: "8/10",
-    assignments: "5/6",
-    quizzes: "5/6",
-    averageScore: "90%",
-    overallProgress: 85,
-    remarks: "Excellent",
-  },
-  {
-    id: 4,
-    subject: "Mathematics",
-    topicsCovered: "8/10",
-    assignments: "5/6",
-    quizzes: "5/6",
-    averageScore: "90%",
-    overallProgress: 85,
-    remarks: "Excellent",
-  },
-];
 
 const subjectColumns = [
   "Subject",
@@ -110,7 +59,7 @@ const subjectColumns = [
   "Remarks",
 ];
 
-function SubjectProgress() {
+function SubjectProgress({ subjects = [] }) {
   return (
     <section className="w-full min-w-0 rounded-lg bg-white p-3.5 sm:p-4 lg:p-5">
       {/* Section Heading */}
@@ -207,7 +156,7 @@ function SubjectProgress() {
 
                 {/* Remarks */}
                 <td className="bg-[#F7F9FC] px-2.5 py-2 sm:px-3">
-                  <span className="inline-flex items-center justify-center whitespace-nowrap rounded-[3px] bg-[#D9F8DF] px-2.5 py-1.5 text-[10px] font-semibold leading-tight text-[#168532] sm:text-[11px]">
+                  <span className={`inline-flex items-center justify-center whitespace-nowrap rounded-[3px] px-2.5 py-1.5 text-[10px] font-semibold leading-tight sm:text-[11px] ${remarkStyles[subject.remarks] || "bg-[#EEF1F6] text-[#667085]"}`}>
                     {subject.remarks}
                   </span>
                 </td>
@@ -220,7 +169,27 @@ function SubjectProgress() {
   );
 }
 
-export default function StudentDetailsStatistics() {
+const remarkStyles = {
+  Excellent: "bg-[#D9F8DF] text-[#168532]",
+  "On Track": "bg-[#FFF0D9] text-[#986515]",
+  Poor: "bg-[#FFE4E5] text-[#D92735]",
+};
+
+const pctText = (n) => (n == null ? "—" : `${n}%`);
+
+export default function StudentDetailsStatistics({ report }) {
+  const student = {
+    ...report.student,
+    guardian: report.student.guardian || "—",
+    reportPeriod: "All time",
+    averageScore: pctText(report.metrics.averageScore),
+    subjectsEnrolled: report.metrics.subjectsEnrolled,
+    classesAttended: `${report.metrics.classesAttended} / ${report.metrics.classesTotal}`,
+    attendanceRate: pctText(report.metrics.attendanceRate),
+  };
+  const subjects = report.subjects.map((s) => ({ ...s, averageScore: pctText(s.averageScore) }));
+  const metrics = buildMetrics(student);
+
   const navigate = useNavigate();
 
   const handleDownload = () => {
@@ -300,11 +269,12 @@ export default function StudentDetailsStatistics() {
           aria-label="Student information"
           className="flex min-w-0 items-start gap-3 sm:gap-4"
         >
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#D9D9D9] sm:h-[54px] sm:w-[54px]">
-            <span className="sr-only">
-              {student.name} profile photo
-            </span>
-          </div>
+          <Avatar
+            name={student.name}
+            avatarUrl={student.avatarUrl}
+            textClassName="text-base"
+            className="h-12 w-12 shrink-0 rounded-full sm:h-[54px] sm:w-[54px]"
+          />
 
           <div className="min-w-0 flex-1 pt-0.5">
             <h2 className="truncate text-lg font-bold leading-tight tracking-[-0.2px] sm:text-xl">
@@ -370,7 +340,7 @@ export default function StudentDetailsStatistics() {
         </section>
 
         {/* Subject Progress */}
-        <SubjectProgress />
+        <SubjectProgress subjects={subjects} />
       </div>
     </main>
   );

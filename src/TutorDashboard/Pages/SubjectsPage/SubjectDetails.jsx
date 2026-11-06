@@ -9,31 +9,20 @@ import {
   HelpCircle,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { subjectLabel } from "./subjectFormat";
 
-export default function SubjectHeader() {
+const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+
+export default function SubjectHeader({ data }) {
   const navigate = useNavigate();
+  const { subject, yearLevel, metrics: m } = data;
 
   const metrics = [
-    {
-      icon: Users,
-      label: "24 Students",
-    },
-    {
-      icon: CalendarDays,
-      label: "36 Total Classes",
-    },
-    {
-      icon: BookOpen,
-      label: "18 Lesson Notes",
-    },
-    {
-      icon: FileText,
-      label: "12 Active Assignments",
-    },
-    {
-      icon: HelpCircle,
-      label: "1 Active Quiz",
-    },
+    { icon: Users, label: plural(m.students, "Student", "Students") },
+    { icon: CalendarDays, label: `${m.totalClasses} Total Classes` },
+    { icon: BookOpen, label: plural(m.lessonNotes, "Lesson Note", "Lesson Notes") },
+    { icon: FileText, label: `${m.activeAssignments} Active Assignments` },
+    { icon: HelpCircle, label: plural(m.activeQuizzes, "Active Quiz", "Active Quizzes") },
   ];
 
   return (
@@ -43,7 +32,7 @@ export default function SubjectHeader() {
         <div className="flex w-full items-center gap-[8px]">
           <button
             type="button"
-            onClick={() => navigate("/subjects")}
+            onClick={() => navigate("/tutor/subjects")}
             className="
               shrink-0
               text-[15px]
@@ -70,7 +59,7 @@ export default function SubjectHeader() {
               text-[#246BFF]
             "
           >
-            Mathematics (Year 1)
+            {subjectLabel(subject.name, yearLevel)}
           </span>
         </div>
 
@@ -117,9 +106,10 @@ export default function SubjectHeader() {
                   text-[#0B0B0D]
                 "
               >
-                Mathematics
+                {subject.name}
               </h1>
 
+              {yearLevel && (
               <span
                 className="
                   inline-flex
@@ -134,8 +124,9 @@ export default function SubjectHeader() {
                   text-[#303487]
                 "
               >
-                Year 1
+                {yearLevel}
               </span>
+              )}
             </div>
 
             {/* DESCRIPTION */}
@@ -149,7 +140,7 @@ export default function SubjectHeader() {
                 text-[#697384]
               "
             >
-              Numbers, algebra, geometry and more.
+              {subject.description || "No description yet."}
             </p>
 
             {/* FULL-WIDTH METRICS */}

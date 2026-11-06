@@ -1,5 +1,6 @@
-
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { api } from "../../lib/api";
 import {
   Search,
   Plus,
@@ -15,101 +16,12 @@ import {
   Users,
 } from "lucide-react";
 
-import ScheduleClassModal from "../../components/Admincomponent/ScheduleClassModal";
 
-const initialClasses = [
-  {
-    id: 1,
-    name: "Olivia Brown",
-    studentId: "STU0012",
-    subject: "Mathematics",
-    level: "Year 4",
-    days: "Mon & Wed",
-    time: "5:00 PM – 6:00 PM",
-    nextClass: "Oct 7, 2026",
-    nextTime: "5:00 PM",
-    classesCount: "12/12",
-    status: "Active",
-  },
-  {
-    id: 2,
-    name: "Olivia Brown",
-    studentId: "STU0012",
-    subject: "Mathematics",
-    level: "Year 4",
-    days: "Mon & Wed",
-    time: "5:00 PM – 6:00 PM",
-    nextClass: "Oct 7, 2026",
-    nextTime: "5:00 PM",
-    classesCount: "7/8",
-    status: "On hold",
-  },
-  {
-    id: 3,
-    name: "Olivia Brown",
-    studentId: "STU0012",
-    subject: "Mathematics",
-    level: "Year 4",
-    days: "Mon & Wed",
-    time: "5:00 PM – 6:00 PM",
-    nextClass: "Oct 7, 2026",
-    nextTime: "5:00 PM",
-    classesCount: "1/1",
-    status: "Active",
-  },
-  {
-    id: 4,
-    name: "Olivia Brown",
-    studentId: "STU0012",
-    subject: "Mathematics",
-    level: "Year 4",
-    days: "Mon & Wed",
-    time: "5:00 PM – 6:00 PM",
-    nextClass: "Oct 7, 2026",
-    nextTime: "5:00 PM",
-    classesCount: "12/12",
-    status: "Active",
-  },
-  {
-    id: 5,
-    name: "Olivia Brown",
-    studentId: "STU0012",
-    subject: "Mathematics",
-    level: "Year 4",
-    days: "Mon & Wed",
-    time: "5:00 PM – 6:00 PM",
-    nextClass: "Oct 7, 2026",
-    nextTime: "5:00 PM",
-    classesCount: "12/12",
-    status: "Active",
-  },
-  {
-    id: 6,
-    name: "Olivia Brown",
-    studentId: "STU0012",
-    subject: "Mathematics",
-    level: "Year 4",
-    days: "Mon & Wed",
-    time: "5:00 PM – 6:00 PM",
-    nextClass: "Oct 7, 2026",
-    nextTime: "5:00 PM",
-    classesCount: "12/12",
-    status: "Active",
-  },
-  {
-    id: 7,
-    name: "Olivia Brown",
-    studentId: "STU0012",
-    subject: "Mathematics",
-    level: "Year 4",
-    days: "Mon & Wed",
-    time: "5:00 PM – 6:00 PM",
-    nextClass: "Oct 7, 2026",
-    nextTime: "5:00 PM",
-    classesCount: "12/12",
-    status: "Active",
-  },
-];
+
+const fmtDay = (d) =>
+  new Date(d).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+const fmtClock = (d) => new Date(d).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+
 
 const ITEMS_PER_PAGE = 7;
 
@@ -126,8 +38,43 @@ const emptyClass = {
   status: "Active",
 };
 
-export default function AssignedClasses() {
-  const [classes, setClasses] = useState(initialClasses);
+export default function AssignedClasses({ tutor }) {
+  const navigate = useNavigate();
+  const [classes, setClasses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  // GET /admin/tutors/:id/classes
+  const load = useCallback(async () => {
+    if (!tutor?.id) return;
+    try {
+      const rows = await api.get(`/admin/tutors/${tutor.id}/classes`);
+      setClasses(
+        rows.map((r) => ({
+          id: r.id,
+          name: r.title,
+          studentId: `${r.students} ${r.students === 1 ? "student" : "students"}`,
+          subject: r.subject,
+          level: "",
+          days: fmtDay(r.startsAt),
+          time: `${fmtClock(r.startsAt)} – ${fmtClock(r.endsAt)}`,
+          nextClass: r.status === "Upcoming" ? fmtDay(r.startsAt) : "–",
+          nextTime: r.status === "Upcoming" ? fmtClock(r.startsAt) : "",
+          classesCount: r.status === "Cancelled" ? "–" : r.marked ? `${r.present}/${r.marked} present` : "Not taken",
+          status: r.status,
+        }))
+      );
+      setError("");
+    } catch (err) {
+      setError(err.message || "Could not load classes.");
+    } finally {
+      setLoading(false);
+    }
+  }, [tutor?.id]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const subjectOptions = [...new Set(classes.map((c) => c.subject))].sort();
   const [search, setSearch] = useState("");
   const [levelFilter, setLevelFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -135,7 +82,6 @@ export default function AssignedClasses() {
   const [currentPage, setCurrentPage] = useState(1);
   const [activeMenu, setActiveMenu] = useState(null);
   const [selectedClass, setSelectedClass] = useState(null);
-  const [showScheduleModal, setShowScheduleModal] = useState(false);
 
   const filteredClasses = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -179,25 +125,15 @@ export default function AssignedClasses() {
     setActiveMenu(null);
   };
 
-  const handleScheduleClass = (formData) => {
-    const newClass = {
-      ...emptyClass,
-      ...formData,
-      id: Date.now(),
-    };
-
-    setClasses((previous) => [newClass, ...previous]);
-    setCurrentPage(1);
-    setSearch("");
-    setLevelFilter("");
-    setStatusFilter("");
-    setSubjectFilter("");
-    setShowScheduleModal(false);
-  };
-
-  const handleRemoveClass = (id) => {
-    setClasses((previous) => previous.filter((item) => item.id !== id));
+  // Cancel an upcoming class: PATCH /classes/:id { status: "CANCELLED" } (students are notified)
+  const handleRemoveClass = async (id) => {
     setActiveMenu(null);
+    try {
+      await api.patch(`/classes/${id}`, { status: "CANCELLED" });
+      load();
+    } catch (err) {
+      setError(err.message || "Could not cancel this class.");
+    }
   };
 
   const clearFilters = () => {
@@ -219,7 +155,7 @@ export default function AssignedClasses() {
 
           <button
             type="button"
-            onClick={() => setShowScheduleModal(true)}
+            onClick={() => navigate("/admin/schedule-class")}
             className="inline-flex h-[34px] shrink-0 items-center justify-center gap-2 rounded-[4px] bg-[#064B0B] px-3 text-[10px] font-medium text-white transition hover:bg-[#053D09] focus:outline-none focus:ring-2 focus:ring-green-200 focus:ring-offset-2 sm:px-4 sm:text-[11px]"
           >
             <Plus size={14} strokeWidth={1.8} />
@@ -239,31 +175,23 @@ export default function AssignedClasses() {
               type="search"
               value={search}
               onChange={updateFilter(setSearch)}
-              placeholder="Search student or subjects..."
-              aria-label="Search students or subjects"
+              placeholder="Search class or subject..." aria-label="Search classes or subjects"
               className="h-[37px] w-full min-w-0 rounded-[5px] border border-[#E5E7EB] bg-white pl-[31px] pr-3 text-[11px] text-[#252525] outline-none transition placeholder:text-[#A0A0A8] focus:border-[#9CAFFB] focus:ring-2 focus:ring-indigo-50"
             />
           </div>
 
           <FilterSelect
-            label="Level"
-            value={levelFilter}
-            onChange={updateFilter(setLevelFilter)}
-            options={["Year 3", "Year 4", "Year 5"]}
-          />
-
-          <FilterSelect
             label="Status"
             value={statusFilter}
             onChange={updateFilter(setStatusFilter)}
-            options={["Active", "On hold"]}
+            options={["Upcoming", "Completed", "Cancelled"]}
           />
 
           <FilterSelect
             label="Subjects"
             value={subjectFilter}
             onChange={updateFilter(setSubjectFilter)}
-            options={["Mathematics", "Science", "English"]}
+            options={subjectOptions}
           />
         </div>
 
@@ -285,14 +213,7 @@ export default function AssignedClasses() {
               <thead>
                 <tr className="h-[33px] bg-[#EEF3F9]">
                   {[
-                    "Student",
-                    "Subject",
-                    "Level",
-                    "Class Schedule",
-                    "Next Class",
-                    "Classes Count",
-                    "Status",
-                    "Action",
+                    "Class", "Subject", "Date & Time", "Next Class", "Attendance", "Status", "Action",
                   ].map((heading) => (
                     <th
                       key={heading}
@@ -318,10 +239,6 @@ export default function AssignedClasses() {
 
                     <td className="truncate px-2 py-1.5 text-[8px] text-[#333B48]">
                       {item.subject}
-                    </td>
-
-                    <td className="whitespace-nowrap px-2 py-1.5 text-[8px] text-[#333B48]">
-                      {item.level}
                     </td>
 
                     <td className="px-2 py-1.5">
@@ -360,7 +277,7 @@ export default function AssignedClasses() {
                 ))}
 
                 {visibleClasses.length === 0 && (
-                  <EmptyState colSpan={8} onClear={clearFilters} />
+                  <EmptyState colSpan={7} onClear={clearFilters} />
                 )}
               </tbody>
             </table>
@@ -512,14 +429,6 @@ export default function AssignedClasses() {
         </footer>
       </div>
 
-      {/* Separate Schedule Class modal */}
-      {showScheduleModal && (
-        <ScheduleClassModal
-          onClose={() => setShowScheduleModal(false)}
-          onSchedule={handleScheduleClass}
-        />
-      )}
-
       {/* Class details modal */}
       {selectedClass && (
         <DetailsModal
@@ -611,14 +520,13 @@ function MobileInfo({ icon: Icon, label, value }) {
 }
 
 function StatusBadge({ status }) {
-  const isActive = status === "Active";
+  const isActive = status === "Upcoming" || status === "Active";
+  const isCancelled = status === "Cancelled";
 
   return (
     <span
       className={`inline-flex min-w-[49px] items-center justify-center rounded-full px-2 py-[3px] text-[9px] font-medium leading-[12px] ${
-        isActive
-          ? "bg-[#DDF5E3] text-[#16803D]"
-          : "bg-[#F8EBDD] text-[#A65A08]"
+        isActive ? "bg-[#DDF5E3] text-[#16803D]" : isCancelled ? "bg-[#FCE4E4] text-[#B42318]" : "bg-[#E8EDF5] text-[#475467]"
       }`}
     >
       {status}
@@ -673,7 +581,7 @@ function RowActions({ item, activeMenu, setActiveMenu, onView, onRemove }) {
             className="flex w-full items-center gap-2 rounded px-3 py-2 text-[11px] text-red-600 hover:bg-red-50"
           >
             <X size={13} />
-            Remove class
+            Cancel class
           </button>
         </div>
       )}
@@ -762,12 +670,12 @@ function DetailsModal({ item, onClose }) {
 
         <div className="grid grid-cols-2 gap-4">
           <DetailItem label="Subject" value={item.subject} />
-          <DetailItem label="Level" value={item.level} />
-          <DetailItem label="Class Days" value={item.days} />
-          <DetailItem label="Class Time" value={item.time} />
+          
+          <DetailItem label="Date" value={item.days} />
+          <DetailItem label="Time" value={item.time} />
           <DetailItem label="Next Class" value={item.nextClass} />
           <DetailItem label="Next Class Time" value={item.nextTime} />
-          <DetailItem label="Classes Count" value={item.classesCount} />
+          <DetailItem label="Attendance" value={item.classesCount} />
           <div>
             <p className="mb-1 text-[11px] text-gray-500">Status</p>
             <StatusBadge status={item.status} />

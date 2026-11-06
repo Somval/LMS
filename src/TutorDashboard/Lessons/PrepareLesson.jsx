@@ -1,6 +1,8 @@
 
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import { readPlan, savePlan } from "./lessonStore";
 import {
   ArrowLeft,
   Check,
@@ -112,13 +114,15 @@ export default function PrepareLesson() {
   const topic = location.state?.topic;
   const lesson = location.state?.lesson;
 
-  const [selectedResources, setSelectedResources] = useState([
-    "lesson-note",
-    "powerpoint",
-    "worksheet",
-  ]);
+  const { user } = useAuth();
 
-  const [selectedDelivery, setSelectedDelivery] = useState([]);
+  // A plan saved earlier for this lesson is picked up again; otherwise start with the usual three.
+  const earlierPlan = lesson ? readPlan(user?.id, lesson.id) : null;
+  const [selectedResources, setSelectedResources] = useState(
+    earlierPlan?.resources ?? ["lesson-note", "powerpoint", "worksheet"]
+  );
+
+  const [selectedDelivery, setSelectedDelivery] = useState(earlierPlan?.delivery ?? []);
   const [alert, setAlert] = useState(null);
 
   const showAlert = (message, type = "info") => {
@@ -153,22 +157,34 @@ export default function PrepareLesson() {
       return;
     }
 
-    const lessonConfiguration = {
-      topic,
-      lesson,
+    savePlan(user?.id, lesson.id, {
       resources: selectedResources,
-      deliveryMethods: selectedDelivery,
-    };
-
-    console.log("Lesson configuration:", lessonConfiguration);
-    showAlert("Lesson successfully configured and saved!", "success");
+      delivery: selectedDelivery,
+    });
+    showAlert("Lesson plan saved on this device.", "success");
   };
 
-  const lessonTitle = lesson?.title || "Introduction to Place Value";
-  const lessonNumber = lesson?.number || "01";
-  const subject = topic?.subject || "Mathematics";
-  const year = topic?.year || 4;
-  const topicTitle = topic?.title || "Numbers";
+  // Opened directly (for example after a refresh) there is no lesson to prepare.
+  if (!lesson) {
+    return (
+      <main className="min-h-screen w-full bg-[#F4F6FC] px-4 py-6 font-sans sm:px-6">
+        <p className="text-sm font-medium text-[#5F6979]">
+          Choose a lesson from a topic to prepare it.
+        </p>
+        <button
+          type="button"
+          onClick={() => navigate("/tutor/lessons")}
+          className="mt-3 text-sm font-semibold text-[#306BFF] hover:underline"
+        >
+          Go to lesson notes
+        </button>
+      </main>
+    );
+  }
+
+  const lessonTitle = lesson.title;
+  const lessonNumber = lesson.number;
+  const subjectLine = [topic?.subject, topic?.year, topic?.title].filter(Boolean).join(" · ");
 
   return (
     <main className="min-h-screen w-full bg-[#F4F6FC] px-3 pb-8 pt-4 font-sans sm:px-6">
@@ -254,7 +270,7 @@ export default function PrepareLesson() {
                   </h3>
 
                   <p className="mt-0.5 truncate text-xs text-[#777F8E]">
-                    {subject} · Year {year} · {topicTitle}
+                    {subjectLine}
                   </p>
                 </div>
               </div>

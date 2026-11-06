@@ -1,6 +1,6 @@
 
 import React, { useMemo, useState } from "react";
-import useAdminPayments, { naira } from "../../AdminDashboard/hooks/useAdminPayments";
+import { naira, exportRevenueCsv } from "../../AdminDashboard/hooks/useAdminPayments";
 
 import {
   CircleAlert,
@@ -88,72 +88,53 @@ function RevenueIcon({ name, className = "" }) {
   );
 }
 
-export default function RevenuePayments() {
-  const { totals, loading } = useAdminPayments();
+export default function RevenuePayments({ range, onRangeChange, summary, loading, error }) {
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState("");
 
-  // Cards use live totals from the backend; the design is unchanged.
+  // Cards show live totals for the selected range; the design is unchanged.
   const revenueData = useMemo(
     () =>
       baseRevenueData.map((card) => {
         const key = { 1: "revenue", 2: "successful", 3: "pending", 4: "failed" }[card.id];
+        const countKey = { 2: "successful", 3: "pending", 4: "failed" }[card.id];
+        let subtitle = "";
+        if (summary) {
+          if (card.id === 1) {
+            subtitle =
+              summary.changePct == null
+                ? "After refunds"
+                : `${summary.changePct > 0 ? "+" : ""}${summary.changePct}% vs previous period`;
+          } else {
+            const n = summary.counts[countKey];
+            subtitle = `${n} payment${n === 1 ? "" : "s"}`;
+          }
+        }
         return {
           ...card,
-          amount: loading ? "…" : naira(totals[key]).replace("₦", ""),
-          subtitle: card.id === 1 ? "" : card.subtitle,
+          amount: summary ? naira(summary.totals[key]).replace("₦", "") : loading ? "…" : "0",
+          subtitle,
         };
       }),
-    [totals, loading]
+    [summary, loading]
   );
 
-  const [startDate, setStartDate] = useState("2026-10-01");
-  const [endDate, setEndDate] = useState("2026-10-31");
+  const startDate = range.from;
+  const endDate = range.to;
+  const setStartDate = (v) => v && onRangeChange({ ...range, from: v });
+  const setEndDate = (v) => v && onRangeChange({ ...range, to: v });
 
-  // Format Date
-  const formatDate = (date) => {
-    if (!date) return "";
-
-    return new Date(`${date}T00:00:00`).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
-
-  // Export CSV
-  const handleExport = () => {
-    const escapeCSV = (value) =>
-      `"${String(value ?? "").replace(/"/g, '""')}"`;
-
-    const csvContent = [
-      ["Revenue & Payments Report"],
-      ["Start Date", formatDate(startDate)],
-      ["End Date", formatDate(endDate)],
-      [],
-      ["Category", "Amount", "Description"],
-      ...revenueData.map((item) => [
-        item.title,
-        item.amount,
-        item.subtitle || "N/A",
-      ]),
-    ]
-      .map((row) => row.map(escapeCSV).join(","))
-      .join("\n");
-
-    const blob = new Blob(["\uFEFF" + csvContent], {
-      type: "text/csv;charset=utf-8;",
-    });
-
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-
-    link.href = url;
-    link.download = "revenue-payments-report.csv";
-
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    URL.revokeObjectURL(url);
+  const handleExport = async () => {
+    if (exporting) return;
+    setExporting(true);
+    setExportError("");
+    try {
+      await exportRevenueCsv(range, summary);
+    } catch (err) {
+      setExportError(err.message || "Could not export the report.");
+    } finally {
+      setExporting(false);
+    }
   };
 
   return (
@@ -168,7 +149,7 @@ export default function RevenuePayments() {
           </h2>
 
           <p className="mt-0.5 text-xs text-slate-500 sm:text-sm">
-            Track revenue, payments, refunds and tutor payouts.
+            Track revenue, payments and refunds.
           </p>
         </div>
 
@@ -209,14 +190,21 @@ export default function RevenuePayments() {
           <button
             type="button"
             onClick={handleExport}
+            disabled={exporting}
             className="flex h-9 items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-4 text-xs font-medium text-slate-700 shadow-sm transition-all hover:bg-slate-50 active:scale-95"
           >
             <Download size={15} strokeWidth={1.8} />
-            Export
+            {exporting ? "Exporting…" : "Export"}
           </button>
 
         </div>
       </div>
+
+      {(error || exportError) && (
+        <p role="alert" className="mb-3 rounded-md bg-red-50 px-3 py-2 text-xs text-red-600">
+          {error || exportError}
+        </p>
+      )}
 
       {/* Revenue Summary Cards */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">

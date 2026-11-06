@@ -1,51 +1,27 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Edit, Trash2 } from "lucide-react";
 import badgeIcon from "../../../assets/images/c2582da116168ead7191b53b24caa4b4015bf713 (1).png";
-import EditRewardModal from "../../Modals/EditRewardModal"; // Adjust path if necessary
+import EditRewardModal from "../../Modals/EditRewardModal";
+import { api } from "../../../lib/api";
+import { toPayload, toRow } from "./rewardFormat";
 
 export default function RewardsBadgesTable() {
-  const [items, setItems] = useState([
-    {
-      id: 1,
-      name: "Algebra Master",
-      description: "Awarded for mastering algebra concepts.",
-      criteria: "Score 90% or above in all Algebra quizzes",
-      studentsEarned: 12,
-      iconUrl: badgeIcon,
-    },
-    {
-      id: 2,
-      name: "Geometry Expert",
-      description: "Awarded for completing geometry path.",
-      criteria: "Score 85% or above in Geometry modules",
-      studentsEarned: 8,
-      iconUrl: badgeIcon,
-    },
-    {
-      id: 3,
-      name: "Calculus Pro",
-      description: "Awarded for advanced problem solving.",
-      criteria: "Complete all Calculus problem sets",
-      studentsEarned: 5,
-      iconUrl: badgeIcon,
-    },
-    {
-      id: 4,
-      name: "Trigonometry Star",
-      description: "Awarded for triangle property mastery.",
-      criteria: "Score 90% or above in Trig assessments",
-      studentsEarned: 15,
-      iconUrl: badgeIcon,
-    },
-    {
-      id: 5,
-      name: "Statistics Wizard",
-      description: "Awarded for data analysis proficiency.",
-      criteria: "Submit final statistics project on time",
-      studentsEarned: 10,
-      iconUrl: badgeIcon,
-    },
-  ]);
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  // Rewards the tutor created (badges are listed on the Achievements page).
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .get("/rewards")
+      .then((list) => !cancelled && setItems(list.filter((a) => a.kind === "REWARD").map(toRow)))
+      .catch((err) => !cancelled && setError(err.message || "Could not load rewards."))
+      .finally(() => !cancelled && setLoading(false));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Modal State Management
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -56,22 +32,39 @@ export default function RewardsBadgesTable() {
     setIsModalOpen(true);
   };
 
-  const handleSaveEdit = (updatedItem) => {
-    setItems((currentItems) =>
-      currentItems.map((item) =>
-        item.id === updatedItem.id ? updatedItem : item
-      )
-    );
+  const handleSaveEdit = async (updatedItem) => {
+    setError("");
+    try {
+      const saved = await api.put(`/rewards/${updatedItem.id}`, toPayload(updatedItem));
+      setItems((current) =>
+        current.map((item) =>
+          item.id === updatedItem.id ? { ...updatedItem, ...toRow({ ...saved, studentsEarned: updatedItem.studentsEarned }) } : item
+        )
+      );
+    } catch (err) {
+      setError(err.message || "Could not save your changes.");
+    }
   };
 
-  const handleDelete = (id) => {
-    setItems((currentItems) =>
-      currentItems.filter((item) => item.id !== id)
-    );
+  const handleDelete = async (id) => {
+    const target = items.find((item) => item.id === id);
+    if (!window.confirm(`Delete "${target?.name ?? "this reward"}"? Students who already earned it will lose it.`)) return;
+    setError("");
+    try {
+      await api.delete(`/rewards/${id}`);
+      setItems((current) => current.filter((item) => item.id !== id));
+    } catch (err) {
+      setError(err.message || "Could not delete this reward.");
+    }
   };
 
   return (
     <div className="w-full">
+      {error && (
+        <p role="alert" className="mb-3 text-sm font-medium text-red-600">
+          {error}
+        </p>
+      )}
       {/* ===================================================
           TABLE CONTAINER
       ==================================================== */}
@@ -189,6 +182,13 @@ export default function RewardsBadgesTable() {
                 TABLE BODY
             ================================================== */}
             <tbody className="divide-y divide-[#F1F3F9]">
+              {items.length === 0 && (
+                <tr>
+                  <td colSpan="5" className="px-6 py-12 text-center text-sm text-[#64748B]">
+                    {loading ? "Loading rewards…" : "No rewards yet. Create your first one."}
+                  </td>
+                </tr>
+              )}
               {items.map((item) => (
                 <tr
                   key={item.id}
@@ -220,7 +220,7 @@ export default function RewardsBadgesTable() {
                         "
                       >
                         <img
-                          src={item.iconUrl}
+                          src={badgeIcon}
                           alt={item.name}
                           className="h-20 w-50 object-contain"
                         />

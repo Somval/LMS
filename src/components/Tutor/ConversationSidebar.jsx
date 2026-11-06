@@ -1,94 +1,42 @@
 
 import React from "react";
 import { Search } from "lucide-react";
+import SharedAvatar from "../Avatar";
 
-// Profile data
-export const profiles = [
-  {
-    id: 1,
-    name: "Sarah Johnson",
-    avatarUrl:
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=120&h=120&q=85",
-    student: "Emily Johnson",
-    course: "Mathematics",
-    preview: "Thank you for the update.",
-    time: "10:42 AM",
-  },
-  {
-    id: 2,
-    name: "Michael Williams",
-    avatarUrl:
-      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=120&h=120&q=85",
-    student: "Daniel Williams",
-    course: "Physics",
-    preview: "I will review the assignment.",
-    time: "9:30 AM",
-  },
-  {
-    id: 3,
-    name: "Jessica Brown",
-    avatarUrl:
-      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&h=120&q=85",
-    student: "Sophia Brown",
-    course: "Chemistry",
-    preview: "Could you share the lesson notes?",
-    time: "Yesterday",
-  },
-  {
-    id: 4,
-    name: "David Miller",
-    avatarUrl:
-      "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=120&h=120&q=85",
-    student: "James Miller",
-    course: "English",
-    preview: "That works for us. Thank you!",
-    time: "Yesterday",
-  },
-];
-
-// Reusable profile photo
-export function Avatar({
-  conversation,
-  name,
-  imageUrl,
-  size = "h-8 w-8",
-}) {
-  const profile = conversation || {};
-
-  const displayName = name || profile.name || "Profile photo";
-
-  const src =
-    imageUrl ||
-    profile.avatarUrl ||
-    profile.imageUrl ||
-    profile.image ||
-    (typeof profile.avatar === "string"
-      ? profile.avatar
-      : "");
-
-  const fallbackImage =
-    "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=120&h=120&q=85";
-
+// Profile photo (private, fetched with the login token) or the person's initials.
+export function Avatar({ conversation, name, imageUrl, size = "h-8 w-8" }) {
+  const person = conversation || {};
   return (
-    <img
-      src={src || fallbackImage}
-      alt={displayName}
-      className={`${size} shrink-0 rounded-full object-cover`}
-      loading="lazy"
-      onError={(event) => {
-        event.currentTarget.onerror = null;
-        event.currentTarget.src = fallbackImage;
-      }}
+    <SharedAvatar
+      name={name || person.name}
+      avatarUrl={imageUrl ?? person.avatarUrl}
+      className={`${size} rounded-full`}
+      textClassName="text-[9px]"
     />
   );
 }
 
 export default function ConversationSidebar({
-  conversations = profiles,
+  conversations = [],
   selectedId,
   onSelect = () => {},
+  loading = false,
+  error = "",
+  onRetry,
+  // Optional (used by the admin inbox): filter tabs, a search callback, and custom empty-state text.
+  tabs,
+  activeTab,
+  onTabChange,
+  onSearchChange,
+  emptyTitle = "No one to message yet",
+  emptyHint = "Your students and their parents will show up here.",
 }) {
   const [search, setSearch] = React.useState("");
+
+  React.useEffect(() => {
+    onSearchChange?.(search.trim());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
 
   const filteredConversations = React.useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -128,6 +76,27 @@ export default function ConversationSidebar({
             className="h-[34px] w-full rounded-[7px] border border-[#E2E5EB] bg-white pl-[35px] pr-[10px] text-[10px] text-[#344054] outline-none placeholder:text-[#9CA3AF] focus:border-[#A8BFFF] focus:ring-2 focus:ring-[#EAF0FF]"
           />
         </div>
+
+        {tabs && (
+          <div className="mt-[9px] flex flex-wrap gap-[5px]" role="tablist" aria-label="Filter by role">
+            {tabs.map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                role="tab"
+                aria-selected={activeTab === tab.key}
+                onClick={() => onTabChange?.(tab.key)}
+                className={`rounded-full px-[10px] py-[4px] text-[9px] font-medium transition-colors ${
+                  activeTab === tab.key
+                    ? "bg-[#326AFF] text-white"
+                    : "bg-[#F2F4F8] text-[#475467] hover:bg-[#E6EBF4]"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Conversation list */}
@@ -158,8 +127,16 @@ export default function ConversationSidebar({
                     {conversation.name || "Unknown user"}
                   </span>
 
-                  <span className="shrink-0 text-[8px] text-[#687386]">
+                  <span className="flex shrink-0 items-center gap-[5px] text-[8px] text-[#687386]">
                     {conversation.time || ""}
+                    {conversation.unread > 0 && (
+                      <span
+                        aria-label={`${conversation.unread} unread`}
+                        className="flex h-[13px] min-w-[13px] items-center justify-center rounded-full bg-[#326AFF] px-[3px] text-[8px] font-semibold text-white"
+                      >
+                        {conversation.unread}
+                      </span>
+                    )}
                   </span>
                 </div>
 
@@ -178,14 +155,31 @@ export default function ConversationSidebar({
           );
         })}
 
-        {filteredConversations.length === 0 && (
+        {loading && (
+          <p className="px-4 py-10 text-center text-[11px] text-[#98A2B3]">Loading messages…</p>
+        )}
+
+        {!loading && error && (
+          <div className="px-4 py-10 text-center">
+            <p role="alert" className="text-[11px] font-medium text-red-600">{error}</p>
+            {onRetry && (
+              <button type="button" onClick={onRetry} className="mt-2 text-[10px] font-semibold text-[#326AFF] hover:underline">
+                Try again
+              </button>
+            )}
+          </div>
+        )}
+
+        {!loading && !error && filteredConversations.length === 0 && (
           <div className="px-4 py-10 text-center">
             <p className="text-[11px] font-medium text-[#475467]">
-              No conversations found
+              {conversations.length === 0 ? emptyTitle : "No conversations found"}
             </p>
 
             <p className="mt-1 text-[9px] text-[#98A2B3]">
-              Try another search.
+              {conversations.length === 0
+                ? emptyHint
+                : "Try another search."}
             </p>
           </div>
         )}

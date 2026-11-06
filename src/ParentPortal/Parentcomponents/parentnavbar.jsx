@@ -1,9 +1,10 @@
 
 import React, { useEffect, useState } from "react";
-import { Bell, Menu } from "lucide-react";
+import { Menu } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { api } from "../../lib/api";
+import NotificationBell from "./NotificationBell";
 
 export default function LMSHeader({ onMenuClick }) {
   const { user } = useAuth();
@@ -83,18 +84,7 @@ export default function LMSHeader({ onMenuClick }) {
         <div className="flex items-center shrink-0 gap-0.5 sm:gap-3 lg:gap-5">
 
           {/* NOTIFICATIONS */}
-          <button
-            type="button"
-            aria-label="View notifications"
-            className="relative flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 shrink-0 rounded-full text-slate-600 hover:bg-slate-50 active:bg-slate-100 transition-colors duration-200"
-          >
-            <Bell
-              className="w-4 h-4 sm:w-5 sm:h-5"
-              strokeWidth={2}
-            />
-
-            <span className="absolute top-[5px] right-[5px] sm:top-[8px] sm:right-[8px] w-1.5 h-1.5 sm:w-2.5 sm:h-2.5 bg-red-500 rounded-full ring-2 ring-white" />
-          </button>
+          <NotificationBell />
 
 <Link to="/parent/settings">
           {/* PROFILE */}

@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { api } from "../../lib/api";
 import {
   Search,
   Plus,
@@ -12,83 +13,49 @@ import {
 
 import AssignStudentModal from "../../components/Admincomponent/AssignStudentModal";
 
-const initialStudents = [
-  {
-    id: 1,
-    name: "Olivia Brown",
-    studentId: "STU0012",
-    subject: "Mathematics",
-    level: "Year 4",
-    days: "Mon & Wed",
-    time: "5:00 PM – 6:00 PM",
-    status: "Active",
-  },
-  {
-    id: 2,
-    name: "Olivia Brown",
-    studentId: "STU0012",
-    subject: "Mathematics",
-    level: "Year 4",
-    days: "Mon & Wed",
-    time: "5:00 PM – 6:00 PM",
-    status: "On hold",
-  },
-  {
-    id: 3,
-    name: "Olivia Brown",
-    studentId: "STU0012",
-    subject: "Mathematics",
-    level: "Year 4",
-    days: "Mon & Wed",
-    time: "5:00 PM – 6:00 PM",
-    status: "Active",
-  },
-  {
-    id: 4,
-    name: "Olivia Brown",
-    studentId: "STU0012",
-    subject: "Mathematics",
-    level: "Year 4",
-    days: "Mon & Wed",
-    time: "5:00 PM – 6:00 PM",
-    status: "Active",
-  },
-  {
-    id: 5,
-    name: "Olivia Brown",
-    studentId: "STU0012",
-    subject: "Mathematics",
-    level: "Year 4",
-    days: "Mon & Wed",
-    time: "5:00 PM – 6:00 PM",
-    status: "Active",
-  },
-  {
-    id: 6,
-    name: "Olivia Brown",
-    studentId: "STU0012",
-    subject: "Mathematics",
-    level: "Year 4",
-    days: "Mon & Wed",
-    time: "5:00 PM – 6:00 PM",
-    status: "Active",
-  },
-  {
-    id: 7,
-    name: "Olivia Brown",
-    studentId: "STU0012",
-    subject: "Mathematics",
-    level: "Year 4",
-    days: "Mon & Wed",
-    time: "5:00 PM – 6:00 PM",
-    status: "Active",
-  },
-];
+const fmtDay = (d) =>
+  new Date(d).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+const fmtClock = (d) => new Date(d).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+
 
 const ITEMS_PER_PAGE = 7;
 
-export default function AssignedStudents() {
-  const [students, setStudents] = useState(initialStudents);
+export default function AssignedStudents({ tutor }) {
+  const [students, setStudents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  // GET /admin/tutors/:id/students
+  const load = useCallback(async () => {
+    if (!tutor?.id) return;
+    try {
+      const rows = await api.get(`/admin/tutors/${tutor.id}/students`);
+      setStudents(
+        rows.map((r) => ({
+          id: r.id,
+          userId: r.userId,
+          subjectId: r.subjectId,
+          name: r.name,
+          studentId: r.learnerId,
+          subject: r.subject,
+          level: r.level || "",
+          days: r.nextClass ? fmtDay(r.nextClass.startsAt) : "No class scheduled",
+          time: r.nextClass ? `${fmtClock(r.nextClass.startsAt)} – ${fmtClock(r.nextClass.endsAt)}` : "",
+          status: r.status,
+        }))
+      );
+      setError("");
+    } catch (err) {
+      setError(err.message || "Could not load students.");
+    } finally {
+      setLoading(false);
+    }
+  }, [tutor?.id]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const levelOptions = [...new Set(students.map((s) => s.level).filter(Boolean))].sort();
+  const subjectOptions = [...new Set(students.map((s) => s.subject))].sort();
   const [search, setSearch] = useState("");
   const [levelFilter, setLevelFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -155,29 +122,24 @@ export default function AssignedStudents() {
     setActiveMenu(null);
   };
 
-  // Receives the student information from the separate modal.
-  const handleAssignStudent = (studentData) => {
-    const studentToAdd = {
-      ...studentData,
-      id: Date.now(),
-    };
-
-    setStudents((previous) => [studentToAdd, ...previous]);
-    setCurrentPage(1);
-    setSearch("");
-    setLevelFilter("");
-    setStatusFilter("");
-    setSubjectFilter("");
-    setActiveMenu(null);
+  // The modal saves the assignment itself; here we just reload the list.
+  const handleAssignStudent = () => {
     setShowAssignModal(false);
+    setCurrentPage(1);
+    load();
   };
 
-  const handleRemoveStudent = (studentId) => {
-    setStudents((previous) =>
-      previous.filter((student) => student.id !== studentId)
-    );
-
+  // Unassign: PUT /admin/students/:userId/subjects/:subjectId/tutor { tutorId: null }
+  const handleRemoveStudent = async (rowId) => {
+    const row = students.find((x) => x.id === rowId);
     setActiveMenu(null);
+    if (!row) return;
+    try {
+      await api.put(`/admin/students/${row.userId}/subjects/${row.subjectId}/tutor`, { tutorId: null });
+      load();
+    } catch (err) {
+      setError(err.message || "Could not remove this student.");
+    }
   };
 
   const clearFilters = () => {
@@ -242,11 +204,7 @@ export default function AssignedStudents() {
             label="Level"
             value={levelFilter}
             onChange={handleFilterChange(setLevelFilter)}
-            options={[
-              { label: "Year 3", value: "Year 3" },
-              { label: "Year 4", value: "Year 4" },
-              { label: "Year 5", value: "Year 5" },
-            ]}
+            options={levelOptions.map((v) => ({ label: v, value: v }))}
           />
 
           <FilterSelect
@@ -263,11 +221,7 @@ export default function AssignedStudents() {
             label="Subjects"
             value={subjectFilter}
             onChange={handleFilterChange(setSubjectFilter)}
-            options={[
-              { label: "Mathematics", value: "Mathematics" },
-              { label: "Science", value: "Science" },
-              { label: "English", value: "English" },
-            ]}
+            options={subjectOptions.map((v) => ({ label: v, value: v }))}
           />
         </div>
 
@@ -443,11 +397,11 @@ export default function AssignedStudents() {
               />
 
               <p className="text-[12px] font-medium text-[#475569]">
-                No students found
+                {loading ? "Loading students…" : error ? "Something went wrong" : students.length === 0 ? "No students assigned yet" : "No students found"}
               </p>
 
               <p className="mt-1 text-[11px] text-[#9299A5]">
-                Try changing your search or filters.
+                {loading ? "" : error ? error : students.length === 0 ? "Use Assign Student to add one." : "Try changing your search or filters."}
               </p>
 
               <button
@@ -540,10 +494,7 @@ export default function AssignedStudents() {
 
       {/* Separate assignment modal component */}
       {showAssignModal && (
-        <AssignStudentModal
-          onClose={() => setShowAssignModal(false)}
-          onAssign={handleAssignStudent}
-        />
+        <AssignStudentModal tutor={tutor} onClose={() => setShowAssignModal(false)} onAssigned={handleAssignStudent} />
       )}
 
       {/* Student details modal */}
@@ -773,7 +724,7 @@ function ActionMenu({
               onClick={() => onRemove(student.id)}
               className="w-full rounded px-3 py-2.5 text-left text-[11px] text-red-600 transition hover:bg-red-50"
             >
-              Remove student
+              Unassign student
             </button>
           </div>
         </>

@@ -4,22 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 
 export default function StudentRecognitionHeader({
-  student,
-  guardian = "Mrs. Okafor",
-  startDate = "2026-10-01",
-  endDate = "2026-10-31",
-}) {
+  student, totalPoints, }) {
   const navigate = useNavigate();
-
-  const formatDate = (date) => {
-    if (!date) return "";
-
-    return new Date(`${date}T00:00:00`).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
 
   return (
     <section className="w-full bg-[#F4F7FD] px-4 pb-4 pt-3 sm:px-6 sm:pb-5 sm:pt-4 lg:px-7">
@@ -46,20 +32,16 @@ export default function StudentRecognitionHeader({
         {/* Student Details */}
         <div className="min-w-0 flex-1">
           <h2 className="truncate text-base font-semibold leading-tight text-[#111111] sm:text-lg">
-            {student?.name || "Daniel Smith"}
+            {student?.name || "Student"}
           </h2>
 
           <div className="mt-1.5 flex flex-wrap items-center gap-x-5 gap-y-1 text-[10px] leading-relaxed text-[#788394] sm:gap-x-7 sm:text-[11px]">
             <span>
-              Student ID: {student?.studentId || "STU001"}
+              Student ID: {student?.studentId}
             </span>
 
             <span>
-              Guardian: {guardian}
-            </span>
-
-            <span>
-              Report Period: {formatDate(startDate)} — {formatDate(endDate)}
+              Total points: {totalPoints ?? "…"}
             </span>
           </div>
         </div>

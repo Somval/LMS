@@ -1,30 +1,14 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { UsersRound } from "lucide-react";
 
-// USER MANAGEMENT SETTINGS DATA
-const userManagementSettings = [
-  {
-    allowStudentRegistration: true,
-    allowParentRegistration: true,
-    allowTutorRegistration: true,
-  },
-];
-
-export default function UserManagement() {
-  const settings = userManagementSettings[0];
-
-  const [studentRegistration, setStudentRegistration] = useState(
-    settings.allowStudentRegistration
-  );
-
-  const [parentRegistration, setParentRegistration] = useState(
-    settings.allowParentRegistration
-  );
-
-  const [tutorRegistration, setTutorRegistration] = useState(
-    settings.allowTutorRegistration
-  );
+export default function UserManagement({ value, onChange }) {
+  const studentRegistration = value.student;
+  const parentRegistration = value.parent;
+  const tutorRegistration = value.tutor;
+  const setStudentRegistration = (v) => onChange({ student: v });
+  const setParentRegistration = (v) => onChange({ parent: v });
+  const setTutorRegistration = (v) => onChange({ tutor: v });
 
   // REUSABLE TOGGLE SWITCH
   const ToggleSwitch = ({ enabled, onToggle, label }) => (

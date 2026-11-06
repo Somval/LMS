@@ -1,6 +1,6 @@
 import React from "react";
 
-export default function Tutorhome() {
+export default function Tutorhome({ onAddTutor = () => {} }) {
   return (
     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6 w-full px-4 sm:px-6 py-4">
       {/* Title & Subtitle */}
@@ -15,7 +15,7 @@ export default function Tutorhome() {
 
       {/* Action Button */}
       <div className="w-full sm:w-auto">
-        <button className="w-full sm:w-[221px] h-[48px] sm:h-[58px] bg-[#003300] hover:bg-[#002200] active:scale-[0.98] transition-all rounded-xl flex items-center justify-center gap-2 text-white font-['Poppins'] font-medium text-sm sm:text-[16px] shadow-sm">
+        <button type="button" onClick={onAddTutor} className="w-full sm:w-[221px] h-[48px] sm:h-[58px] bg-[#003300] hover:bg-[#002200] active:scale-[0.98] transition-all rounded-xl flex items-center justify-center gap-2 text-white font-['Poppins'] font-medium text-sm sm:text-[16px] shadow-sm">
           <svg
             width="18"
             height="18"

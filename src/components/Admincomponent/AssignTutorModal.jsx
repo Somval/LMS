@@ -1,17 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { X, Check, UserRound } from "lucide-react";
-
-const tutors = [
-  { id: 1, name: "Sarah Johnson", email: "sarah@email.com", days: "Mon, Tue, Wed", time: "5:00 PM – 10:00 PM" },
-  { id: 2, name: "Sarah Johnson", email: "sarah2@email.com", days: "Mon, Tue, Wed", time: "5:00 PM – 10:00 PM" },
-  { id: 3, name: "Sarah Johnson", email: "sarah3@email.com", days: "Mon, Tue, Wed", time: "5:00 PM – 10:00 PM" },
-  { id: 4, name: "Sarah Johnson", email: "sarah4@email.com", days: "Mon, Tue, Wed", time: "5:00 PM – 10:00 PM" },
-  { id: 5, name: "Sarah Johnson", email: "sarah5@email.com", days: "Mon, Tue, Wed", time: "5:00 PM – 10:00 PM" },
-  { id: 6, name: "Sarah Johnson", email: "sarah6@email.com", days: "Mon, Tue, Wed", time: "5:00 PM – 10:00 PM" },
-  { id: 7, name: "Sarah Johnson", email: "sarah7@email.com", days: "Mon, Tue, Wed", time: "5:00 PM – 10:00 PM" },
-  { id: 8, name: "Sarah Johnson", email: "sarah8@email.com", days: "Mon, Tue, Wed", time: "5:00 PM – 10:00 PM" },
-  { id: 9, name: "Sarah Johnson", email: "sarah9@email.com", days: "Mon, Tue, Wed", time: "6:00 PM – 10:00 PM" },
-];
+import { api } from "../../lib/api";
 
 export default function AssignTutorModal({
   isOpen = true,
@@ -21,6 +10,29 @@ export default function AssignTutorModal({
   assignment,
 }) {
   const [selectedTutor, setSelectedTutor] = useState(null);
+  const [tutors, setTutors] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const subjectId = course?.subjectId;
+  const currentTutorId = course?.tutorId ?? null;
+
+  useEffect(() => {
+    if (!isOpen || !subjectId) return undefined;
+    let cancelled = false;
+    setLoading(true);
+    setError("");
+    setSelectedTutor(currentTutorId);
+    api
+      .get(`/admin/subjects/${subjectId}/tutors`)
+      .then((data) => !cancelled && setTutors(data))
+      .catch((err) => !cancelled && setError(err.message || "Could not load tutors."))
+      .finally(() => !cancelled && setLoading(false));
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, subjectId, currentTutorId]);
 
   if (!isOpen) return null;
 
@@ -30,13 +42,21 @@ export default function AssignTutorModal({
   const level = currentCourse.level || "Level not specified";
   const studentName = currentCourse.studentName || "Student";
 
-  const handleAssign = () => {
+  const handleAssign = async () => {
     if (!selectedTutor) return;
 
     const tutor = tutors.find((item) => item.id === selectedTutor);
     if (!tutor) return;
 
-    onAssign?.(currentCourse, tutor);
+    setSaving(true);
+    setError("");
+    try {
+      await onAssign?.(currentCourse, tutor);
+    } catch (err) {
+      setError(err.message || "Could not assign the tutor.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleClose = () => {
@@ -97,6 +117,16 @@ export default function AssignTutorModal({
 
         {/* Tutor list */}
         <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-5 sm:px-8">
+          {loading && <p className="py-6 text-sm text-[#858C98]">Loading tutors…</p>}
+          {error && (
+            <p role="alert" className="mb-3 rounded-md bg-[#FDE7E7] px-3 py-2 text-sm text-[#D14343]">
+              {error}
+            </p>
+          )}
+          {!loading && !error && tutors.length === 0 && (
+            <p className="py-6 text-sm text-[#858C98]">No approved tutors teach {courseName} yet.</p>
+          )}
+
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
             {tutors.map((tutor) => {
               const isSelected = selectedTutor === tutor.id;
@@ -184,10 +214,10 @@ export default function AssignTutorModal({
             <button
               type="button"
               onClick={handleAssign}
-              disabled={!selectedTutor}
+              disabled={!selectedTutor || saving}
               className="inline-flex h-10 items-center justify-center rounded-lg bg-[#004B0B] px-6 text-sm font-semibold text-white transition-colors hover:bg-[#063B0D] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#159A42] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Assign Tutor
+              {saving ? "Assigning…" : "Assign Tutor"}
             </button>
           </div>
         </footer>

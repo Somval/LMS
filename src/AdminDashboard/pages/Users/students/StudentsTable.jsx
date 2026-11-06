@@ -8,97 +8,21 @@ import {
   ChevronRight,
   MoreVertical,
   Eye,
+  UserCheck,
+  UserX,
   X,
 } from "lucide-react";
+import { api } from "../../../../lib/api";
+import Avatar from "../../../../components/Avatar";
 
-export const studentsData = [
-  {
-    id: 1,
-    name: "Olivia Brown",
-    email: "olivia@email.com",
-    image: "https://randomuser.me/api/portraits/women/44.jpg",
-    level: "Year 4",
-    subjects: ["Mathematics", "English"],
-    tutorStatus: "Assigned",
-    status: "Active",
-  },
-  {
-    id: 2,
-    name: "Olivia Brown",
-    email: "olivia@email.com",
-    image: "https://randomuser.me/api/portraits/women/68.jpg",
-    level: "Year 4",
-    subjects: ["Mathematics", "English"],
-    tutorStatus: "Assigned",
-    status: "Active",
-  },
-  {
-    id: 3,
-    name: "Olivia Brown",
-    email: "olivia@email.com",
-    image: "https://randomuser.me/api/portraits/women/32.jpg",
-    level: "Year 4",
-    subjects: ["Mathematics", "English"],
-    tutorStatus: "Assigned",
-    status: "Active",
-  },
-  {
-    id: 4,
-    name: "Olivia Brown",
-    email: "olivia@email.com",
-    image: "https://randomuser.me/api/portraits/women/47.jpg",
-    level: "Year 4",
-    subjects: ["Mathematics", "English"],
-    tutorStatus: "Assigned",
-    status: "Active",
-  },
-  {
-    id: 5,
-    name: "Olivia Brown",
-    email: "olivia@email.com",
-    image: "https://randomuser.me/api/portraits/women/56.jpg",
-    level: "Year 4",
-    subjects: ["Mathematics", "English"],
-    tutorStatus: "Assigned",
-    status: "Active",
-  },
-  {
-    id: 6,
-    name: "Olivia Brown",
-    email: "olivia@email.com",
-    image: "https://randomuser.me/api/portraits/women/65.jpg",
-    level: "Year 4",
-    subjects: ["Mathematics", "English"],
-    tutorStatus: "Assigned",
-    status: "Active",
-  },
-  {
-    id: 7,
-    name: "Olivia Brown",
-    email: "olivia@email.com",
-    image: "https://randomuser.me/api/portraits/women/22.jpg",
-    level: "Year 4",
-    subjects: ["Mathematics", "English"],
-    tutorStatus: "Assigned",
-    status: "Active",
-  },
-  {
-    id: 8,
-    name: "Olivia Brown",
-    email: "olivia@email.com",
-    image: "https://randomuser.me/api/portraits/women/36.jpg",
-    level: "Year 4",
-    subjects: ["Mathematics", "English"],
-    tutorStatus: "Assigned",
-    status: "Active",
-  },
-];
 
-const TOTAL_STUDENTS = 127;
 const ROWS_PER_PAGE = 8;
 
 export default function StudentsTable({
-  students = studentsData,
+  students = [],
+  loading = false,
+  error = "",
+  onChanged = async () => {},
   onViewStudent = () => {},
 }) {
   const navigate = useNavigate();
@@ -109,6 +33,33 @@ export default function StudentsTable({
   const [subjectFilter, setSubjectFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [activeMenu, setActiveMenu] = useState(null);
+  const [busyId, setBusyId] = useState(null);
+  const [actionError, setActionError] = useState("");
+
+  const levelOptions = useMemo(
+    () => [...new Set(students.flatMap((s) => s.levels))].sort(),
+    [students]
+  );
+  const subjectOptions = useMemo(
+    () => [...new Set(students.flatMap((s) => s.subjects))].sort(),
+    [students]
+  );
+
+  const toggleStatus = async (student) => {
+    setActiveMenu(null);
+    const suspending = student.status === "Active";
+    if (suspending && !window.confirm(`Suspend ${student.name}? They will no longer be able to sign in.`)) return;
+    setBusyId(student.id);
+    setActionError("");
+    try {
+      await api.patch(`/admin/users/${student.id}/status`, { status: suspending ? "SUSPENDED" : "ACTIVE" });
+      await onChanged();
+    } catch (err) {
+      setActionError(err.message || "Could not update the student.");
+    } finally {
+      setBusyId(null);
+    }
+  };
 
   const filteredStudents = useMemo(() => {
     return students.filter((student) => {
@@ -123,7 +74,7 @@ export default function StudentsTable({
         );
 
       const matchesLevel =
-        !levelFilter || student.level === levelFilter;
+        !levelFilter || student.levels.includes(levelFilter);
 
       const matchesStatus =
         !statusFilter || student.status === statusFilter;
@@ -230,12 +181,9 @@ export default function StudentsTable({
               className={selectClass}
             >
               <option value="">Level</option>
-              <option value="Year 1">Year 1</option>
-              <option value="Year 2">Year 2</option>
-              <option value="Year 3">Year 3</option>
-              <option value="Year 4">Year 4</option>
-              <option value="Year 5">Year 5</option>
-              <option value="Year 6">Year 6</option>
+              {levelOptions.map((level) => (
+                <option key={level} value={level}>{level}</option>
+              ))}
             </select>
 
             <ChevronDown
@@ -256,7 +204,7 @@ export default function StudentsTable({
             >
               <option value="">Status</option>
               <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
+              <option value="Suspended">Suspended</option>
             </select>
 
             <ChevronDown
@@ -276,11 +224,9 @@ export default function StudentsTable({
               className={selectClass}
             >
               <option value="">Subjects</option>
-              <option value="Mathematics">Mathematics</option>
-              <option value="English">English</option>
-              <option value="Science">Science</option>
-              <option value="Physics">Physics</option>
-              <option value="Chemistry">Chemistry</option>
+              {subjectOptions.map((subject) => (
+                <option key={subject} value={subject}>{subject}</option>
+              ))}
             </select>
 
             <ChevronDown
@@ -309,6 +255,12 @@ export default function StudentsTable({
           </div>
         )}
       </div>
+
+      {(error || actionError) && (
+        <p role="alert" className="mx-3 mb-3 rounded-[5px] bg-[#FDE7E7] px-3 py-2 text-[11px] text-[#D14343] sm:mx-5">
+          {actionError || error}
+        </p>
+      )}
 
       {/* Students Table */}
       <div className="mx-3 min-w-0 flex-1 sm:mx-5">
@@ -354,14 +306,11 @@ export default function StudentsTable({
                 >
                   <td className="px-3 py-2">
                     <div className="flex min-w-0 items-center gap-3">
-                      <img
-                        src={student.image}
-                        alt={student.name}
-                        loading="lazy"
-                        className="h-[38px] w-[38px] shrink-0 rounded-full border border-[#E5E7EB] bg-[#D9D9D9] object-cover"
-                        onError={(event) => {
-                          event.currentTarget.style.visibility = "hidden";
-                        }}
+                      <Avatar
+                        name={student.name}
+                        avatarUrl={student.avatarUrl}
+                        textClassName="text-[11px]"
+                        className="h-[38px] w-[38px] rounded-full border border-[#E5E7EB]"
                       />
 
                       <div className="min-w-0">
@@ -377,7 +326,7 @@ export default function StudentsTable({
 
                   <td className="px-2 py-2">
                     <span className="font-[Inter] text-[11px] text-[#414957]">
-                      {student.level}
+                      {student.levels.length ? student.levels.join(", ") : "—"}
                     </span>
                   </td>
 
@@ -392,7 +341,9 @@ export default function StudentsTable({
                       className={`inline-flex min-w-[100px] items-center justify-center rounded-[3px] px-2 py-1 font-[Inter] text-[10px] font-medium ${
                         student.tutorStatus === "Assigned"
                           ? "bg-[#DDF5E3] text-[#159447]"
-                          : "bg-[#FFF0D9] text-[#B96A08]"
+                          : student.tutorStatus === "Unassigned"
+                          ? "bg-[#FFF0D9] text-[#B96A08]"
+                          : "bg-[#EEF1F6] text-[#667085]"
                       }`}
                     >
                       {student.tutorStatus}
@@ -448,6 +399,15 @@ export default function StudentsTable({
                               <Eye size={14} />
                               View details
                             </button>
+                            <button
+                              type="button"
+                              disabled={busyId === student.id}
+                              onClick={() => toggleStatus(student)}
+                              className="flex w-full items-center gap-2 rounded px-2.5 py-2 text-left text-[11px] text-[#344054] hover:bg-[#F5F6FA] disabled:opacity-50"
+                            >
+                              {student.status === "Active" ? <UserX size={14} /> : <UserCheck size={14} />}
+                              {student.status === "Active" ? "Suspend" : "Reactivate"}
+                            </button>
                           </div>
                         )}
                       </div>
@@ -456,7 +416,15 @@ export default function StudentsTable({
                 </tr>
               ))}
 
-              {currentStudents.length === 0 && (
+              {loading && (
+                <tr>
+                  <td colSpan={6} className="h-[240px] text-center text-[12px] text-[#727B8C]">
+                    Loading students…
+                  </td>
+                </tr>
+              )}
+
+              {!loading && currentStudents.length === 0 && (
                 <tr>
                   <td colSpan={6} className="h-[240px] px-4 text-center">
                     <div className="flex flex-col items-center justify-center gap-2">
@@ -491,7 +459,7 @@ export default function StudentsTable({
       <footer className="mt-auto flex shrink-0 flex-col justify-between gap-3 border-t border-[#F0F1F5] px-4 py-4 sm:flex-row sm:items-center sm:px-5">
         <p className="font-[Inter] text-[11px] text-[#303844]">
           Showing {startRow}–{endRow} of{" "}
-          {hasFilters ? filteredStudents.length : TOTAL_STUDENTS} students
+          {filteredStudents.length} students
         </p>
 
         <nav

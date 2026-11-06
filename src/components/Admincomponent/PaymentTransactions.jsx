@@ -1,6 +1,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
-import useAdminPayments from "../../AdminDashboard/hooks/useAdminPayments";
+import { useTransactions } from "../../AdminDashboard/hooks/useAdminPayments";
+import { api } from "../../lib/api";
 import { createPortal } from "react-dom";
 
 import {
@@ -27,16 +28,18 @@ const statusStyles = {
   Refunded: "bg-[#DCE8FF] text-[#326BFA]",
 };
 
-export default function PaymentTransactions() {
-  const { rows, loading, error } = useAdminPayments();
-  const [transactions, setTransactions] = useState([]);
+const PAGE_SIZE = 15;
+const STATUS_PARAM = { Successful: "CONFIRMED", Pending: "PENDING", Failed: "FAILED", Refunded: "REFUNDED" };
+const METHOD_FILTERS = ["All Methods", "Card", "Bank transfer"];
+const METHOD_PARAM = { Card: "CARD", "Bank transfer": "BANK_TRANSFER" };
 
-  // Sync backend rows into local state (refunds are applied locally on top).
-  useEffect(() => { setTransactions(rows); }, [rows]);
-
+export default function PaymentTransactions({ range, version = 0, onChanged }) {
   const [search, setSearch] = useState("");
-  const [selectedPlan, setSelectedPlan] = useState("All Plans");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [selectedMethod, setSelectedMethod] = useState("All Methods");
   const [selectedStatus, setSelectedStatus] = useState("All Status");
+  const [page, setPage] = useState(1);
+  const [localVersion, setLocalVersion] = useState(0);
 
   const [openMenu, setOpenMenu] = useState(null);
   const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
@@ -45,25 +48,27 @@ export default function PaymentTransactions() {
   const [refundTransaction, setRefundTransaction] = useState(null);
   const [notification, setNotification] = useState("");
 
-  const filteredTransactions = useMemo(() => {
-    return transactions.filter((transaction) => {
-      const searchValue = search.toLowerCase().trim();
+  // Wait for a pause in typing before searching, and go back to page 1 when filters change.
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search.trim()), 300);
+    return () => clearTimeout(t);
+  }, [search]);
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, selectedMethod, selectedStatus, range.from, range.to]);
 
-      const matchesSearch =
-        transaction.transactionId.toLowerCase().includes(searchValue) ||
-        transaction.user.toLowerCase().includes(searchValue);
-
-      const matchesPlan =
-        selectedPlan === "All Plans" ||
-        transaction.plan === selectedPlan;
-
-      const matchesStatus =
-        selectedStatus === "All Status" ||
-        transaction.status === selectedStatus;
-
-      return matchesSearch && matchesPlan && matchesStatus;
-    });
-  }, [transactions, search, selectedPlan, selectedStatus]);
+  // Filtering, search and paging all happen on the server.
+  const { rows, total, loading, error } = useTransactions({
+    range,
+    status: STATUS_PARAM[selectedStatus],
+    method: METHOD_PARAM[selectedMethod],
+    search: debouncedSearch,
+    page,
+    pageSize: PAGE_SIZE,
+    version: version + localVersion,
+  });
+  const filteredTransactions = rows;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const showNotification = (message) => {
     setNotification(message);
@@ -83,7 +88,7 @@ export default function PaymentTransactions() {
       `Date: ${transaction.date}`,
       `Time: ${transaction.time}`,
       `Transaction Type: ${transaction.type}`,
-      `Subscription Plan: ${transaction.plan}`,
+      `Learner ID: ${transaction.learnerId}`,
       `Amount: ${transaction.amount}`,
       `Status: ${transaction.status}`,
       `Payment Method: ${transaction.paymentMethod}`,
@@ -127,27 +132,24 @@ export default function PaymentTransactions() {
     setRefundTransaction(transaction);
   };
 
-  const handleConfirmRefund = (refundDetails) => {
-    setTransactions((previous) =>
-      previous.map((item) =>
-        item.id === refundTransaction?.id
-          ? {
-              ...item,
-              status: "Refunded",
-              type: "Refund",
-              refundAmount: refundDetails.refundAmount,
-              refundType: refundDetails.refundType,
-              refundReason: refundDetails.reason,
-            }
-          : item
-      )
-    );
-
-    setRefundTransaction(null);
-
-    showNotification(
-      `Refund of ₦${refundDetails.refundAmount.toLocaleString("en-NG")} recorded successfully.`
-    );
+  const handleConfirmRefund = async (refundDetails) => {
+    const partial = refundDetails.refundType === "partial";
+    try {
+      await api.post(`/payments/admin/${refundTransaction.id}/refund`, {
+        type: partial ? "PARTIAL" : "FULL",
+        ...(partial && { amount: refundDetails.refundAmount }),
+        reason: refundDetails.reason,
+      });
+      setRefundTransaction(null);
+      setLocalVersion((v) => v + 1);
+      onChanged?.();
+      showNotification(
+        `Refund of ₦${refundDetails.refundAmount.toLocaleString("en-NG")} recorded. For card payments, also refund the customer in Paystack.`
+      );
+    } catch (err) {
+      setLocalVersion((v) => v + 1);
+      showNotification(err.message || "Could not record the refund.");
+    }
   };
 
   // Transaction action menu
@@ -291,14 +293,13 @@ export default function PaymentTransactions() {
 
         <div className="relative w-full lg:w-[160px]">
           <select
-            value={selectedPlan}
-            onChange={(event) => setSelectedPlan(event.target.value)}
+            value={selectedMethod}
+            onChange={(event) => setSelectedMethod(event.target.value)}
             className="h-11 w-full appearance-none rounded-lg border border-[#D9E0EA] bg-white px-3.5 pr-9 text-sm text-slate-700 outline-none focus:border-blue-400"
           >
-            <option>All Plans</option>
-            <option>Monthly Plan</option>
-            <option>Quarterly Plan</option>
-            <option>Yearly Plan</option>
+            {METHOD_FILTERS.map((o) => (
+              <option key={o}>{o}</option>
+            ))}
           </select>
 
           <ChevronDown
@@ -336,7 +337,7 @@ export default function PaymentTransactions() {
               <th className="px-3">Date &amp; Time</th>
               <th className="px-3">User</th>
               <th className="px-3">Type</th>
-              <th className="px-3">Plan</th>
+              <th className="px-3">Learner ID</th>
               <th className="px-3">Amount</th>
               <th className="px-3">Status</th>
               <th className="px-3">Payment Method</th>
@@ -381,7 +382,7 @@ export default function PaymentTransactions() {
                 </td>
 
                 <td className="whitespace-nowrap px-3">
-                  {transaction.plan}
+                  {transaction.learnerId}
                 </td>
 
                 <td className="whitespace-nowrap px-3 font-semibold text-slate-700">
@@ -492,8 +493,8 @@ export default function PaymentTransactions() {
               />
 
               <MobileDetail
-                label="Subscription Plan"
-                value={transaction.plan}
+                label="Learner ID"
+                value={transaction.learnerId}
               />
 
               <MobileDetail
@@ -533,19 +534,41 @@ export default function PaymentTransactions() {
           </span>{" "}
           of{" "}
           <span className="font-semibold text-slate-700">
-            {transactions.length}
+            {total}
           </span>{" "}
           transactions
         </p>
 
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            disabled={page <= 1 || loading}
+            onClick={() => setPage((p) => p - 1)}
+            className="rounded-md border border-[#D9E0EA] bg-white px-3 py-1.5 text-xs font-medium text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Previous
+          </button>
+          <span className="text-xs text-slate-500">
+            Page {page} of {totalPages}
+          </span>
+          <button
+            type="button"
+            disabled={page >= totalPages || loading}
+            onClick={() => setPage((p) => p + 1)}
+            className="rounded-md border border-[#D9E0EA] bg-white px-3 py-1.5 text-xs font-medium text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Next
+          </button>
+        </div>
+
         {(search ||
-          selectedPlan !== "All Plans" ||
+          selectedMethod !== "All Methods" ||
           selectedStatus !== "All Status") && (
           <button
             type="button"
             onClick={() => {
               setSearch("");
-              setSelectedPlan("All Plans");
+              setSelectedMethod("All Methods");
               setSelectedStatus("All Status");
             }}
             className="text-xs font-semibold text-blue-600 transition hover:text-blue-800"
@@ -633,7 +656,7 @@ export default function PaymentTransactions() {
                 ["Date", selectedTransaction.date],
                 ["Time", selectedTransaction.time],
                 ["Transaction Type", selectedTransaction.type],
-                ["Subscription Plan", selectedTransaction.plan],
+                ["Learner ID", selectedTransaction.learnerId],
                 ["Payment Method", selectedTransaction.paymentMethod],
               ].map(([label, value]) => (
                 <div

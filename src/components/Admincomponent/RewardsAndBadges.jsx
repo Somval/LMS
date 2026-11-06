@@ -1,54 +1,21 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { Plus, Award } from "lucide-react";
 
 import BadgeIcon from "../../assets/images/c2582da116168ead7191b53b24caa4b4015bf713.png";
-import CreateRewardModal from "./CreateRewardModal";
 
-// Initial rewards data
-const INITIAL_REWARDS = [
-  {
-    id: 1,
-    title: "Mathematics Star",
-    date: "Earned Aug 8, 2026",
-    icon: BadgeIcon,
-  },
-  {
-    id: 2,
-    title: "Mathematics Star",
-    date: "Earned Aug 8, 2026",
-    icon: BadgeIcon,
-  },
-  {
-    id: 3,
-    title: "Mathematics Star",
-    date: "Earned Aug 8, 2026",
-    icon: BadgeIcon,
-  },
-  {
-    id: 4,
-    title: "Mathematics Star",
-    date: "Earned Aug 8, 2026",
-    icon: BadgeIcon,
-  },
-];
 
-export default function RewardsAndBadges({ titleImage }) {
-  const [rewards, setRewards] = useState(INITIAL_REWARDS);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+const fmtDate = (d) =>
+  new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 
-  // Add a newly created reward
-  const handleCreateReward = (newReward) => {
-    const newEntry = {
-      ...newReward,
-      id: rewards.length
-        ? Math.max(...rewards.map((reward) => Number(reward.id) || 0)) + 1
-        : 1,
-    };
-
-    setRewards((previous) => [...previous, newEntry]);
-    setIsModalOpen(false);
-  };
+// Rewards this student has earned. items: [{ id, title, awardedAt, points }]
+export default function RewardsAndBadges({ titleImage, items = [], loading = false, onAward }) {
+  const rewards = items.map((a) => ({
+    id: a.id,
+    title: a.title,
+    date: `Earned ${fmtDate(a.awardedAt)}`,
+    icon: a.icon && /^https?:|^\/|^data:/.test(a.icon) ? a.icon : BadgeIcon,
+  }));
 
   return (
     <>
@@ -65,8 +32,7 @@ export default function RewardsAndBadges({ titleImage }) {
               />
             ) : (
               <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl lg:text-[26px]">
-                Rewards & Badges
-              </h1>
+                Rewards </h1>
             )}
 
             <p className="mt-1.5 max-w-xl text-xs leading-relaxed text-slate-500 sm:text-sm">
@@ -77,18 +43,18 @@ export default function RewardsAndBadges({ titleImage }) {
           {/* Create Button */}
           <button
             type="button"
-            onClick={() => setIsModalOpen(true)}
+            onClick={onAward}
             className="inline-flex min-h-10 w-full shrink-0 items-center justify-center gap-2 rounded-lg border border-[#3b82f6] px-4 py-2.5 text-sm font-medium text-[#3b82f6] transition-colors hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:ring-offset-2 sm:w-auto"
           >
             <Plus className="h-4 w-4 shrink-0 stroke-[2.5]" />
-            <span>Create Reward & Badge</span>
+            <span>Award Reward</span>
           </button>
         </div>
 
         {/* Inner Card Container */}
         <div className="flex min-h-0 flex-1 flex-col rounded-[11px] border border-slate-100/90 bg-white p-4 sm:p-6 lg:p-8">
           <h2 className="mb-5 text-base font-bold tracking-tight text-[#3730a3] sm:mb-6 sm:text-[17px]">
-            Earned Rewards & Badges
+            Earned Rewards
           </h2>
 
           {/* Rewards Grid */}
@@ -127,24 +93,16 @@ export default function RewardsAndBadges({ titleImage }) {
               </div>
 
               <h3 className="text-sm font-bold text-slate-800">
-                No rewards or badges yet
+                {loading ? "Loading…" : "No rewards yet"}
               </h3>
 
               <p className="mt-1 max-w-xs text-xs leading-relaxed text-slate-500">
-                Create your first reward or badge to celebrate learning
-                achievements.
+                {loading ? "" : "Use Award Reward to celebrate this student's progress."}
               </p>
             </div>
           )}
         </div>
       </section>
-
-      {/* Separate Create Reward Modal */}
-      <CreateRewardModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onCreate={handleCreateReward}
-      />
     </>
   );
 }

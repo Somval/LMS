@@ -1,43 +1,57 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { api } from "../../../lib/api";
 import { ArrowRight } from "lucide-react";
 
-const activities = [
-  {
-    id: 1,
-    name: "Sarah Johnson",
-    role: "Student",
-    activity: "Completed an assignment",
-    time: "10 min ago",
-  },
-  {
-    id: 2,
-    name: "Sarah Johnson",
-    role: "Student",
-    activity: "Completed an assignment",
-    time: "10 min ago",
-  },
-  {
-    id: 3,
-    name: "Sarah Johnson",
-    role: "Student",
-    activity: "Completed an assignment",
-    time: "10 min ago",
-  },
-  {
-    id: 4,
-    name: "Sarah Johnson",
-    role: "Student",
-    activity: "Completed an assignment",
-    time: "10 min ago",
-  },
-];
+const ROLE_LABEL = { STUDENT: "Student", PARENT: "Parent", TUTOR: "Tutor" };
+const ACTIVITY = {
+  STUDENT: "Joined as a student",
+  PARENT: "Joined as a parent",
+  TUTOR: "Applied to teach",
+};
+
+const timeAgo = (date) => {
+  const mins = Math.round((Date.now() - new Date(date)) / 60000);
+  if (mins < 1) return "Just now";
+  if (mins < 60) return `${mins} min ago`;
+  const hrs = Math.round(mins / 60);
+  if (hrs < 24) return `${hrs} hr ago`;
+  const days = Math.round(hrs / 24);
+  if (days < 30) return `${days} day${days === 1 ? "" : "s"} ago`;
+  return new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+};
 
 export default function RecentActivity() {
-  const handleViewAll = () => {
-    // Connect this to your activity history route.
-    console.log("View all recent activities");
-  };
+  const navigate = useNavigate();
+  const [activities, setActivities] = useState([]);
+  const [state, setState] = useState("loading"); // loading | ready | error
+
+  // Latest sign-ups across the platform: GET /admin/users (newest first)
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .get("/admin/users", { pageSize: 6 })
+      .then((res) => {
+        if (cancelled) return;
+        setActivities(
+          res.users.map((u) => ({
+            id: u.id,
+            name: u.fullName,
+            role: ROLE_LABEL[u.role] ?? u.role,
+            activity: ACTIVITY[u.role] ?? "Joined",
+            time: timeAgo(u.createdAt),
+          }))
+        );
+        setState("ready");
+      })
+      .catch(() => !cancelled && setState("error"));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleViewAll = () => navigate("/admin/users/students");
 
   return (
     <section className="w-full min-w-0 overflow-hidden rounded-[9px] border border-[#EEF0F4] bg-white">
@@ -92,6 +106,13 @@ export default function RecentActivity() {
           </thead>
 
           <tbody>
+            {activities.length === 0 && (
+              <tr>
+                <td colSpan={3} className="py-8 text-center font-[Inter] text-[10px] text-[#9297A5]">
+                  {state === "loading" ? "Loading activity…" : state === "error" ? "Could not load activity." : "No activity yet."}
+                </td>
+              </tr>
+            )}
             {activities.map((item) => (
               <tr
                 key={item.id}

@@ -1,5 +1,6 @@
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { api } from "../../lib/api";
 import { useNavigate } from "react-router-dom";
 import {
   CalendarDays,
@@ -9,88 +10,13 @@ import {
   X,
 } from "lucide-react";
 
-const complaints = [
-  {
-    id: "#1024",
-    name: "John Doe",
-    initials: "JD",
-    role: "Parent",
-    subject: "Subscription payment issue",
-    description: "I was charged twice for the same subscription.",
-    category: "Billing",
-    status: "New",
-    date: "Oct 16, 2026",
-    time: "10:24 AM",
-  },
-  {
-    id: "#1025",
-    name: "Jane Doe",
-    initials: "JD",
-    role: "Parent",
-    subject: "Quiz not submitting",
-    description: "My quiz keeps showing an error.",
-    category: "Technical",
-    status: "New",
-    date: "Oct 16, 2026",
-    time: "10:24 AM",
-  },
-  {
-    id: "#1034",
-    name: "John Doe",
-    initials: "JD",
-    role: "Parent",
-    subject: "Access to progress report",
-    description: "I can't see my child's report.",
-    category: "Account",
-    status: "In Progress",
-    date: "Oct 16, 2026",
-    time: "10:24 AM",
-  },
-  {
-    id: "#1035",
-    name: "Jane Doe",
-    initials: "JD",
-    role: "Parent",
-    subject: "Login issues persist",
-    description: "The recording for Sunday's class is unavailable.",
-    category: "Content",
-    status: "New",
-    date: "Oct 16, 2026",
-    time: "10:24 AM",
-  },
-  {
-    id: "#1036",
-    name: "John Doe",
-    initials: "JD",
-    role: "Parent",
-    subject: "Incorrect grade displayed",
-    description: "My child's grade is showing incorrectly.",
-    category: "Academic",
-    status: "Resolved",
-    date: "Oct 16, 2026",
-    time: "10:24 AM",
-  },
-  {
-    id: "#1037",
-    name: "Jane Doe",
-    initials: "JD",
-    role: "Parent",
-    subject: "Schedule conflict",
-    description: "I am unable to confirm the schedule.",
-    category: "Schedule",
-    status: "New",
-    date: "Oct 16, 2026",
-    time: "10:24 AM",
-  },
-];
+const fmtDate = (d) =>
+  new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+const fmtTime = (d) => new Date(d).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+const initialsOf = (name = "") =>
+  name.split(" ").filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join("") || "?";
 
-const tabs = [
-  { label: "All", count: 24 },
-  { label: "New", count: 8 },
-  { label: "In Progress", count: 5 },
-  { label: "Resolved", count: 10 },
-  { label: "Closed", count: 1 },
-];
+const TAB_LABELS = ["All", "New", "In Progress", "Resolved", "Closed"];
 
 const categoryStyles = {
   Billing: "bg-purple-50 text-purple-700",
@@ -136,6 +62,42 @@ function EmptyState() {
 
 export default function Complaints() {
   const navigate = useNavigate();
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .get("/admin/complaints")
+      .then((res) => !cancelled && setRows(res))
+      .catch((err) => !cancelled && setError(err.message || "Could not load complaints."))
+      .finally(() => !cancelled && setLoading(false));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const complaints = useMemo(
+    () =>
+      rows.map((c) => ({
+        id: `#${c.id}`,
+        name: c.name,
+        initials: initialsOf(c.name),
+        role: c.role,
+        subject: c.subject,
+        description: c.description,
+        category: c.category,
+        status: c.status,
+        date: fmtDate(c.createdAt),
+        time: fmtTime(c.createdAt),
+      })),
+    [rows]
+  );
+  const tabs = TAB_LABELS.map((label) => ({
+    label,
+    count: label === "All" ? complaints.length : complaints.filter((c) => c.status === label).length,
+  }));
 
   const [activeTab, setActiveTab] = useState("All");
   const [userFilter, setUserFilter] = useState("All Users");
@@ -170,10 +132,14 @@ export default function Complaints() {
         matchesSearch
       );
     });
-  }, [activeTab, userFilter, categoryFilter, search]);
+  }, [complaints, activeTab, userFilter, categoryFilter, search]);
 
   return (
     <section className="w-full min-w-0 bg-transparent text-gray-800">
+
+      {error && (
+        <p role="alert" className="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-600">{error}</p>
+      )}
 
       {/* COMPLAINTS PAGE HEADER */}
       <div className="mb-6">
@@ -335,7 +301,11 @@ export default function Complaints() {
           </tbody>
         </table>
 
-        {filteredComplaints.length === 0 && <EmptyState />}
+        {loading ? (
+          <p className="py-14 text-center text-sm text-gray-500">Loading complaints…</p>
+        ) : (
+          filteredComplaints.length === 0 && <EmptyState />
+        )}
       </div>
 
       {/* MOBILE CARDS */}
@@ -380,12 +350,16 @@ export default function Complaints() {
           </article>
         ))}
 
-        {filteredComplaints.length === 0 && <EmptyState />}
+        {loading ? (
+          <p className="py-14 text-center text-sm text-gray-500">Loading complaints…</p>
+        ) : (
+          filteredComplaints.length === 0 && <EmptyState />
+        )}
       </div>
 
       {/* FOOTER */}
       <div className="mt-5 flex flex-wrap items-center justify-between gap-2 text-xs text-gray-500">
-        <p>Showing {filteredComplaints.length} of {complaints.length} sample complaints</p>
+        <p>Showing {filteredComplaints.length} of {complaints.length} complaints</p>
         <p>Updated recently</p>
       </div>
     </section>

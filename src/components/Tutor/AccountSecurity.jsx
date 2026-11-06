@@ -1,7 +1,47 @@
-import React from 'react';
-import { Lock, ShieldCheck, ChevronRight } from 'lucide-react';
+import React, { useState } from 'react';
+import { ChevronRight, X, Save, Check } from 'lucide-react';
+import { api } from '../../lib/api';
+
+const EMPTY_FORM = { currentPassword: '', newPassword: '', confirmPassword: '' };
 
 export const AccountSecurity = () => {
+  const [modalOpen, setModalOpen] = useState(false);
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [done, setDone] = useState(false);
+
+  const closeModal = () => {
+    setModalOpen(false);
+    setForm(EMPTY_FORM);
+    setError('');
+    setDone(false);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    const { currentPassword, newPassword, confirmPassword } = form;
+    if (newPassword !== confirmPassword) {
+      setError('New passwords do not match.');
+      return;
+    }
+    if (newPassword.length < 8 || !/[A-Za-z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
+      setError('Your new password needs at least 8 characters, with a letter and a number.');
+      return;
+    }
+    setSaving(true);
+    try {
+      await api.post('/account/change-password', { currentPassword, newPassword });
+      setDone(true);
+      setTimeout(closeModal, 1500);
+    } catch (err) {
+      setError(err.message || 'Could not change your password. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const items = [
     {
       icon: <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -11,7 +51,7 @@ export const AccountSecurity = () => {
 ,
       title: 'Change Password',
       desc: 'Update your password regularly.',
-      onClick: () => console.log('Change password clicked'),
+      onClick: () => setModalOpen(true),
     },
     {
       icon: <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -28,7 +68,7 @@ export const AccountSecurity = () => {
 ,
       title: 'Two-Factor Authentication',
       desc: 'Add an extra layer of security to your account.',
-      onClick: () => console.log('2FA clicked'),
+      comingSoon: true,
     },
   ];
 
@@ -39,8 +79,12 @@ export const AccountSecurity = () => {
         {items.map((item, idx) => (
           <button
             key={idx}
+            type="button"
             onClick={item.onClick}
-            className="w-full flex items-center justify-between py-4 hover:bg-gray-50 px-2 rounded-lg transition-colors text-left"
+            disabled={item.comingSoon}
+            className={`w-full flex items-center justify-between py-4 px-2 rounded-lg transition-colors text-left ${
+              item.comingSoon ? 'opacity-70 cursor-default' : 'hover:bg-gray-50'
+            }`}
           >
             <div className="flex items-center gap-3">
               <div className="p-2 bg-gray-50 rounded-lg">{item.icon}</div>
@@ -49,10 +93,63 @@ export const AccountSecurity = () => {
                 <p className="text-xs text-gray-400">{item.desc}</p>
               </div>
             </div>
-            <ChevronRight size={18} className="text-gray-400" />
+            {item.comingSoon ? (
+              <span className="px-3 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-500">Coming soon</span>
+            ) : (
+              <ChevronRight size={18} className="text-gray-400" />
+            )}
           </button>
         ))}
       </div>
+
+      {modalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-labelledby="change-password-title">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 id="change-password-title" className="text-lg font-bold text-gray-900">Change Password</h3>
+              <button type="button" onClick={closeModal} aria-label="Close" className="text-gray-400 hover:text-gray-600">
+                <X size={18} />
+              </button>
+            </div>
+
+            {done ? (
+              <div className="flex flex-col items-center gap-2 py-8 text-center">
+                <Check className="h-10 w-10 text-emerald-500" />
+                <p className="text-sm font-semibold text-gray-900">Password updated</p>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {error && <p role="alert" className="text-sm font-medium text-red-600">{error}</p>}
+                {[
+                  ['currentPassword', 'Current password', 'current-password'],
+                  ['newPassword', 'New password', 'new-password'],
+                  ['confirmPassword', 'Confirm new password', 'new-password'],
+                ].map(([key, label, autoComplete]) => (
+                  <div key={key}>
+                    <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-gray-500">{label}</label>
+                    <input
+                      type="password"
+                      required
+                      autoComplete={autoComplete}
+                      value={form[key]}
+                      onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                ))}
+                <div className="flex items-center justify-end gap-2 pt-2">
+                  <button type="button" onClick={closeModal} className="rounded-xl border border-gray-300 px-4 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50">
+                    Cancel
+                  </button>
+                  <button type="submit" disabled={saving} className="flex items-center gap-1.5 rounded-xl bg-blue-600 px-5 py-2 text-xs font-medium text-white shadow-sm hover:bg-blue-700 disabled:opacity-60">
+                    <Save size={14} /> {saving ? 'Saving…' : 'Update Password'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

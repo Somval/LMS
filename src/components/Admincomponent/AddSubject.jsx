@@ -16,6 +16,7 @@ import {
   Code2,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { api } from "../../lib/api";
 import SubjectSuccessMessage from "./SubjectCreatedSuccess";
 
 const YEAR_LEVELS = [
@@ -83,7 +84,7 @@ export default function AddSubject() {
     }));
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     if (isSubmitting) return;
@@ -108,30 +109,23 @@ export default function AddSubject() {
 
     setIsSubmitting(true);
 
-    const newSubject = {
-      id: Date.now(),
-      name: subjectName.trim(),
-      description: description.trim(),
-      icon: selectedIcon,
-      yearLevels: [...selectedYears],
-      status: "Active",
-    };
-
     try {
-      // Notify other components that a subject has been created.
-      window.dispatchEvent(
-        new CustomEvent("subjectCreated", {
-          detail: newSubject,
-        })
-      );
+      const created = await api.post("/admin/subjects", {
+        name: subjectName.trim(),
+        description: description.trim(),
+        icon: selectedIcon,
+        yearLevels: selectedYears,
+      });
 
       // Display the success component instead of a popup.
-      setCreatedSubject(newSubject);
+      setCreatedSubject({ ...created, status: "Active" });
     } catch (error) {
-      console.error("Unable to create subject:", error);
       setErrors((current) => ({
         ...current,
-        submit: "Unable to create the subject. Please try again.",
+        submit:
+          error?.status === 409
+            ? "A subject with that name already exists."
+            : error?.message || "Unable to create the subject. Please try again.",
       }));
     } finally {
       setIsSubmitting(false);
@@ -142,10 +136,13 @@ export default function AddSubject() {
   if (createdSubject) {
     return (
       <SubjectSuccessMessage
-        subject={createdSubject}
+        subjectName={createdSubject.name}
+        yearLevels={(createdSubject.yearLevels ?? []).map((y) =>
+          Number(String(y).replace(/\D/g, ""))
+        )}
         onSetupCurriculum={() =>
           navigate(
-            `/admin/subjects/${createdSubject.id}/curriculum`
+            `/admin/curriculum?subjectId=${createdSubject.id}`
           )
         }
         onBackToSubjects={() => navigate("/admin/subjects")}

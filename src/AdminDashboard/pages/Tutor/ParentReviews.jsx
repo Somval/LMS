@@ -24,97 +24,21 @@ const StarRating = ({ rating }) => (
   </div>
 );
 
-// Initial Sample Reviews Dataset
-const INITIAL_REVIEWS = [
-  {
-    id: 1,
-    parentName: 'Mrs. Tunde',
-    childSubtitle: "Olivia's Parent",
-    rating: 4,
-    course: 'Mathematics- Year 1',
-    feedback:
-      'My child has improved so much in Maths. Very patient and explains things clearly.',
-    date: 'Sep 12, 2026',
-    period: 'this_month',
-  },
-  {
-    id: 2,
-    parentName: 'Mrs. Tunde',
-    childSubtitle: "Olivia's Parent",
-    rating: 4,
-    course: 'Mathematics- Year 1',
-    feedback:
-      'My child has improved so much in Maths. Very patient and explains things clearly.',
-    date: 'Sep 12, 2026',
-    period: 'this_month',
-  },
-  {
-    id: 3,
-    parentName: 'Mrs. Tunde',
-    childSubtitle: "Olivia's Parent",
-    rating: 4,
-    course: 'Mathematics- Year 1',
-    feedback:
-      'My child has improved so much in Maths. Very patient and explains things clearly.',
-    date: 'Sep 12, 2026',
-    period: 'this_month',
-  },
-  {
-    id: 4,
-    parentName: 'Mrs. Tunde',
-    childSubtitle: "Olivia's Parent",
-    rating: 4,
-    course: 'Mathematics- Year 1',
-    feedback:
-      'My child has improved so much in Maths. Very patient and explains things clearly.',
-    date: 'Sep 12, 2026',
-    period: 'this_month',
-  },
-  {
-    id: 5,
-    parentName: 'Mrs. Tunde',
-    childSubtitle: "Olivia's Parent",
-    rating: 4,
-    course: 'Mathematics- Year 1',
-    feedback:
-      'My child has improved so much in Maths. Very patient and explains things clearly.',
-    date: 'Sep 12, 2026',
-    period: 'this_month',
-  },
-  {
-    id: 6,
-    parentName: 'Mrs. Tunde',
-    childSubtitle: "Olivia's Parent",
-    rating: 4,
-    course: 'Mathematics- Year 1',
-    feedback:
-      'My child has improved so much in Maths. Very patient and explains things clearly.',
-    date: 'Sep 12, 2026',
-    period: 'this_month',
-  },
-  {
-    id: 7,
-    parentName: 'Mr. David',
-    childSubtitle: "Liam's Parent",
-    rating: 5,
-    course: 'Science- Year 2',
-    feedback:
-      'Fantastic practical experiments and interactive sessions. Highly recommended!',
-    date: 'Aug 28, 2026',
-    period: 'last_month',
-  },
-  {
-    id: 8,
-    parentName: 'Sarah Jenkins',
-    childSubtitle: "Emma's Parent",
-    rating: 5,
-    course: 'English- Year 1',
-    feedback:
-      'Great reading exercises. Her reading speed and vocabulary doubled in weeks.',
-    date: 'Jul 15, 2026',
-    period: 'this_year',
-  },
-];
+const fmtDate = (d) =>
+  new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+// this_month / last_month / this_year, as the Time filter uses them.
+const inPeriod = (date, period) => {
+  const d = new Date(date);
+  const now = new Date();
+  if (period === 'this_month') return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+  if (period === 'last_month') {
+    const last = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    return d.getFullYear() === last.getFullYear() && d.getMonth() === last.getMonth();
+  }
+  if (period === 'this_year') return d.getFullYear() === now.getFullYear();
+  return true;
+};
 
 const ITEMS_PER_PAGE = 6;
 
@@ -137,68 +61,7 @@ const MoreIcon = () => (
   </svg>
 );
 
-const ReviewActions = ({
-  item,
-  activeMenuId,
-  setActiveMenuId,
-  triggerToast,
-}) => (
-  <div
-    className="relative"
-    onClick={(event) => event.stopPropagation()}
-  >
-    <button
-      type="button"
-      aria-label={`Actions for review by ${item.parentName}`}
-      aria-expanded={activeMenuId === item.id}
-      onClick={() =>
-        setActiveMenuId((current) =>
-          current === item.id ? null : item.id
-        )
-      }
-      className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-    >
-      <MoreIcon />
-    </button>
-
-    {activeMenuId === item.id && (
-      <div className="absolute right-0 top-10 z-30 w-36 rounded-xl border border-slate-100 bg-white py-1.5 text-left text-xs font-medium text-slate-700 shadow-lg">
-        <button
-          type="button"
-          onClick={() => {
-            setActiveMenuId(null);
-            triggerToast(`Viewing details for ${item.parentName}`);
-          }}
-          className="w-full px-3.5 py-2 text-left hover:bg-slate-50"
-        >
-          View Details
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            setActiveMenuId(null);
-            triggerToast(`Replying to ${item.parentName}`);
-          }}
-          className="w-full px-3.5 py-2 text-left hover:bg-slate-50"
-        >
-          Reply
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            setActiveMenuId(null);
-            triggerToast(`Review #${item.id} flagged`);
-          }}
-          className="w-full px-3.5 py-2 text-left text-red-600 hover:bg-red-50"
-        >
-          Flag Review
-        </button>
-      </div>
-    )}
-  </div>
-);
+const ReviewActions = () => null; // the old menu only showed pop-up messages; there is nothing to act on yet.
 
 // Mobile-only review card
 const MobileReviewCard = ({
@@ -239,12 +102,6 @@ const MobileReviewCard = ({
     </div>
 
     <div className="mt-3">
-      <span className="inline-block max-w-full break-words rounded-md bg-slate-50 px-2.5 py-1.5 text-xs font-medium text-slate-600">
-        {item.course}
-      </span>
-    </div>
-
-    <div className="mt-3">
       <p className="mb-1 text-xs font-semibold text-slate-400">
         Feedback
       </p>
@@ -259,8 +116,22 @@ const MobileReviewCard = ({
   </article>
 );
 
-export default function App() {
-  const [selectedCourse, setSelectedCourse] = useState('all');
+export default function App({ reviews: rawReviews = [], loading = false }) {
+  // Real reviews from GET /tutors/:id/reviews, in the shape the cards draw.
+  const INITIAL_REVIEWS = useMemo(
+    () =>
+      rawReviews.map((r) => ({
+        id: r.id,
+        parentName: r.parentName,
+        childSubtitle: 'Parent',
+        rating: r.rating,
+        feedback: r.comment || 'No comment left.',
+        date: fmtDate(r.createdAt),
+        createdAt: r.createdAt,
+      })),
+    [rawReviews]
+  );
+
   const [selectedRating, setSelectedRating] = useState('all');
   const [selectedTime, setSelectedTime] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
@@ -299,9 +170,7 @@ export default function App() {
   const filteredReviews = useMemo(
     () =>
       INITIAL_REVIEWS.filter((item) => {
-        const matchCourse =
-          selectedCourse === 'all' ||
-          item.course === selectedCourse;
+        
 
         const matchRating =
           selectedRating === 'all' ||
@@ -309,11 +178,11 @@ export default function App() {
 
         const matchTime =
           selectedTime === 'all' ||
-          item.period === selectedTime;
+          inPeriod(item.createdAt, selectedTime);
 
-        return matchCourse && matchRating && matchTime;
+        return matchRating && matchTime;
       }),
-    [selectedCourse, selectedRating, selectedTime]
+    [INITIAL_REVIEWS, selectedRating, selectedTime]
   );
 
   const totalPages = Math.max(
@@ -348,7 +217,6 @@ export default function App() {
   };
 
   const clearFilters = () => {
-    setSelectedCourse('all');
     setSelectedRating('all');
     setSelectedTime('all');
     setCurrentPage(1);
@@ -367,41 +235,6 @@ export default function App() {
 
             {/* Responsive filters */}
             <div className="grid w-full min-w-0 grid-cols-1 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center sm:gap-3">
-              <div className="relative w-full min-w-0 sm:w-auto sm:min-w-[130px]">
-                <select
-                  aria-label="Filter by course"
-                  value={selectedCourse}
-                  onChange={updateFilter(setSelectedCourse)}
-                  className="w-full cursor-pointer appearance-none rounded-lg border border-slate-200 bg-white px-4 py-2.5 pr-9 text-sm font-medium text-slate-600 transition-colors hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 sm:py-2"
-                >
-                  <option value="all">All Courses</option>
-                  <option value="Mathematics- Year 1">
-                    Mathematics- Year 1
-                  </option>
-                  <option value="Science- Year 2">
-                    Science- Year 2
-                  </option>
-                  <option value="English- Year 1">
-                    English- Year 1
-                  </option>
-                </select>
-
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
-                  <svg
-                    className="h-4 w-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </div>
-              </div>
 
               <div className="relative w-full min-w-0 sm:w-auto sm:min-w-[120px]">
                 <select
@@ -472,7 +305,7 @@ export default function App() {
             {paginatedReviews.length === 0 ? (
               <div className="w-full rounded-xl border border-slate-200 px-4 py-10 text-center">
                 <p className="text-sm font-medium text-slate-500">
-                  No reviews match the selected filters.
+                  {loading ? 'Loading reviews…' : INITIAL_REVIEWS.length === 0 ? 'No reviews yet.' : 'No reviews match the selected filters.'}
                 </p>
 
                 <button
@@ -507,7 +340,6 @@ export default function App() {
                   </th>
                   <th className="w-48 px-4 py-3.5">Parent</th>
                   <th className="w-36 px-4 py-3.5">Rating</th>
-                  <th className="w-48 px-4 py-3.5">Course</th>
                   <th className="px-4 py-3.5">Feedback</th>
                   <th className="w-32 px-4 py-3.5">Date</th>
                   <th className="w-10 rounded-r-lg px-4 py-3.5 text-center">
@@ -523,7 +355,7 @@ export default function App() {
                       colSpan={7}
                       className="py-10 text-center font-medium text-slate-400"
                     >
-                      No reviews match the selected filters.
+                      {loading ? 'Loading reviews…' : INITIAL_REVIEWS.length === 0 ? 'No reviews yet.' : 'No reviews match the selected filters.'}
                     </td>
                   </tr>
                 ) : (
@@ -555,10 +387,6 @@ export default function App() {
 
                       <td className="px-4 py-4">
                         <StarRating rating={item.rating} />
-                      </td>
-
-                      <td className="px-4 py-4 font-normal text-slate-500">
-                        {item.course}
                       </td>
 
                       <td className="max-w-md px-4 py-4 font-normal leading-snug text-slate-600">

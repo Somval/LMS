@@ -1,5 +1,5 @@
 import React from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 
 const navigationItems = [
   {
@@ -162,6 +162,7 @@ const NavIcon = ({ type, className = "w-5 h-5" }) => {
 };
 
 export default function LMSSidebar() {
+  const navigate = useNavigate();
   return (
     <aside className="w-64 min-h-screen flex flex-col justify-between select-none font-sans">
       {/* Top Section: Brand Header & Navigation */}
@@ -223,7 +224,7 @@ export default function LMSSidebar() {
 
           {/* Action Button */}
           <button 
-            onClick={() => alert('Opening Support...')}
+            onClick={() => navigate('/parent/settings', { state: { openSupport: true } })}
             className="w-full bg-white text-indigo-950 text-xs font-semibold py-2 px-4 rounded-xl shadow-sm hover:bg-slate-50 active:scale-95 transition-all"
           >
             Contact Support

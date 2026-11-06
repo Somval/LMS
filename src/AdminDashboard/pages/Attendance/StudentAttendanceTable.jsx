@@ -1,80 +1,13 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { ChevronDown, Calendar } from "lucide-react";
 
-const INITIAL_STUDENT_ATTENDANCE = [
-  {
-    id: 1,
-    date: "Oct 16, 2026",
-    subject: "Mathematics-Year 1",
-    classTime: "4:00 PM – 5:00 PM",
-    timeJoined: "4:00 PM",
-    tutorName: "John Doe",
-    tutorId: "TID0012",
-    duration: "58 min",
-    attendance: "Present",
-  },
-  {
-    id: 2,
-    date: "Oct 16, 2026",
-    subject: "Mathematics-Year 1",
-    classTime: "4:00 PM – 5:00 PM",
-    timeJoined: "4:00 PM",
-    tutorName: "John Doe",
-    tutorId: "TID0012",
-    duration: "58 min",
-    attendance: "Present",
-  },
-  {
-    id: 3,
-    date: "Oct 16, 2026",
-    subject: "Mathematics-Year 1",
-    classTime: "4:00 PM – 5:00 PM",
-    timeJoined: "4:00 PM",
-    tutorName: "John Doe",
-    tutorId: "TID0012",
-    duration: "58 min",
-    attendance: "Present",
-  },
-  {
-    id: 4,
-    date: "Oct 16, 2026",
-    subject: "Mathematics-Year 1",
-    classTime: "4:00 PM – 5:00 PM",
-    timeJoined: "4:00 PM",
-    tutorName: "John Doe",
-    tutorId: "TID0012",
-    duration: "58 min",
-    attendance: "Present",
-  },
-  {
-    id: 5,
-    date: "Oct 16, 2026",
-    subject: "Mathematics-Year 1",
-    classTime: "4:00 PM – 5:00 PM",
-    timeJoined: "4:00 PM",
-    tutorName: "John Doe",
-    tutorId: "TID0012",
-    duration: "58 min",
-    attendance: "Present",
-  },
-  {
-    id: 6,
-    date: "Oct 16, 2026",
-    subject: "Mathematics-Year 1",
-    classTime: "4:00 PM – 5:00 PM",
-    timeJoined: "4:00 PM",
-    tutorName: "John Doe",
-    tutorId: "TID0012",
-    duration: "58 min",
-    attendance: "Present",
-  },
-];
-
 export default function StudentAttendanceTable({
-  data = INITIAL_STUDENT_ATTENDANCE,
+  data = [],
 }) {
   const [selectedSubject, setSelectedSubject] = useState("All Subjects");
-  const [dateRange, setDateRange] = useState("Oct 12, 2026 – Oct 18, 2026");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const subjectOptions = useMemo(() => [...new Set(data.map((d) => d.subject))].sort(), [data]);
   const [selectedStatus, setSelectedStatus] = useState("All Statuses");
 
   // Status badge styling helper
@@ -99,7 +32,8 @@ export default function StudentAttendanceTable({
       selectedStatus === "All Statuses" ||
       item.attendance.toLowerCase() === selectedStatus.toLowerCase();
 
-    return matchesSubject && matchesStatus;
+    const matchesDate = (!fromDate || item.dateISO >= fromDate) && (!toDate || item.dateISO <= toDate);
+    return matchesSubject && matchesStatus && matchesDate;
   });
 
   return (
@@ -117,23 +51,32 @@ export default function StudentAttendanceTable({
               className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 pr-9 text-xs sm:text-sm font-medium text-slate-700 outline-none transition focus:border-[#3b82f6] focus:ring-2 focus:ring-[#3b82f6]/10 shadow-2xs cursor-pointer select-text"
             >
               <option value="All Subjects">All Subjects</option>
-              <option value="Mathematics-Year 1">Mathematics-Year 1</option>
-              <option value="English - Year 1">English - Year 1</option>
+              {subjectOptions.map((subject) => (
+                <option key={subject} value={subject}>{subject}</option>
+              ))}
             </select>
             <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
           </div>
 
           {/* 2. Selectable Date Range Input */}
-          <div className="relative min-w-[240px]">
-            <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none select-none" />
+          <div className="flex items-center gap-2">
             <input
-              type="text"
-              value={dateRange}
-              onChange={(e) => setDateRange(e.target.value)}
-              placeholder="Select date range..."
-              className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-9 py-2.5 text-xs sm:text-sm font-medium text-slate-700 outline-none transition focus:border-[#3b82f6] focus:ring-2 focus:ring-[#3b82f6]/10 shadow-2xs select-text cursor-text"
+              type="date"
+              aria-label="From date"
+              value={fromDate}
+              max={toDate || undefined}
+              onChange={(e) => setFromDate(e.target.value)}
+              className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs sm:text-sm font-medium text-slate-700 outline-none"
             />
-            <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+            <span className="text-sm text-slate-400">to</span>
+            <input
+              type="date"
+              aria-label="To date"
+              value={toDate}
+              min={fromDate || undefined}
+              onChange={(e) => setToDate(e.target.value)}
+              className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs sm:text-sm font-medium text-slate-700 outline-none"
+            />
           </div>
 
           {/* 3. Status Filter Dropdown */}

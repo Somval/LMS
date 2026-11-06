@@ -10,7 +10,6 @@ import Dashboard from "../pages/Dashboardsection/Dashboard";
 import Students from "../pages/Users/students/studentPage";
 import StudentDetails from "../pages/Users/students/StudentDetails";
 import Dashome from "../pages/Tutor/DashboardHome";
-import TutorTable from "../pages/Tutor/listofstudents";
 import TutorDetails from "../pages/Tutor/studentDetails";
 import Parent from "../pages/parents/parent"
 
@@ -41,6 +40,8 @@ import ComplaintDetails from "../Complaints/ComplaintDetails"
 import RevenuePayment from "../Revenue/RenueAndPayment"
 import AuditLogs from "../AuditLogs/AuditLogs"
 import Settings from "../Settings/settingsPage"
+import AdminMessages from "../Messages/AdminMessages"
+import AdminNotifications from "../Notifications/AdminNotifications";
 export default function AdminRoute() {
   return (
     <Routes>
@@ -79,9 +80,9 @@ export default function AdminRoute() {
         />
 
         {/* Tutors list table (Fixed path) */}
-        <Route 
-          path="/tutors" 
-          element={<TutorTable />} 
+        <Route
+          path="/tutors"
+          element={<Dashome />}
         />
 
         {/* Individual tutor details (Fixed path to match ID format) */}
@@ -96,12 +97,6 @@ export default function AdminRoute() {
  <Route
           path="/users/parents"
           element={<Parent />}
-        />
-
-        {/* Parents table */}
-        <Route
-          path="/users/parents"
-          element={<ParentsTable />}
         />
 
         {/* Individual parent details */}
@@ -180,6 +175,8 @@ export default function AdminRoute() {
         <Route path="/complaints" element={<AdminComplaints />} />
         <Route path="/complaints/:id" element={<ComplaintDetails />} />
         <Route path="/audit-logs" element={<AuditLogs />} />
+        <Route path="/messages" element={<AdminMessages />} />
+          <Route path="/notifications" element={<AdminNotifications />} />
         <Route path="/settings" element={<Settings />} />
       </Route>
     </Routes>
